@@ -1,4 +1,4 @@
-package com.hospital.controller;
+package com.hospital.exception;
 
 import java.util.Map;
 

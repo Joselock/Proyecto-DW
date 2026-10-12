@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!app) return;
 
   // ---------------------------------------------------------
-  // Cambio de estado global (define una sola vez, arriba)
+  // Cambio de estado global
   // ---------------------------------------------------------
   const setState = (state) => {
     app.dataset.state = state;
@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ---------------------------------------------------------
-  // REGISTER (2 pasos animados · validación nativa)
+  // REGISTER
   // ---------------------------------------------------------
   const registerForm = document.getElementById("registerForm");
   const registerError = document.getElementById("registerError");
