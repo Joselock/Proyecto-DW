@@ -288,3 +288,30 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.key === "Escape") closeModal();
   });
 });
+
+//==================================================
+//FECHA ACTUAL======================================
+
+function capitalizar(texto) {
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+function obtenerFecha(fecha = new Date()) {
+  const texto = new Intl.DateTimeFormat("es-Es", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(fecha);
+
+  return capitalizar(texto);
+}
+
+function renderFecha() {
+  ["fechahoy", "agendaDate"].forEach((id) => {
+    const fe = document.getElementById(id);
+    if (fe) fe.textContent = obtenerFecha();
+  });
+  fe.setAttribute("datetime", new Date().toISOString().slice(0, 10));
+}
+renderFecha();
