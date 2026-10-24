@@ -1,0 +1,113 @@
+gestion-hospitalaria/
+├── docker-compose.yml          # Orquesta BD + backend + frontend
+├── README.md                   # Instrucciones de instalación y uso
+├── .env.example                # Plantilla de variables de entorno
+├── .gitignore                  # Excluye .env, target/, node_modules/
+│
+├── database/                   # Scripts SQL (PostgreSQL/MySQL)
+│   ├── 01_schema.sql           # Tablas, PKs, FKs, CHECKs, ON DELETE CASCADE
+│   ├── 02_seed.sql             # Datos de prueba
+│   └── 03_views.sql            # Vistas para reportes 3, 4, 7 y 9
+│
+├── backend/                    # API REST — Spring Boot (Java)
+│   ├── Dockerfile
+│   ├── pom.xml                 # Dependencias Maven
+│   └── src/main/
+│       ├── java/com/hospital/
+│       │   ├── HospitalApplication.java
+│       │   │
+│       │   ├── config/         # Seguridad y configuración
+│       │   │   ├── SecurityConfig.java   # CORS, rutas públicas/privadas
+│       │   │   └── JwtConfig.java        # Secreto, expiración
+│       │   │
+│       │   ├── model/          # Entidades JPA (1:1 con tablas)
+│       │   │   ├── Hospital.java
+│       │   │   ├── Departamento.java
+│       │   │   ├── Unidad.java
+│       │   │   ├── Medico.java
+│       │   │   ├── Paciente.java
+│       │   │   ├── Turno.java
+│       │   │   ├── Consulta.java
+│       │   │   ├── Informe.java
+│       │   │   └── RegistroPaciente.java
+│       │   │
+│       │   ├── repository/     # Interfaces JpaRepository + @Query
+│       │   │   ├── HospitalRepository.java
+│       │   │   ├── PacienteRepository.java
+│       │   │   └── ...
+│       │   │
+│       │   ├── service/        # Reglas de negocio del PDF
+│       │   │   ├── HospitalService.java
+│       │   │   ├── PacienteService.java   # Valida edad >= 16
+│       │   │   ├── MedicoService.java     # Valida máx. 10 por unidad
+│       │   │   ├── TurnoService.java      # Calcula el 80% de éxito
+│       │   │   ├── InformeService.java
+│       │   │   └── ReporteService.java    # Los 9 reportes
+│       │   │
+│       │   ├── controller/     # Endpoints REST
+│       │   │   ├── AuthController.java    # POST /api/auth/login
+│       │   │   ├── HospitalController.java
+│       │   │   ├── PacienteController.java
+│       │   │   ├── MedicoController.java
+│       │   │   ├── TurnoController.java
+│       │   │   ├── InformeController.java
+│       │   │   └── ReporteController.java
+│       │   │
+│       │   ├── dto/            # Request / Response
+│       │   │   ├── request/
+│       │   │   └── response/
+│       │   │
+│       │   ├── exception/      # Manejo global de errores
+│       │   │   ├── GlobalExceptionHandler.java
+│       │   │   └── BusinessException.java
+│       │   │
+│       │   └── util/           # Validadores y mappers
+│       │       ├── EdadValidator.java
+│       │       └── Mapper.java
+│       │
+│       └── resources/
+│           ├── application.yml
+│           ├── application-dev.yml
+│           └── application-prod.yml
+│
+└── frontend/                   # HTML + CSS + JS puro (sin build)
+    ├── index.html              # Login
+    ├── dashboard.html          # Panel principal
+    ├── hospitales.html         # CRUD hospitales
+    ├── departamentos.html      # CRUD departamentos
+    ├── unidades.html           # CRUD unidades
+    ├── medicos.html            # CRUD médicos
+    ├── pacientes.html          # CRUD pacientes + registro en unidad
+    ├── turnos.html             # CRUD turnos
+    ├── informes.html           # Generación de informes
+    │
+    ├── reportes/               # Un archivo por cada reporte del PDF
+    │   ├── reporte1.html       # Listado de pacientes
+    │   ├── reporte2.html       # Listado de médicos
+    │   ├── reporte3.html       # Resumen por hospitales
+    │   ├── reporte4.html       # Top 5 hospitales con más pacientes
+    │   ├── reporte5.html       # Informe durante las consultas
+    │   ├── reporte6.html       # Pacientes no atendidos
+    │   ├── reporte7.html       # Resumen del proceso
+    │   ├── reporte8.html       # Unidades que deben revisar turnos
+    │   └── reporte9.html       # Consultas exitosas
+    │
+    ├── css/
+    │   ├── styles.css          # Estilos globales (navbar, forms, tablas)
+    │   └── reportes.css        # Estilos de reportes (impresión, totales)
+    │
+    ├── js/
+    │   ├── config.js           # API_URL, expiración de token
+    │   ├── api.js              # fetch() genérico con JWT
+    │   ├── auth.js             # login, logout, guard de sesión
+    │   ├── hospitales.js       # Lógica de hospitales.html
+    │   ├── departamentos.js    # Lógica de departamentos.html
+    │   ├── unidades.js         # Lógica de unidades.html
+    │   ├── medicos.js          # Lógica de medicos.html
+    │   ├── pacientes.js        # Lógica de pacientes.html
+    │   ├── turnos.js           # Lógica de turnos.html
+    │   ├── informes.js         # Lógica de informes.html
+    │   └── reportes.js         # Funciones compartidas de render
+    │
+    └── assets/
+        └── logo.png            # Logo institucional
