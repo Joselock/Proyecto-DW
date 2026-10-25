@@ -19,7 +19,7 @@ Estilos de la pagina principal=======================================
 #button {
     width: 140px;
     height: 50px;
-    font-size: 14px;
+    font-size: 15px;
     color: rgb(197, 201, 206);
 
     /* Reset total del estilo nativo */
@@ -34,7 +34,17 @@ Estilos de la pagina principal=======================================
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
-#button:hover {}
+#button:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.28);
+}
+
+#button:active {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
 
 /*=================================================================
 Pagina de inicio de sesion=========================================
@@ -131,24 +141,6 @@ h4 {
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.2),
         0 0 0 4px rgba(255, 255, 255, 0.08);
-}
-
-.boton {
-
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 12px;
-
-    /* Fondo translúcido tipo vidrio */
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    /* Sombra interior sutil */
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
-
-.boton:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.28);
 }
 
 
