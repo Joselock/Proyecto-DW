@@ -310,8 +310,18 @@ function obtenerFecha(fecha = new Date()) {
 function renderFecha() {
   ["fechahoy", "agendaDate"].forEach((id) => {
     const fe = document.getElementById(id);
-    if (fe) fe.textContent = obtenerFecha();
+    if (fe) {
+fe.textContent = obtenerFecha();
+fe.setAttribute("datetime", new Date().toISOString().slice(0, 10));
+}
   });
-  fe.setAttribute("datetime", new Date().toISOString().slice(0, 10));
+  
 }
 renderFecha();
+
+/*==========================================================================
+Habilitar los botones de 'Sing In' y 'Register'==============================
+===========================================================================*/
+document.getElementById("button1").addEventListener("click", () => {
+  window.location.href = "login.html";
+});
