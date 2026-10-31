@@ -1,0 +1,400 @@
+/* ==========================================================
+   Reset
+   ========================================================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    background: #138f82;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: #fff;
+    overflow: hidden;
+}
+
+.app {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* ==========================================================
+   HOME
+   ========================================================== */
+.home {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    text-align: center;
+    gap: 24px;
+    z-index: 2;
+    transition: opacity 0.4s ease;
+}
+
+.home-title {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    color: rgb(197, 201, 206);
+    max-width: 800px;
+    line-height: 1.2;
+}
+
+.home-desc {
+    font-size: 1.1rem;
+    color: rgb(197, 201, 206);
+    max-width: 600px;
+}
+
+.home-buttons {
+    display: flex;
+    gap: 16px;
+    margin-top: 10px;
+}
+
+.app:not([data-state="home"]) .home {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ==========================================================
+   AUTH — único contenedor que recorta
+   ========================================================== */
+.auth {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    /* ← ahora recorta aquí, no los tracks */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    z-index: 1;
+}
+
+.app[data-state="login"] .auth,
+.app[data-state="register"] .auth {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Los tracks ya no recortan ni forman grid:
+   cubren toda el área, y dentro viven los paneles absolutos. */
+.info-track,
+.form-track {
+    position: absolute;
+    inset: 0;
+}
+
+/* Todos los paneles: mitad de ancho, anclados a la izquierda */
+.info-panel,
+.form-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 50%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px;
+    transition:
+        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+        opacity 0.3s ease;
+    will-change: transform, opacity;
+}
+
+.info-panel {
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.form-panel {
+    align-items: center;
+}
+
+/* ==========================================================
+   POSICIONES
+   translateX(0)     → mitad izquierda
+   translateX(100%)  → mitad derecha
+   translateX(-100%) → fuera, izquierda
+   translateX(200%)  → fuera, derecha
+   ========================================================== */
+
+/* ---------- LOGIN (y HOME, que prepara login) ---------- */
+.app[data-state="home"] .info-login,
+.app[data-state="login"] .info-login {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.app[data-state="home"] .form-login-panel,
+.app[data-state="login"] .form-login-panel {
+    transform: translateX(100%);
+    opacity: 1;
+}
+
+.app[data-state="home"] .info-register,
+.app[data-state="login"] .info-register {
+    transform: translateX(200%);
+    opacity: 0;
+}
+
+.app[data-state="home"] .form-register-panel,
+.app[data-state="login"] .form-register-panel {
+    transform: translateX(-100%);
+    opacity: 0;
+}
+
+/* ---------- REGISTER ----------
+   Ojo: aquí los lados se intercambian respecto a login */
+.app[data-state="register"] .info-login {
+    transform: translateX(-100%);
+    opacity: 0;
+}
+
+.app[data-state="register"] .form-login-panel {
+    transform: translateX(200%);
+    opacity: 0;
+}
+
+.app[data-state="register"] .info-register {
+    transform: translateX(100%);
+    /* aparece a la DERECHA */
+    opacity: 1;
+}
+
+.app[data-state="register"] .form-register-panel {
+    transform: translateX(0);
+    /* aparece a la IZQUIERDA */
+    opacity: 1;
+}
+
+/* ==========================================================
+   TIMING DE OPACIDAD
+   - Salientes: fade-out rápido al principio
+   - Entrantes: fade-in retrasado a la segunda mitad
+   (así nunca se ven dos paneles superpuestos)
+   ========================================================== */
+.app[data-state="register"] .info-login,
+.app[data-state="register"] .form-login-panel {
+    transition:
+        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+        opacity 0.25s ease;
+}
+
+.app[data-state="register"] .info-register,
+.app[data-state="register"] .form-register-panel {
+    transition:
+        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+        opacity 0.3s ease 0.3s;
+}
+
+.app[data-state="login"] .info-login,
+.app[data-state="login"] .form-login-panel {
+    transition:
+        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+        opacity 0.3s ease 0.3s;
+}
+
+.app[data-state="login"] .info-register,
+.app[data-state="login"] .form-register-panel {
+    transition:
+        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+        opacity 0.25s ease;
+}
+
+/* ==========================================================
+   ESTILOS DE CONTENIDO (sin cambios)
+   ========================================================== */
+.info-panel h2 {
+    font-size: 2rem;
+    color: #fff;
+}
+
+.info-panel p {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 1.05rem;
+    line-height: 1.5;
+    max-width: 380px;
+}
+
+.form-panel h2 {
+    font-size: 2rem;
+    color: #fff;
+    margin-bottom: 20px;
+}
+
+.entradas {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 340px;
+    max-width: 100%;
+}
+
+.entradas h4 {
+    color: #fff;
+    font-weight: 500;
+    margin-top: 10px;
+    font-size: 0.95rem;
+}
+
+.entradas input {
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    outline: none;
+    font-size: 14px;
+}
+
+.entradas input:focus {
+    border-color: #fff;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.entradas p {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.entradas a {
+    color: #fff;
+    text-decoration: none;
+    opacity: 0.8;
+}
+
+.entradas a:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
+/* ==========================================================
+   BOTONES (sin cambios)
+   ========================================================== */
+.button {
+    width: 140px;
+    height: 50px;
+    font-size: 15px;
+    color: rgb(197, 201, 206);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.button:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.28);
+}
+
+.boton-Inicio {
+    margin-top: 20px;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background 0.2s;
+}
+
+.boton-Inicio:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.volver {
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+.volver:hover {
+    opacity: 1;
+}
+
+.volver-mobile {
+    display: none;
+}
+
+/* ==========================================================
+   RESPONSIVE
+   ========================================================== */
+@media (max-width: 800px) {
+    .info-track {
+        display: none;
+    }
+
+    .info-panel,
+    .form-panel {
+        width: 100%;
+        /* en móvil ocupan todo el ancho */
+        padding: 40px 20px;
+    }
+
+    /* Como solo hay un formulario visible, mantenemos el slide clásico */
+    .app[data-state="home"] .form-login-panel,
+    .app[data-state="login"] .form-login-panel {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    .app[data-state="home"] .form-register-panel,
+    .app[data-state="login"] .form-register-panel {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    .app[data-state="register"] .form-login-panel {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+
+    .app[data-state="register"] .form-register-panel {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    .volver-mobile {
+        display: block;
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 22px;
+        cursor: pointer;
+        opacity: 0.8;
+    }
+
+    .volver-mobile:hover {
+        opacity: 1;
+    }
+
+    .home-title {
+        font-size: 1.8rem;
+    }
+}
