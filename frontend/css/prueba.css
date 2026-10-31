@@ -93,6 +93,7 @@ body {
 .form-track {
     position: absolute;
     inset: 0;
+    pointer-events: none;
 }
 
 /* Todos los paneles: mitad de ancho, anclados a la izquierda */
@@ -111,6 +112,7 @@ body {
         transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
         opacity 0.3s ease;
     will-change: transform, opacity;
+    pointer-events: auto;
 }
 
 .info-panel {
@@ -147,12 +149,14 @@ body {
 .app[data-state="login"] .info-register {
     transform: translateX(200%);
     opacity: 0;
+    pointer-events: none;
 }
 
 .app[data-state="home"] .form-register-panel,
 .app[data-state="login"] .form-register-panel {
     transform: translateX(-100%);
     opacity: 0;
+    pointer-events: none;
 }
 
 /* ---------- REGISTER ----------
@@ -160,11 +164,13 @@ body {
 .app[data-state="register"] .info-login {
     transform: translateX(-100%);
     opacity: 0;
+    pointer-events: none;
 }
 
 .app[data-state="register"] .form-login-panel {
     transform: translateX(200%);
     opacity: 0;
+    pointer-events: none;
 }
 
 .app[data-state="register"] .info-register {
