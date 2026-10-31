@@ -55,6 +55,11 @@ h4 {
     margin-left: 60px;
 }
 
+h1 {
+    color: #fff;
+    margin-left: 130px;
+}
+
 .entradas input {
     padding: 10px 30px;
     font-size: 14px;
