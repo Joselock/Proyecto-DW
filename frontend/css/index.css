@@ -68,7 +68,7 @@ body {
 }
 
 /* ==========================================================
-   AUTH — único contenedor que recorta
+   AUTH 
    ========================================================== */
 .auth {
     position: absolute;
@@ -189,7 +189,6 @@ body {
    TIMING DE OPACIDAD
    - Salientes: fade-out rápido al principio
    - Entrantes: fade-in retrasado a la segunda mitad
-   (así nunca se ven dos paneles superpuestos)
    ========================================================== */
 .app[data-state="register"] .info-login,
 .app[data-state="register"] .form-login-panel {
@@ -220,7 +219,7 @@ body {
 }
 
 /* ==========================================================
-   ESTILOS DE CONTENIDO (sin cambios)
+   ESTILOS DE CONTENIDO 
    ========================================================== */
 .info-panel h2 {
     font-size: 2rem;
@@ -258,16 +257,37 @@ body {
 .entradas input {
     padding: 12px;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    background: rgba(255, 255, 255, 0.1);
     color: #fff;
     outline: none;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 12px;
+
+    /* Fondo translúcido tipo vidrio */
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    /* Sombra interior sutil */
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+
     font-size: 14px;
 }
 
+.entradas input::placeholder {
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.entradas input:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.28);
+}
+
 .entradas input:focus {
-    border-color: #fff;
     background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.55);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        0 0 0 4px rgba(255, 255, 255, 0.08);
 }
 
 .entradas p {
@@ -287,7 +307,7 @@ body {
 }
 
 /* ==========================================================
-   BOTONES (sin cambios)
+   BOTONES 
    ========================================================== */
 .button {
     width: 140px;

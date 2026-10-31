@@ -68,7 +68,7 @@ body {
 }
 
 /* ==========================================================
-   AUTH — único contenedor que recorta
+   AUTH 
    ========================================================== */
 .auth {
     position: absolute;
@@ -118,6 +118,11 @@ body {
 .info-panel {
     align-items: flex-start;
     gap: 20px;
+}
+
+.info-register {
+    align-items: flex-end;
+    text-align: right;
 }
 
 .form-panel {
@@ -189,7 +194,6 @@ body {
    TIMING DE OPACIDAD
    - Salientes: fade-out rápido al principio
    - Entrantes: fade-in retrasado a la segunda mitad
-   (así nunca se ven dos paneles superpuestos)
    ========================================================== */
 .app[data-state="register"] .info-login,
 .app[data-state="register"] .form-login-panel {
@@ -220,7 +224,7 @@ body {
 }
 
 /* ==========================================================
-   ESTILOS DE CONTENIDO (sin cambios)
+   ESTILOS DE CONTENIDO 
    ========================================================== */
 .info-panel h2 {
     font-size: 2rem;
