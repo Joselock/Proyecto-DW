@@ -1,32 +1,37 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const container = document.getElementById("container");
-  const btnLogin = document.getElementById("btnLogin");
-  const btnRegister = document.getElementById("btnRegister");
-  const backFromLogin = document.getElementById("backFromLogin");
-  const backFromRegister = document.getElementById("backFromRegister");
+  const app = document.getElementById("app");
+  if (!app) return;
 
-  if (!container) {
-    console.warn("No se encontró #container en la página");
-    return;
-  }
-
-  // Mostrar formulario de LOGIN (desliza desde la izquierda)
-  btnLogin?.addEventListener("click", () => {
-    container.classList.remove("mostrar-register");
-    container.classList.add("mostrar-login");
-  });
-
-  // Mostrar formulario de REGISTRO (desliza desde la derecha)
-  btnRegister?.addEventListener("click", () => {
-    container.classList.remove("mostrar-login");
-    container.classList.add("mostrar-register");
-  });
-
-  // Volver al panel principal
-  const volver = () => {
-    container.classList.remove("mostrar-login", "mostrar-register");
+  // Cambia el estado global del "escenario"
+  const setState = (state) => {
+    app.dataset.state = state;
   };
 
-  backFromLogin?.addEventListener("click", volver);
-  backFromRegister?.addEventListener("click", volver);
+  // Desde la home
+  document
+    .getElementById("btnGoLogin")
+    ?.addEventListener("click", () => setState("login"));
+  document
+    .getElementById("btnGoRegister")
+    ?.addEventListener("click", () => setState("register"));
+
+  // Botones para volver a la home (uno por cada panel de info + móvil)
+  [
+    "backFromLoginLeft",
+    "backFromRegisterLeft",
+    "backMobileLogin",
+    "backMobileRegister",
+  ].forEach((id) => {
+    document
+      .getElementById(id)
+      ?.addEventListener("click", () => setState("home"));
+  });
+
+  // Cambios entre login y registro (esta es la animación de deslizamiento)
+  document
+    .getElementById("btnSwitchToRegister")
+    ?.addEventListener("click", () => setState("register"));
+  document
+    .getElementById("btnSwitchToLogin")
+    ?.addEventListener("click", () => setState("login"));
 });

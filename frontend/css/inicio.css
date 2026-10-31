@@ -1,5 +1,5 @@
 /* ==========================================================
-   Reset básico
+   Reset
    ========================================================== */
 * {
     box-sizing: border-box;
@@ -7,148 +7,173 @@
     padding: 0;
 }
 
+html,
 body {
-    background: #138f82;
-    min-height: 100vh;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    height: 100%;
 }
 
-/* ==========================================================
-   Contenedor principal (grid 50/50)
-   ========================================================== */
-#container {
+body {
+    background: #138f82;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: #fff;
+    overflow: hidden;
+}
+
+.app {
     position: relative;
     width: 100%;
     height: 100vh;
     overflow: hidden;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
 }
 
 /* ==========================================================
-   Paneles
+   HOME (centrado, sin imagen)
    ========================================================== */
-.panel-izquierdo {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 60px;
-    gap: 20px;
-    transition: opacity 0.4s ease;
-}
-
-.panel-derecho {
-    padding: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: opacity 0.4s ease;
-}
-
-.panel-derecho img {
-    width: 100%;
-    height: 80%;
-    object-fit: cover;
-    border-radius: 20px;
-}
-
-/* ==========================================================
-   Formularios + animación de deslizamiento
-   ========================================================== */
-.form-container {
+.home {
     position: absolute;
     inset: 0;
-    /* top:0; right:0; bottom:0; left:0 */
-    background: #138f82;
-    /* tapa los paneles al deslizarse */
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding: 40px;
+    text-align: center;
+    gap: 24px;
+    z-index: 2;
+    transition: opacity 0.4s ease;
+}
+
+.home-title {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    color: rgb(197, 201, 206);
+    max-width: 800px;
+    line-height: 1.2;
+}
+
+.home-desc {
+    font-size: 1.1rem;
+    color: rgb(197, 201, 206);
+    max-width: 600px;
+}
+
+.home-buttons {
+    display: flex;
+    gap: 16px;
+    margin-top: 10px;
+}
+
+/* Se oculta cuando NO estamos en home */
+.app:not([data-state="home"]) .home {
     opacity: 0;
     pointer-events: none;
-    /* no clickeable si está oculto */
-    transition: transform 0.6s ease-in-out, opacity 0.6s ease-in-out;
-    z-index: 10;
 }
 
-/* Posición inicial fuera de pantalla */
-.form-login {
-    transform: translateX(-100%);
+/* ==========================================================
+   AUTH (los dos tracks)
+   ========================================================== */
+.auth {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    z-index: 1;
 }
 
-.form-register {
-    transform: translateX(100%);
-}
-
-/* Cuando el contenedor tiene la clase activa, el form entra a escena */
-#container.mostrar-login .form-login,
-#container.mostrar-register .form-register {
-    transform: translateX(0);
+.app[data-state="login"] .auth,
+.app[data-state="register"] .auth {
     opacity: 1;
     pointer-events: auto;
 }
 
-/* Ocultar los paneles mientras se ve un formulario */
-#container.mostrar-login .panel-izquierdo,
-#container.mostrar-login .panel-derecho,
-#container.mostrar-register .panel-izquierdo,
-#container.mostrar-register .panel-derecho {
-    opacity: 0;
-    pointer-events: none;
+.info-track,
+.form-track {
+    position: relative;
+    overflow: hidden;
 }
 
-/* ==========================================================
-   Estilos del panel principal
-   ========================================================== */
-.titulo {
-    color: rgb(197, 201, 206);
-    font-size: 2.2rem;
-    line-height: 1.2;
-}
-
-.subtitulo {
-    color: rgb(197, 201, 206);
-    font-weight: 400;
-    font-size: 1.1rem;
-}
-
-.buttons {
+.info-panel,
+.form-panel {
+    position: absolute;
+    inset: 0;
     display: flex;
-    gap: 15px;
-    margin-top: 20px;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px;
+    transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+    will-change: transform;
 }
 
-.button {
-    width: 140px;
-    height: 50px;
-    font-size: 15px;
-    color: rgb(197, 201, 206);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    cursor: pointer;
-    transition: background 0.2s, border-color 0.2s;
+.info-panel {
+    align-items: flex-start;
+    gap: 20px;
 }
 
-.button:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.28);
-}
-
-.button:active {
-    background: rgba(255, 255, 255, 0.08);
+.form-panel {
+    align-items: center;
 }
 
 /* ==========================================================
-   Estilos de los formularios
+   POSICIONES DE LOS PANELES
+   HOME = LOGIN: listo para deslizar al pulsar Sign In
    ========================================================== */
-.form-container h1 {
-    color: #fff;
+.app[data-state="home"] .info-login,
+.app[data-state="login"] .info-login {
+    transform: translateX(0);
+}
+
+.app[data-state="home"] .info-register,
+.app[data-state="login"] .info-register {
+    transform: translateX(-100%);
+}
+
+.app[data-state="home"] .form-login-panel,
+.app[data-state="login"] .form-login-panel {
+    transform: translateX(0);
+}
+
+.app[data-state="home"] .form-register-panel,
+.app[data-state="login"] .form-register-panel {
+    transform: translateX(100%);
+}
+
+/* REGISTER: register visible, login fuera */
+.app[data-state="register"] .info-login {
+    transform: translateX(100%);
+}
+
+.app[data-state="register"] .info-register {
+    transform: translateX(0);
+}
+
+.app[data-state="register"] .form-login-panel {
+    transform: translateX(-100%);
+}
+
+.app[data-state="register"] .form-register-panel {
+    transform: translateX(0);
+}
+
+/* ==========================================================
+   ESTILOS DE CONTENIDO
+   ========================================================== */
+.info-panel h2 {
     font-size: 2rem;
+    color: #fff;
+}
+
+.info-panel p {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 1.05rem;
+    line-height: 1.5;
+    max-width: 380px;
+}
+
+.form-panel h2 {
+    font-size: 2rem;
+    color: #fff;
     margin-bottom: 20px;
 }
 
@@ -156,8 +181,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    width: 320px;
-    max-width: 90%;
+    width: 340px;
+    max-width: 100%;
 }
 
 .entradas h4 {
@@ -182,22 +207,6 @@ body {
     background: rgba(255, 255, 255, 0.15);
 }
 
-.boton-Inicio {
-    margin-top: 20px;
-    padding: 12px;
-    border-radius: 8px;
-    border: none;
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-    cursor: pointer;
-    font-size: 15px;
-    transition: background 0.2s;
-}
-
-.boton-Inicio:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
 .entradas p {
     margin-top: 10px;
     text-align: center;
@@ -214,7 +223,48 @@ body {
     text-decoration: underline;
 }
 
-/* Botón "volver" dentro de los formularios */
+/* ==========================================================
+   BOTONES
+   ========================================================== */
+.button {
+    width: 140px;
+    height: 50px;
+    font-size: 15px;
+    color: rgb(197, 201, 206);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.button:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.28);
+}
+
+.boton-Inicio {
+    margin-top: 20px;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background 0.2s;
+}
+
+.boton-Inicio:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* ==========================================================
+   VOLVER
+   ========================================================== */
 .volver {
     position: absolute;
     top: 30px;
@@ -231,19 +281,45 @@ body {
     opacity: 1;
 }
 
+.volver-mobile {
+    display: none;
+}
+
 /* ==========================================================
-   Responsive
+   RESPONSIVE
    ========================================================== */
 @media (max-width: 800px) {
-    #container {
+    .auth {
         grid-template-columns: 1fr;
     }
 
-    .panel-derecho {
+    .info-track {
         display: none;
     }
 
-    .titulo {
+    .volver-mobile {
+        display: block;
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 22px;
+        cursor: pointer;
+        opacity: 0.8;
+    }
+
+    .volver-mobile:hover {
+        opacity: 1;
+    }
+
+    .info-panel,
+    .form-panel {
+        padding: 40px 20px;
+    }
+
+    .home-title {
         font-size: 1.8rem;
     }
 }

@@ -3,65 +3,113 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pagina de Presentacion</title>
+    <title>Sistema de Gestión Hospitalaria</title>
     <link rel="stylesheet" href="./css/inicio.css" />
   </head>
   <body>
-    <div class="container" id="container">
-      <!-- Panel principal (izquierda) -->
-      <div class="panel-izquierdo">
-        <h1 class="titulo">Sistema de Gestion Hospitalaria</h1>
-        <h3 class="subtitulo">
+    <div class="app" id="app" data-state="home">
+      <!-- ================= HOME (centrado, sin imagen) ================= -->
+      <section class="home" id="home">
+        <h1 class="home-title">Sistema de Gestión Hospitalaria</h1>
+        <p class="home-desc">
           Sistema de control y consulta del hospital al que perteneces.
-        </h3>
-        <div class="buttons">
-          <button type="button" class="button" id="btnLogin">Sign In</button>
-          <button type="button" class="button" id="btnRegister">
+        </p>
+        <div class="home-buttons">
+          <button type="button" class="button" id="btnGoLogin">Sign In</button>
+          <button type="button" class="button" id="btnGoRegister">
             Register
           </button>
         </div>
-      </div>
+      </section>
 
-      <!-- Panel de imagen (derecha) -->
-      <div class="panel-derecho">
-        <img src="./assets/img/login.jpg" alt="Imagen" />
-      </div>
+      <!-- ================= AUTH (info izquierda + form derecha) ================= -->
+      <section class="auth" id="auth">
+        <!-- Track de INFO (mitad izquierda) -->
+        <div class="info-track">
+          <!-- Info de LOGIN -->
+          <div class="info-panel info-login">
+            <button type="button" class="volver" id="backFromLoginLeft">
+              ← Volver
+            </button>
+            <h2>Bienvenido de nuevo</h2>
+            <p>
+              Inicia sesión para acceder al sistema de gestión hospitalaria y
+              consultar tus turnos.
+            </p>
+            <button
+              type="button"
+              class="button switch-btn"
+              id="btnSwitchToRegister"
+            >
+              Register
+            </button>
+          </div>
 
-      <!-- Formulario de inicio de sesión (hermano, NO anidado) -->
-      <div class="form-container form-login">
-        <button type="button" class="volver" id="backFromLogin">
-          ← Volver
-        </button>
-        <h1>Sign In</h1>
-        <div class="entradas">
-          <h4>Profile Name</h4>
-          <input type="text" />
-          <h4>Password</h4>
-          <input type="password" />
-          <button type="button" class="boton-Inicio">Entrar</button>
-          <p><a href="#">¿Forgot password?</a></p>
+          <!-- Info de REGISTRO -->
+          <div class="info-panel info-register">
+            <button type="button" class="volver" id="backFromRegisterLeft">
+              ← Volver
+            </button>
+            <h2>Crea tu cuenta</h2>
+            <p>
+              Regístrate para comenzar a usar el sistema hospitalario y
+              gestionar tus citas.
+            </p>
+            <button
+              type="button"
+              class="button switch-btn"
+              id="btnSwitchToLogin"
+            >
+              Sign In
+            </button>
+          </div>
         </div>
-      </div>
 
-      <!-- Formulario de registro (hermano) -->
-      <div class="form-container form-register">
-        <button type="button" class="volver" id="backFromRegister">
-          ← Volver
-        </button>
-        <h1>Register</h1>
-        <div class="entradas">
-          <h4>Nombre completo</h4>
-          <input type="text" />
-          <h4>Correo electrónico</h4>
-          <input type="email" />
-          <h4>Password</h4>
-          <input type="password" />
-          <button type="button" class="boton-Inicio">Registrarse</button>
+        <!-- Track de FORMULARIOS (mitad derecha) -->
+        <div class="form-track">
+          <!-- Formulario de LOGIN -->
+          <div class="form-panel form-login-panel">
+            <button
+              type="button"
+              class="volver volver-mobile"
+              id="backMobileLogin"
+            >
+              ←
+            </button>
+            <h2>Sign In</h2>
+            <div class="entradas">
+              <h4>Profile Name</h4>
+              <input type="text" />
+              <h4>Password</h4>
+              <input type="password" />
+              <button type="button" class="boton-Inicio">Entrar</button>
+              <p><a href="#">¿Forgot password?</a></p>
+            </div>
+          </div>
+
+          <!-- Formulario de REGISTRO -->
+          <div class="form-panel form-register-panel">
+            <button
+              type="button"
+              class="volver volver-mobile"
+              id="backMobileRegister"
+            >
+              ←
+            </button>
+            <h2>Register</h2>
+            <div class="entradas">
+              <h4>Nombre completo</h4>
+              <input type="text" />
+              <h4>Correo electrónico</h4>
+              <input type="email" />
+              <h4>Password</h4>
+              <input type="password" />
+              <button type="button" class="boton-Inicio">Registrarse</button>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
     </div>
-
-    <!-- SOLO cargamos el JS de autenticación en esta página -->
     <script src="./js/auth.js"></script>
   </body>
 </html>
