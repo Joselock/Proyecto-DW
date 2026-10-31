@@ -1,19 +1,122 @@
-/*=================================================================
-Estilos de la pagina principal=======================================
-===================================================================*/
+/* ==========================================================
+   Reset básico
+   ========================================================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
+body {
+    background: #138f82;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ==========================================================
+   Contenedor principal (grid 50/50)
+   ========================================================== */
+#container {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+/* ==========================================================
+   Paneles
+   ========================================================== */
+.panel-izquierdo {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px;
+    gap: 20px;
+    transition: opacity 0.4s ease;
+}
+
+.panel-derecho {
+    padding: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.4s ease;
+}
+
+.panel-derecho img {
+    width: 100%;
+    height: 80%;
+    object-fit: cover;
+    border-radius: 20px;
+}
+
+/* ==========================================================
+   Formularios + animación de deslizamiento
+   ========================================================== */
+.form-container {
+    position: absolute;
+    inset: 0;
+    /* top:0; right:0; bottom:0; left:0 */
+    background: #138f82;
+    /* tapa los paneles al deslizarse */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    /* no clickeable si está oculto */
+    transition: transform 0.6s ease-in-out, opacity 0.6s ease-in-out;
+    z-index: 10;
+}
+
+/* Posición inicial fuera de pantalla */
+.form-login {
+    transform: translateX(-100%);
+}
+
+.form-register {
+    transform: translateX(100%);
+}
+
+/* Cuando el contenedor tiene la clase activa, el form entra a escena */
+#container.mostrar-login .form-login,
+#container.mostrar-register .form-register {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Ocultar los paneles mientras se ve un formulario */
+#container.mostrar-login .panel-izquierdo,
+#container.mostrar-login .panel-derecho,
+#container.mostrar-register .panel-izquierdo,
+#container.mostrar-register .panel-derecho {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ==========================================================
+   Estilos del panel principal
+   ========================================================== */
 .titulo {
     color: rgb(197, 201, 206);
-    margin-left: 70px
+    font-size: 2.2rem;
+    line-height: 1.2;
 }
 
 .subtitulo {
-    color: rgb(197, 201, 206)
+    color: rgb(197, 201, 206);
+    font-weight: 400;
+    font-size: 1.1rem;
 }
 
 .buttons {
-    padding: 15px;
-    margin-left: 120px;
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
 }
 
 .button {
@@ -21,17 +124,14 @@ Estilos de la pagina principal=======================================
     height: 50px;
     font-size: 15px;
     color: rgb(197, 201, 206);
-
-    /* Reset total del estilo nativo */
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 12px;
-
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-
-    /* Sombra interior sutil */
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
 }
 
 .button:hover {
@@ -41,6 +141,109 @@ Estilos de la pagina principal=======================================
 
 .button:active {
     background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+}
+
+/* ==========================================================
+   Estilos de los formularios
+   ========================================================== */
+.form-container h1 {
+    color: #fff;
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+
+.entradas {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 320px;
+    max-width: 90%;
+}
+
+.entradas h4 {
+    color: #fff;
+    font-weight: 500;
+    margin-top: 10px;
+    font-size: 0.95rem;
+}
+
+.entradas input {
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    outline: none;
+    font-size: 14px;
+}
+
+.entradas input:focus {
+    border-color: #fff;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.boton-Inicio {
+    margin-top: 20px;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background 0.2s;
+}
+
+.boton-Inicio:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.entradas p {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.entradas a {
+    color: #fff;
+    text-decoration: none;
+    opacity: 0.8;
+}
+
+.entradas a:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
+/* Botón "volver" dentro de los formularios */
+.volver {
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+.volver:hover {
+    opacity: 1;
+}
+
+/* ==========================================================
+   Responsive
+   ========================================================== */
+@media (max-width: 800px) {
+    #container {
+        grid-template-columns: 1fr;
+    }
+
+    .panel-derecho {
+        display: none;
+    }
+
+    .titulo {
+        font-size: 1.8rem;
+    }
 }
