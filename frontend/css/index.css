@@ -27,7 +27,7 @@ body {
 }
 
 /* ==========================================================
-   HOME (centrado, sin imagen)
+   HOME
    ========================================================== */
 .home {
     position: absolute;
@@ -62,20 +62,19 @@ body {
     margin-top: 10px;
 }
 
-/* Se oculta cuando NO estamos en home */
 .app:not([data-state="home"]) .home {
     opacity: 0;
     pointer-events: none;
 }
 
 /* ==========================================================
-   AUTH (los dos tracks)
+   AUTH — único contenedor que recorta
    ========================================================== */
 .auth {
     position: absolute;
     inset: 0;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    overflow: hidden;
+    /* ← ahora recorta aquí, no los tracks */
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.4s ease;
@@ -88,22 +87,32 @@ body {
     pointer-events: auto;
 }
 
+/* Los tracks ya no recortan ni forman grid:
+   cubren toda el área, y dentro viven los paneles absolutos. */
 .info-track,
 .form-track {
-    position: relative;
-    overflow: hidden;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
 }
 
+/* Todos los paneles: mitad de ancho, anclados a la izquierda */
 .info-panel,
 .form-panel {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
+    width: 50%;
+    height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
     padding: 60px;
-    transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
-    will-change: transform;
+    transition:
+        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+        opacity 0.3s ease;
+    will-change: transform, opacity;
+    pointer-events: auto;
 }
 
 .info-panel {
@@ -116,48 +125,102 @@ body {
 }
 
 /* ==========================================================
-   POSICIONES DE LOS PANELES
-   HOME = LOGIN: listo para deslizar al pulsar Sign In
+   POSICIONES
+   translateX(0)     → mitad izquierda
+   translateX(100%)  → mitad derecha
+   translateX(-100%) → fuera, izquierda
+   translateX(200%)  → fuera, derecha
    ========================================================== */
+
+/* ---------- LOGIN (y HOME, que prepara login) ---------- */
 .app[data-state="home"] .info-login,
 .app[data-state="login"] .info-login {
     transform: translateX(0);
-}
-
-.app[data-state="home"] .info-register,
-.app[data-state="login"] .info-register {
-    transform: translateX(-100%);
+    opacity: 1;
 }
 
 .app[data-state="home"] .form-login-panel,
 .app[data-state="login"] .form-login-panel {
-    transform: translateX(0);
+    transform: translateX(100%);
+    opacity: 1;
+}
+
+.app[data-state="home"] .info-register,
+.app[data-state="login"] .info-register {
+    transform: translateX(200%);
+    opacity: 0;
+    pointer-events: none;
 }
 
 .app[data-state="home"] .form-register-panel,
 .app[data-state="login"] .form-register-panel {
-    transform: translateX(100%);
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
 }
 
-/* REGISTER: register visible, login fuera */
+/* ---------- REGISTER ----------
+   Ojo: aquí los lados se intercambian respecto a login */
 .app[data-state="register"] .info-login {
-    transform: translateX(100%);
-}
-
-.app[data-state="register"] .info-register {
-    transform: translateX(0);
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
 }
 
 .app[data-state="register"] .form-login-panel {
-    transform: translateX(-100%);
+    transform: translateX(200%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.app[data-state="register"] .info-register {
+    transform: translateX(100%);
+    /* aparece a la DERECHA */
+    opacity: 1;
 }
 
 .app[data-state="register"] .form-register-panel {
     transform: translateX(0);
+    /* aparece a la IZQUIERDA */
+    opacity: 1;
 }
 
 /* ==========================================================
-   ESTILOS DE CONTENIDO
+   TIMING DE OPACIDAD
+   - Salientes: fade-out rápido al principio
+   - Entrantes: fade-in retrasado a la segunda mitad
+   (así nunca se ven dos paneles superpuestos)
+   ========================================================== */
+.app[data-state="register"] .info-login,
+.app[data-state="register"] .form-login-panel {
+    transition:
+        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+        opacity 0.25s ease;
+}
+
+.app[data-state="register"] .info-register,
+.app[data-state="register"] .form-register-panel {
+    transition:
+        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+        opacity 0.3s ease 0.3s;
+}
+
+.app[data-state="login"] .info-login,
+.app[data-state="login"] .form-login-panel {
+    transition:
+        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+        opacity 0.3s ease 0.3s;
+}
+
+.app[data-state="login"] .info-register,
+.app[data-state="login"] .form-register-panel {
+    transition:
+        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+        opacity 0.25s ease;
+}
+
+/* ==========================================================
+   ESTILOS DE CONTENIDO (sin cambios)
    ========================================================== */
 .info-panel h2 {
     font-size: 2rem;
@@ -224,7 +287,7 @@ body {
 }
 
 /* ==========================================================
-   BOTONES
+   BOTONES (sin cambios)
    ========================================================== */
 .button {
     width: 140px;
@@ -262,9 +325,6 @@ body {
     background: rgba(255, 255, 255, 0.3);
 }
 
-/* ==========================================================
-   VOLVER
-   ========================================================== */
 .volver {
     position: absolute;
     top: 30px;
@@ -289,12 +349,38 @@ body {
    RESPONSIVE
    ========================================================== */
 @media (max-width: 800px) {
-    .auth {
-        grid-template-columns: 1fr;
-    }
-
     .info-track {
         display: none;
+    }
+
+    .info-panel,
+    .form-panel {
+        width: 100%;
+        /* en móvil ocupan todo el ancho */
+        padding: 40px 20px;
+    }
+
+    /* Como solo hay un formulario visible, mantenemos el slide clásico */
+    .app[data-state="home"] .form-login-panel,
+    .app[data-state="login"] .form-login-panel {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    .app[data-state="home"] .form-register-panel,
+    .app[data-state="login"] .form-register-panel {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    .app[data-state="register"] .form-login-panel {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+
+    .app[data-state="register"] .form-register-panel {
+        transform: translateX(0);
+        opacity: 1;
     }
 
     .volver-mobile {
@@ -314,14 +400,7 @@ body {
         opacity: 1;
     }
 
-    .info-panel,
-    .form-panel {
-        padding: 40px 20px;
-    }
-
     .home-title {
         font-size: 1.8rem;
     }
 }
-
-*/
