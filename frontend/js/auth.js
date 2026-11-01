@@ -89,8 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ---------------------------------------------------------
-  // REGISTER (2 pasos animados · validación completa)
-  // Paso 1 = datos personales · Paso 2 = credenciales
+  // REGISTER (2 pasos animados · validación nativa)
   // ---------------------------------------------------------
   const registerForm = document.getElementById("registerForm");
   const registerError = document.getElementById("registerError");
@@ -101,10 +100,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const step1 = registerForm?.querySelector('.step[data-step="1"]');
   const step2 = registerForm?.querySelector('.step[data-step="2"]');
 
-  // Estado del paso actual
   let currentStep = 1;
 
-  // --- Inicialización: quitar hidden y activar paso 1 ---
+  // Inicialización: quitar hidden y activar paso 1
   if (step1 && step2) {
     step1.hidden = false;
     step2.hidden = false;
@@ -119,13 +117,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const from = currentStep === 1 ? step1 : step2;
     const to = target === 1 ? step1 : step2;
 
-    // Saliente
     from.classList.remove("is-active");
     from.classList.add(
       direction === "forward" ? "is-leaving-left" : "is-leaving-right",
     );
 
-    // Entrante: preparar sin transición
     to.style.transition = "none";
     to.classList.remove("is-leaving-left", "is-leaving-right");
     to.style.transform =
@@ -134,15 +130,13 @@ document.addEventListener("DOMContentLoaded", () => {
     to.style.visibility = "visible";
     to.style.pointerEvents = "none";
 
-    void to.offsetWidth; // forzar reflow
+    void to.offsetWidth;
 
-    // Animar entrada
     to.style.transition = "";
     to.style.transform = "";
     to.style.opacity = "";
     to.classList.add("is-active");
 
-    // Limpiar clase de salida
     setTimeout(() => {
       from.classList.remove("is-leaving-left", "is-leaving-right");
     }, 350);
@@ -155,95 +149,24 @@ document.addEventListener("DOMContentLoaded", () => {
     animateToStep(step, step > currentStep ? "forward" : "backward");
   };
 
-  // --- Utilidades de validación ---
-  const val = (id) => (document.getElementById(id)?.value ?? "").trim();
-
-  const markInvalid = (id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.add("is-invalid");
-    el.addEventListener("input", () => el.classList.remove("is-invalid"), {
-      once: true,
-    });
-  };
-
-  const validateStep1 = () => {
-    const missing = [];
-    if (!val("registerNombre")) {
-      missing.push("Nombre completo");
-      markInvalid("registerNombre");
-    }
-    if (!val("registerEspecialidad")) {
-      missing.push("Especialidad");
-      markInvalid("registerEspecialidad");
-    }
-    if (!val("registerDireccion")) {
-      missing.push("Dirección");
-      markInvalid("registerDireccion");
-    }
-    if (!val("registerTelefono")) {
-      missing.push("Teléfono");
-      markInvalid("registerTelefono");
-    }
-
-    if (missing.length) {
-      registerError.textContent = `Completa: ${missing.join(", ")}.`;
-      return false;
+  // --- Helper: valida los inputs del paso visible con el tooltip nativo ---
+  const reportCurrentStep = () => {
+    const inputs = registerForm.querySelectorAll(
+      ".step.is-active input, .step.is-active select, .step.is-active textarea",
+    );
+    for (const input of inputs) {
+      if (!input.checkValidity()) {
+        input.reportValidity(); // ⬅️ muestra "Completa este campo" nativo
+        return false;
+      }
     }
     return true;
   };
 
-  const validateStep2 = () => {
-    const missing = [];
-    if (!val("registerUsername")) {
-      missing.push("Username");
-      markInvalid("registerUsername");
-    }
-    if (!val("registerEmail")) {
-      missing.push("Correo electrónico");
-      markInvalid("registerEmail");
-    }
-    if (!val("registerPass")) {
-      missing.push("Password");
-      markInvalid("registerPass");
-    }
-    if (!val("registerPassConfirm")) {
-      missing.push("Confirm password");
-      markInvalid("registerPassConfirm");
-    }
-
-    if (missing.length) {
-      registerError.textContent = `Completa: ${missing.join(", ")}.`;
-      return false;
-    }
-
-    const email = val("registerEmail");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      registerError.textContent = "El correo no tiene un formato válido.";
-      markInvalid("registerEmail");
-      return false;
-    }
-
-    if (val("registerPass").length < 6) {
-      registerError.textContent =
-        "La contraseña debe tener al menos 6 caracteres.";
-      markInvalid("registerPass");
-      return false;
-    }
-
-    if (val("registerPass") !== val("registerPassConfirm")) {
-      registerError.textContent = "Las contraseñas no coinciden.";
-      markInvalid("registerPassConfirm");
-      return false;
-    }
-
-    return true;
-  };
-
-  // --- PASO 1 → validar y avanzar ---
+  // --- PASO 1 → validar nativo y avanzar ---
   registerNext?.addEventListener("click", () => {
     registerError.textContent = "";
-    if (!validateStep1()) return;
+    if (!reportCurrentStep()) return;
     goToStep(2);
   });
 
@@ -258,16 +181,39 @@ document.addEventListener("DOMContentLoaded", () => {
     if (currentStep !== 2) return;
 
     registerError.textContent = "";
-    if (!validateStep1() || !validateStep2()) return;
+
+    // 1) Validación nativa (tooltip "Completa este campo" + required)
+    if (!reportCurrentStep()) return;
+
+    // 2) Validaciones extra (formato / coincidencia / longitud)
+    const email = document.getElementById("registerEmail").value.trim();
+    const password = document.getElementById("registerPass").value;
+    const confirm = document.getElementById("registerPassConfirm").value;
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      registerError.textContent = "El correo no tiene un formato válido.";
+      return;
+    }
+    if (password.length < 6) {
+      registerError.textContent =
+        "La contraseña debe tener al menos 6 caracteres.";
+      return;
+    }
+    if (password !== confirm) {
+      registerError.textContent = "Las contraseñas no coinciden.";
+      return;
+    }
 
     const data = {
-      username: val("registerUsername"),
-      email: val("registerEmail"),
-      password: document.getElementById("registerPass").value,
-      nombre: val("registerNombre"),
-      especialidad: val("registerEspecialidad"),
-      direccion: val("registerDireccion"),
-      telefono: val("registerTelefono"),
+      username: document.getElementById("registerUsername").value.trim(),
+      email,
+      password,
+      nombre: document.getElementById("registerNombre").value.trim(),
+      especialidad: document
+        .getElementById("registerEspecialidad")
+        .value.trim(),
+      direccion: document.getElementById("registerDireccion").value.trim(),
+      telefono: document.getElementById("registerTelefono").value.trim(),
     };
 
     registerSubmit.disabled = true;

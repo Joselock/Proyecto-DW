@@ -127,7 +127,7 @@ body {
 
 .form-panel {
     align-items: center;
-    overflow-y: auto;
+    /*overflow-y: auto;*/
 }
 
 
@@ -357,7 +357,7 @@ body {
     opacity: 0;
     visibility: visible;
     transform: translateX(-24px);
-    pointer-events: none;
+    pointer-events: auto;
 }
 
 /* Saliente hacia la derecha (volver) */
@@ -365,7 +365,7 @@ body {
     opacity: 0;
     visibility: visible;
     transform: translateX(24px);
-    pointer-events: none;
+    pointer-events: auto;
 }
 
 /* Fallback: si el JS no ha inicializado, respeta hidden */
@@ -390,6 +390,7 @@ body {
 .boton-volver {
     flex: 0 0 auto;
     padding: 10px 14px;
+    margin-top: 25px;
     font-size: 13px;
     color: rgba(255, 255, 255, 0.85);
     background: transparent;
@@ -412,14 +413,6 @@ body {
     margin-top: 0;
 }
 
-/* Feedback visual de campo inválido */
-.entradas input.is-invalid {
-    border-color: #ff8a8a;
-    background: rgba(255, 80, 80, 0.12);
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.15),
-        0 0 0 3px rgba(255, 80, 80, 0.18);
-}
 
 /* Reducir movimiento si el usuario lo pide */
 @media (prefers-reduced-motion: reduce) {
@@ -429,6 +422,12 @@ body {
         transition: opacity 0.01s linear;
         transform: none !important;
     }
+}
+
+.form-register-panel .step.is-active input,
+.form-register-panel .step.is-active button,
+.form-register-panel .step.is-active .input-wrap {
+    pointer-events: auto;
 }
 
 

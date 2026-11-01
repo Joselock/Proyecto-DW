@@ -121,20 +121,31 @@
               <!-- PASO 1: datos personales -->
               <div class="step" data-step="1">
                 <h4>Nombre completo</h4>
-                <input type="text" id="registerNombre" name="nombre" />
+                <input type="text" id="registerNombre" name="nombre" required />
 
                 <h4>Especialidad</h4>
                 <input
                   type="text"
                   id="registerEspecialidad"
                   name="especialidad"
+                  required
                 />
 
                 <h4>Dirección</h4>
-                <input type="text" id="registerDireccion" name="direccion" />
+                <input
+                  type="text"
+                  id="registerDireccion"
+                  name="direccion"
+                  required
+                />
 
                 <h4>Teléfono</h4>
-                <input type="tel" id="registerTelefono" name="telefono" />
+                <input
+                  type="tel"
+                  id="registerTelefono"
+                  name="telefono"
+                  required
+                />
                 <button type="button" class="boton-Inicio" id="registerNext">
                   Siguiente
                 </button>
