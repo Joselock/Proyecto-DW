@@ -115,59 +115,101 @@
               <p><a href="#">¿Forgot password?</a></p>
             </form>
           </div>
-
-          <!-- Formulario de REGISTRO -->
           <div class="form-panel form-register-panel">
-            <h2>Register</h2>
-            <form class="entradas" id="registerForm">
-              <h4>Nombre completo</h4>
-              <input type="text" id="registerNombre" name="nombre" />
-              <h4>Correo electrónico</h4>
-              <input
-                type="email"
-                id="registerEmail"
-                name="email"
-                required
-                autocomplete="email"
-              />
-              <h4>Password</h4>
-              <div class="input-wrap">
+            <form class="entradas" id="registerForm" data-step="1">
+              <h2>Register</h2>
+              <!-- PASO 1: datos personales -->
+              <div class="step" data-step="1">
+                <h4>Nombre completo</h4>
+                <input type="text" id="registerNombre" name="nombre" />
+
+                <h4>Especialidad</h4>
                 <input
-                  type="password"
-                  id="registerPass"
-                  name="password"
-                  required
-                  autocomplete="new-password"
+                  type="text"
+                  id="registerEspecialidad"
+                  name="especialidad"
                 />
-                <button
-                  type="button"
-                  class="toggle-pass"
-                  aria-label="Mostrar contraseña"
-                  aria-pressed="false"
-                >
-                  <i class="bi bi-eye"></i>
+
+                <h4>Dirección</h4>
+                <input type="text" id="registerDireccion" name="direccion" />
+
+                <h4>Teléfono</h4>
+                <input type="tel" id="registerTelefono" name="telefono" />
+                <button type="button" class="boton-Inicio" id="registerNext">
+                  Siguiente
                 </button>
               </div>
-              <h4>Confirm password</h4>
-              <div class="input-wrap">
+
+              <!-- PASO 2: credenciales -->
+              <div class="step" data-step="2">
+                <h4>Username</h4>
                 <input
-                  type="password"
-                  id="registerPassConfirm"
+                  type="text"
+                  id="registerUsername"
+                  name="username"
                   required
-                  autocomplete="new-password"
                 />
-                <button
-                  type="button"
-                  class="toggle-pass"
-                  aria-label="Mostrar contraseña"
-                  aria-pressed="false"
-                >
-                  <i class="bi bi-eye"></i>
-                </button>
+
+                <h4>Correo electrónico</h4>
+                <input
+                  type="email"
+                  id="registerEmail"
+                  name="email"
+                  required
+                  autocomplete="email"
+                />
+
+                <h4>Password</h4>
+                <div class="input-wrap">
+                  <input
+                    type="password"
+                    id="registerPass"
+                    name="password"
+                    required
+                    autocomplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    class="toggle-pass"
+                    aria-label="Mostrar contraseña"
+                    aria-pressed="false"
+                  >
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+
+                <h4>Confirm password</h4>
+                <div class="input-wrap">
+                  <input
+                    type="password"
+                    id="registerPassConfirm"
+                    required
+                    autocomplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    class="toggle-pass"
+                    aria-label="Mostrar contraseña"
+                    aria-pressed="false"
+                  >
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+
+                <div class="step-actions">
+                  <button type="button" class="boton-volver" id="registerBack">
+                    Volver
+                  </button>
+                  <button
+                    type="submit"
+                    class="boton-Inicio"
+                    id="registerSubmit"
+                  >
+                    Registrarse
+                  </button>
+                </div>
               </div>
-              <button type="submit" class="boton-Inicio" id="registerSubmit">
-                Registrarse
-              </button>
+
               <p id="registerError" class="form-error" role="alert"></p>
             </form>
           </div>
