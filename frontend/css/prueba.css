@@ -159,6 +159,55 @@ body {
         url(../assets/img/register.jpeg) center / cover no-repeat;
 }
 
+/* ==========================================================
+   TOGGLE CONTRASEÑA 
+   ========================================================== */
+.input-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.input-wrap input {
+    width: 100%;
+    padding-right: 48px;
+    /* hueco para el botón */
+}
+
+.toggle-pass {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.65);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    transition: color 0.2s, background 0.2s;
+}
+
+.toggle-pass:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.toggle-pass:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.6);
+    outline-offset: 2px;
+}
+
+.toggle-pass i {
+    font-size: 20px;
+    line-height: 1;
+    pointer-events: none;
+    /* el clic va al <button> */
+    color: inherit;
+}
+
 
 /* ==========================================================
    POSICIONES

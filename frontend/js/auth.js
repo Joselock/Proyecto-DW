@@ -35,3 +35,28 @@ document.addEventListener("DOMContentLoaded", () => {
     .getElementById("btnSwitchToLogin")
     ?.addEventListener("click", () => setState("login"));
 });
+
+// ---------------------------------------------------------
+// Toggle mostrar / ocultar contraseña (Bootstrap Icons)
+// ---------------------------------------------------------
+document.querySelectorAll(".toggle-pass").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const input = btn.parentElement.querySelector("input");
+    const icon = btn.querySelector("i");
+    if (!input || !icon) return;
+
+    const show = input.type === "password";
+    input.type = show ? "text" : "password";
+
+    // Intercambiar clases del icono
+    icon.classList.toggle("bi-eye", !show);
+    icon.classList.toggle("bi-eye-slash", show);
+
+    // Accesibilidad
+    btn.setAttribute("aria-pressed", show);
+    btn.setAttribute(
+      "aria-label",
+      show ? "Ocultar contraseña" : "Mostrar contraseña",
+    );
+  });
+});
