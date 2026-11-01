@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: Login
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck: # Esto asegura que la BD esté lista antes de arrancar el backend
+      test: ["CMD-SHELL", "pg_isready -U tu_usuario -d tu_basedatos"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  
+  backend:
+    build: . # Asume que tienes un Dockerfile para tu Spring Boot
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/Login
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: admin123
+    depends_on:
+      db:
+        condition: service_healthy # Espera a que la BD esté lista
+volumes:
+  pgdata:
