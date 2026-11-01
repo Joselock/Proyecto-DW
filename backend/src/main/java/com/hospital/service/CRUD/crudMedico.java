@@ -1,4 +1,4 @@
-package com.mycompany.gestorui.model.services.crud;
+package com.hospital.service.CRUD;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -7,12 +7,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.mycompany.gestorui.model.entidades.Medico;
-import com.mycompany.gestorui.model.utils.BaseDatos;
+import com.hospital.model.Entidades.Medico;
 
-public class crudMedico {
+@org.springframework.stereotype.Service
+public class crudMedico extends com.hospital.service.JdbcServiceSupport {
 
-    public static List<Medico> obtenerMedicos() {
+    public crudMedico(javax.sql.DataSource dataSource) {
+        super(dataSource);
+    }
+
+    public List<Medico> obtenerMedicos() {
         List<Medico> medicos = new ArrayList<>();
         String sql = "SELECT * FROM public.\"Medico\" ORDER BY \"codMed\"";
         
@@ -21,7 +25,7 @@ public class crudMedico {
         ResultSet rs = null;
         
         try {
-            con = BaseDatos.getConnection();
+            con = getConnection();
             if (con == null) {
                 System.err.println("Error: No se pudo conectar a la base de datos");
                 return medicos;
@@ -59,11 +63,11 @@ public class crudMedico {
         return medicos;
     }
 
-    public static Map<String, Object> insertarMedico(String codMed, String nomMed, String especialidad,
+    public Map<String, Object> insertarMedico(String codMed, String nomMed, String especialidad,
             String licencia, String telefono, int experiencia,
             String datosCon, String codUni) {
 
-        java.sql.Connection con = BaseDatos.getConnection();        
+        java.sql.Connection con = getConnection();        
         String function = "SELECT * FROM public.insertarMedico(?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement ps = con.prepareStatement(function)) {
@@ -97,11 +101,11 @@ public class crudMedico {
         return Map.of("existe", false, "mensaje", "Sin resultado");
     }
 
-    public static Map<String, Object> modificarMedico(String oldCod, String newCod, String nomMed, String espMed,
+    public Map<String, Object> modificarMedico(String oldCod, String newCod, String nomMed, String espMed,
             String numLic, String telefono, int experiencia,
             String datos, String codUni) {
 
-        java.sql.Connection con = BaseDatos.getConnection();          
+        java.sql.Connection con = getConnection();          
         String function  = "SELECT * FROM public.modificarMedico(?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement ps = con.prepareStatement(function )) {
@@ -136,9 +140,9 @@ public class crudMedico {
         return Map.of("existe", false, "mensaje", "Sin resultado");
     }
 
-    public static String eliminarMedico(String codMed) {
+    public String eliminarMedico(String codMed) {
 
-        java.sql.Connection con = BaseDatos.getConnection();  
+        java.sql.Connection con = getConnection();  
         String function  = "SELECT public.eliminarMedico(?)";
 
         try (PreparedStatement ps = con.prepareStatement(function )) {

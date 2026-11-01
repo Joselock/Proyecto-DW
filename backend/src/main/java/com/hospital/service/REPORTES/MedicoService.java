@@ -1,4 +1,4 @@
-package com.mycompany.gestorui.model.services.reportes;
+package com.hospital.service.REPORTES;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -6,21 +6,25 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import com.mycompany.gestorui.model.entidades.Departamento;
-import com.mycompany.gestorui.model.entidades.Hospital;
-import com.mycompany.gestorui.model.entidades.Medico;
-import com.mycompany.gestorui.model.entidades.Registro;
-import com.mycompany.gestorui.model.entidades.Unidad;
-import com.mycompany.gestorui.model.utils.BaseDatos;
+import com.hospital.model.Entidades.Departamento;
+import com.hospital.model.Entidades.Hospital;
+import com.hospital.model.Entidades.Medico;
+import com.hospital.model.Entidades.Registro;
+import com.hospital.model.Entidades.Unidad;
 
-public class MedicoService {
+@org.springframework.stereotype.Service
+public class MedicoService extends com.hospital.service.JdbcServiceSupport {
+
+    public MedicoService(javax.sql.DataSource dataSource) {
+        super(dataSource);
+    }
 
     // Reporte 2: Obtener listado de medicos
     public LinkedList<Hospital> obtenerListadosMedicos() {
         LinkedList<Hospital> listado = new LinkedList<>();
         HashMap<String, Hospital> hospitalMap = new HashMap<>();
 
-        try (java.sql.Connection con = BaseDatos.getConnection()) {
+        try (java.sql.Connection con = getConnection()) {
             String function = "SELECT * FROM public.listadoMedicos()";
 
             PreparedStatement ps = con.prepareStatement(function);
@@ -77,7 +81,7 @@ public class MedicoService {
             }
 
         } catch (SQLException ex) {
-            System.getLogger(MedicoService.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+            throw new IllegalStateException("No se pudo consultar el listado de médicos.", ex);
         }
 
         return listado;

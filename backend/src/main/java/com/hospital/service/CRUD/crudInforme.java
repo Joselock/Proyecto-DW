@@ -1,4 +1,4 @@
-package com.mycompany.gestorui.model.services.crud;
+package com.hospital.service.CRUD;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -6,12 +6,16 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mycompany.gestorui.model.entidades.Informe;
-import com.mycompany.gestorui.model.utils.BaseDatos;
+import com.hospital.model.Entidades.Informe;
 
-public class crudInforme {
+@org.springframework.stereotype.Service
+public class crudInforme extends com.hospital.service.JdbcServiceSupport {
 
-     public static List<Informe> obtenerInformes() {
+    public crudInforme(javax.sql.DataSource dataSource) {
+        super(dataSource);
+    }
+
+     public List<Informe> obtenerInformes() {
         List<Informe> informes = new ArrayList<>();
         String sql = "SELECT * FROM public.\"Informe\" ORDER BY \"numIn\"";
         
@@ -20,7 +24,7 @@ public class crudInforme {
         ResultSet rs = null;
         
         try {
-            con = BaseDatos.getConnection();
+            con = getConnection();
             if (con == null) {
                 System.err.println("Error: No se pudo conectar a la base de datos");
                 return informes;
@@ -60,9 +64,9 @@ public class crudInforme {
         return informes;
     }
 
-     public static String eliminarInforme(String numIn) {
+     public String eliminarInforme(String numIn) {
 
-        java.sql.Connection con = BaseDatos.getConnection();
+        java.sql.Connection con = getConnection();
         String function = "SELECT public.eliminarInforme(?)";
 
         try (PreparedStatement ps = con.prepareStatement(function)) {

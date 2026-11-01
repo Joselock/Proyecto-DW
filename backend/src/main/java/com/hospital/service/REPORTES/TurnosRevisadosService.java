@@ -1,28 +1,21 @@
-package com.mycompany.gestorui.model.services.reportes;
+package com.hospital.service.REPORTES;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Set;
 
-import com.mycompany.gestorui.model.utils.BaseDatos;
 
-public class TurnosRevisadosService {
+@org.springframework.stereotype.Service
+public class TurnosRevisadosService extends com.hospital.service.JdbcServiceSupport {
     
-    private static TurnosRevisadosService instance;
     private final Set<String> cacheTurnosRevisados;
-    private boolean cargado = false;
+    private volatile boolean cargado = false;
     
-    private TurnosRevisadosService() {
-        cacheTurnosRevisados = new HashSet<>();
-    }
-    
-    public static TurnosRevisadosService getInstance() {
-        if (instance == null) {
-            instance = new TurnosRevisadosService();
-        }
-        return instance;
+    public TurnosRevisadosService(javax.sql.DataSource dataSource) {
+        super(dataSource);
+        cacheTurnosRevisados = ConcurrentHashMap.newKeySet();
     }
     
     /**
@@ -34,10 +27,11 @@ public class TurnosRevisadosService {
                            "FROM public.\"Unidad\" u " +
                            "JOIN public.\"Departamento\" d ON u.\"codDep\" = d.\"codDep\" " +
                            "JOIN public.\"Hospital\" h ON d.\"codHos\" = h.\"codHos\" " +
-                           "JOIN public.\"Medico\" m ON m.\"nomMed\" = ? " +
+                           "JOIN public.\"Medico\" m ON m.\"codUni\" = u.\"codUni\" " +
                            "WHERE h.\"nomHos\" = ? " +
                            "AND d.\"nomDep\" = ? " +
                            "AND u.\"nomUni\" = ? " +
+                           "AND m.\"nomMed\" = ? " +
                            "LIMIT 1";
         
         String sqlActualizar = "UPDATE public.\"Turno\" t " +
@@ -46,16 +40,16 @@ public class TurnosRevisadosService {
                                "AND t.\"codMed\" = ? " +
                                "AND t.\"estTur\" = 'Revisar'";
         
-        try (java.sql.Connection con = BaseDatos.getConnection()) {
+        try (java.sql.Connection con = getConnection()) {
             // Buscar los códigos
             String codUni = null;
             String codMed = null;
             
             try (PreparedStatement ps = con.prepareStatement(sqlBuscar)) {
-                ps.setString(1, medico);
-                ps.setString(2, hospital);
-                ps.setString(3, departamento);
-                ps.setString(4, unidad);
+                ps.setString(1, hospital);
+                ps.setString(2, departamento);
+                ps.setString(3, unidad);
+                ps.setString(4, medico);
                 
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
@@ -66,10 +60,7 @@ public class TurnosRevisadosService {
             }
             
             if (codUni == null || codMed == null) {
-                System.err.println("⚠️ No se encontró la unidad o médico para: " + hospital + " | " + departamento + " | " + unidad + " | " + medico);
-                String clave = generarClave(hospital, departamento, unidad, medico);
-                cacheTurnosRevisados.add(clave);
-                return true;
+                return false;
             }
             
             // Actualizar el turno
@@ -82,20 +73,13 @@ public class TurnosRevisadosService {
                 if (result > 0) {
                     String clave = generarClave(hospital, departamento, unidad, medico);
                     cacheTurnosRevisados.add(clave);
-                    System.out.println("✅ Turno marcado como Revisado: " + hospital + " | " + departamento + " | " + unidad + " | " + medico);
-                    return true;
-                } else {
-                    // Si no hay turno pendiente, lo marcamos en caché igual
-                    String clave = generarClave(hospital, departamento, unidad, medico);
-                    cacheTurnosRevisados.add(clave);
-                    System.out.println("⚠️ No se encontró turno pendiente, pero se marcó en caché: " + clave);
                     return true;
                 }
+                return false;
             }
             
         } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+            throw new IllegalStateException("No se pudo marcar el turno como revisado.", e);
         }
     }
     
@@ -114,7 +98,7 @@ public class TurnosRevisadosService {
     /**
      * Carga todos los turnos que ya están revisados desde la base de datos
      */
-    public void cargar() {
+    public synchronized void cargar() {
         cacheTurnosRevisados.clear();
         
         String sql = "SELECT h.\"nomHos\", d.\"nomDep\", u.\"nomUni\", m.\"nomMed\" " +
@@ -123,9 +107,9 @@ public class TurnosRevisadosService {
                      "JOIN public.\"Departamento\" d ON u.\"codDep\" = d.\"codDep\" " +
                      "JOIN public.\"Hospital\" h ON d.\"codHos\" = h.\"codHos\" " +
                      "JOIN public.\"Medico\" m ON t.\"codMed\" = m.\"codMed\" " +
-                     "WHERE t.\"estTur\" IN ('Revisado', 'Extioso')";
+                     "WHERE LOWER(t.\"estTur\") IN ('revisado', 'exitoso', 'extioso')";
         
-        try (java.sql.Connection con = BaseDatos.getConnection();
+        try (java.sql.Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             
@@ -140,10 +124,8 @@ public class TurnosRevisadosService {
             }
             
             cargado = true;
-            System.out.println("📦 Cargados " + cacheTurnosRevisados.size() + " turnos revisados desde la base de datos");
-            
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("No se pudieron cargar los turnos revisados.", e);
         }
     }
     

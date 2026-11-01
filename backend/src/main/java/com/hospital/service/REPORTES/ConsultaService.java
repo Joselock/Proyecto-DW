@@ -1,4 +1,4 @@
-package com.mycompany.gestorui.model.services.reportes;
+package com.hospital.service.REPORTES;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -8,19 +8,23 @@ import java.sql.Time;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import com.mycompany.gestorui.model.entidades.Departamento;
-import com.mycompany.gestorui.model.entidades.Hospital;
-import com.mycompany.gestorui.model.entidades.Informe;
-import com.mycompany.gestorui.model.entidades.Medico;
-import com.mycompany.gestorui.model.entidades.Registro;
-import com.mycompany.gestorui.model.entidades.Turno;
-import com.mycompany.gestorui.model.entidades.Unidad;
-import com.mycompany.gestorui.model.utils.BaseDatos;
+import com.hospital.model.Entidades.Departamento;
+import com.hospital.model.Entidades.Hospital;
+import com.hospital.model.Entidades.Informe;
+import com.hospital.model.Entidades.Medico;
+import com.hospital.model.Entidades.Registro;
+import com.hospital.model.Entidades.Turno;
+import com.hospital.model.Entidades.Unidad;
 
-public class ConsultaService {
+@org.springframework.stereotype.Service
+public class ConsultaService extends com.hospital.service.JdbcServiceSupport {
+
+    public ConsultaService(javax.sql.DataSource dataSource) {
+        super(dataSource);
+    }
 
     // Reporte 5: Informe durante las consultas
-    public LinkedList<Hospital> obtenerInformeHospital(String area, String codigo) throws SQLException {
+    public LinkedList<Hospital> obtenerInformeHospital(String area, String codigo) {
         LinkedList<Hospital> resultado = new LinkedList<>();
 
         HashMap<String, Hospital> hospitalMap = new HashMap<>();
@@ -31,11 +35,10 @@ public class ConsultaService {
             case "Hospital" -> function = "SELECT * FROM public.informeDuranteConsultas(?,NULL,NULL)";
             case "Departamento" -> function = "SELECT * FROM public.informeDuranteConsultas(NULL,?,NULL)";
             case "Unidad" -> function = "SELECT * FROM public.informeDuranteConsultas(NULL,NULL,?)";
-            default -> {
-            }
+            default -> throw new IllegalArgumentException("Área no válida: " + area);
         }
 
-        try (java.sql.Connection con = BaseDatos.getConnection()) {
+        try (java.sql.Connection con = getConnection()) {
 
             PreparedStatement ps = con.prepareStatement(function);
             ps.setString(1, codigo);
@@ -98,7 +101,7 @@ public class ConsultaService {
             }
 
         } catch (SQLException ex) {
-            System.getLogger(ConsultaService.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+            throw new IllegalStateException("No se pudo consultar el informe de consultas.", ex);
         }
 
         return resultado;
@@ -114,11 +117,10 @@ public class ConsultaService {
             switch (area) {
             case "Hospital" -> function = "SELECT * FROM public.consultasExitosas(?,NULL)";
             case "Unidad" -> function = "SELECT * FROM public.consultasExitosas(NULL,?)";
-            default -> {
-            }
+            default -> throw new IllegalArgumentException("Área no válida: " + area);
         }
 
-        try (java.sql.Connection con = BaseDatos.getConnection()) {
+        try (java.sql.Connection con = getConnection()) {
             PreparedStatement ps = con.prepareStatement(function);
             ps.setString(1, codigo);
 
@@ -174,7 +176,7 @@ public class ConsultaService {
             }
 
         } catch (SQLException ex) {
-            System.getLogger(ConsultaService.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+            throw new IllegalStateException("No se pudo consultar el resumen de consultas exitosas.", ex);
         }
 
         return resumen;

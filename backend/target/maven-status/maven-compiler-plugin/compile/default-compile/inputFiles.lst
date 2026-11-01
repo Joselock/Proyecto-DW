@@ -1,3 +1,4 @@
+/home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/JdbcServiceSupport.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/model/Entidades/Departamento.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/REPORTES/MedicoService.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/controller/JPA/AuthController.java
@@ -10,10 +11,12 @@
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/CRUD/crudDepartamento.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/model/Entidades/Registro.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/model/Entidades/Hospital.java
+/home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/controller/ReportesController.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/REPORTES/UnidadService.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/CRUD/crudMedico.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/model/Entidades/Consulta.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/REPORTES/PacienteService.java
+/home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/controller/ApiExceptionHandler.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/CRUD/crudPaciente.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/model/Entidades/Turno.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/HospitalApplication.java

@@ -90,4 +90,41 @@ export const api = {
   logout() {
     return apiFetch("/logout", { method: "POST" });
   },
+
+  /** Reportes del backend */
+  resumenHospitales() {
+    return apiFetch("/reportes/hospitales/resumen");
+  },
+
+  hospitalesMayorCantidadPacientes() {
+    return apiFetch("/reportes/hospitales/mayores-de-cien");
+  },
+
+  resumenProceso() {
+    return apiFetch("/reportes/proceso");
+  },
+
+  listadoMedicos() {
+    return apiFetch("/reportes/medicos");
+  },
+
+  listadoPacientes(area, codigo) {
+    return apiFetch(`/reportes/pacientes?area=${encodeURIComponent(area)}&codigo=${encodeURIComponent(codigo)}`);
+  },
+
+  pacientesNoAtendidos(area, codigo) {
+    return apiFetch(`/reportes/pacientes/no-atendidos?area=${encodeURIComponent(area)}&codigo=${encodeURIComponent(codigo)}`);
+  },
+
+  informeDuranteConsultas(area, codigo) {
+    return apiFetch(`/reportes/consultas/informe?area=${encodeURIComponent(area)}&codigo=${encodeURIComponent(codigo)}`);
+  },
+
+  consultasExitosas(area, codigo) {
+    return apiFetch(`/reportes/consultas/exitosas?area=${encodeURIComponent(area)}&codigo=${encodeURIComponent(codigo)}`);
+  },
+
+  unidadesTurnosPorRevisar() {
+    return apiFetch("/reportes/unidades/turnos-por-revisar");
+  },
 };

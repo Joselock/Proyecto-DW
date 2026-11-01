@@ -1,4 +1,4 @@
-package com.mycompany.gestorui.model.services.crud;
+package com.hospital.service.CRUD;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -7,12 +7,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.mycompany.gestorui.model.entidades.Departamento;
-import com.mycompany.gestorui.model.utils.BaseDatos;
+import com.hospital.model.Entidades.Departamento;
 
-public class crudDepartamento {
+@org.springframework.stereotype.Service
+public class crudDepartamento extends com.hospital.service.JdbcServiceSupport {
 
-    public static List<Departamento> obtenerDepartamentos() {
+    public crudDepartamento(javax.sql.DataSource dataSource) {
+        super(dataSource);
+    }
+
+    public List<Departamento> obtenerDepartamentos() {
         List<Departamento> departamentos = new ArrayList<>();
         String sql = "SELECT * FROM public.\"Departamento\" ORDER BY \"codDep\"";
         
@@ -21,7 +25,7 @@ public class crudDepartamento {
         ResultSet rs = null;
         
         try {
-            con = BaseDatos.getConnection();
+            con = getConnection();
             if (con == null) {
                 System.err.println("Error: No se pudo conectar a la base de datos");
                 return departamentos;
@@ -55,8 +59,8 @@ public class crudDepartamento {
     }
 
     //Funcion para insertar un departamento
-    public static Map<String, Object> insertarDepartamento(String codDep, String nomDep, String codHos) {
-        java.sql.Connection con = BaseDatos.getConnection();
+    public Map<String, Object> insertarDepartamento(String codDep, String nomDep, String codHos) {
+        java.sql.Connection con = getConnection();
         
         String function = "SELECT * FROM public.insertarDepartamento(?, ?, ?)";
 
@@ -84,8 +88,8 @@ public class crudDepartamento {
 
     
     //Funcion para modificar un departamento
-    public static Map<String, Object> modificarDepartamento(String oldCod, String newCod, String nomDep, String codHos) {
-        java.sql.Connection con = BaseDatos.getConnection();
+    public Map<String, Object> modificarDepartamento(String oldCod, String newCod, String nomDep, String codHos) {
+        java.sql.Connection con = getConnection();
 
         String function = "SELECT * FROM public.modificarDepartamento(?, ?, ?, ?)";
 
@@ -114,8 +118,8 @@ public class crudDepartamento {
 
 
     //Funcion para eliminar un departamento
-    public static String eliminarDepartamento(String codDep) {
-        java.sql.Connection con = BaseDatos.getConnection();
+    public String eliminarDepartamento(String codDep) {
+        java.sql.Connection con = getConnection();
 
         String function = "SELECT public.eliminarDepartamento(?)";
 

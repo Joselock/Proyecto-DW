@@ -1,4 +1,4 @@
-package com.mycompany.gestorui.model.services.crud;
+package com.hospital.service.CRUD;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -8,12 +8,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.mycompany.gestorui.model.entidades.Unidad;
-import com.mycompany.gestorui.model.utils.BaseDatos;
+import com.hospital.model.Entidades.Unidad;
 
-public class crudUnidad {
+@org.springframework.stereotype.Service
+public class crudUnidad extends com.hospital.service.JdbcServiceSupport {
 
-    public static List<Unidad> obtenerUnidades() {
+    public crudUnidad(javax.sql.DataSource dataSource) {
+        super(dataSource);
+    }
+
+    public List<Unidad> obtenerUnidades() {
         List<Unidad> unidades = new ArrayList<>();
         String sql = "SELECT * FROM public.\"Unidad\" ORDER BY \"codUni\"";
         
@@ -22,7 +26,7 @@ public class crudUnidad {
         ResultSet rs = null;
         
         try {
-            con = BaseDatos.getConnection();
+            con = getConnection();
             if (con == null) {
                 System.err.println("Error: No se pudo conectar a la base de datos");
                 return unidades;
@@ -58,12 +62,12 @@ public class crudUnidad {
     }
 
     // Función para insertar una unidad
-    public static Map<String, Object> insertarUnidad(String codUni, String nomUni, String ubicacion, String codDep) {
+    public Map<String, Object> insertarUnidad(String codUni, String nomUni, String ubicacion, String codDep) {
         Map<String, Object> resultado = new HashMap<>();
         java.sql.Connection con = null;
         
         try {
-            con = BaseDatos.getConnection();
+            con = getConnection();
             if (con == null) {
                 resultado.put("existe", false);
                 resultado.put("mensaje", "Error de conexión a la base de datos");
@@ -113,13 +117,13 @@ public class crudUnidad {
     }
 
     // Función para modificar una unidad
-    public static Map<String, Object> modificarUnidad(String oldCod, String newCod, String nomUni, String ubicacion,
+    public Map<String, Object> modificarUnidad(String oldCod, String newCod, String nomUni, String ubicacion,
             String codDep) {
         Map<String, Object> resultado = new HashMap<>();
         java.sql.Connection con = null;
         
         try {
-            con = BaseDatos.getConnection();
+            con = getConnection();
             if (con == null) {
                 resultado.put("existe", false);
                 resultado.put("mensaje", "Error de conexión a la base de datos");
@@ -170,11 +174,11 @@ public class crudUnidad {
     }
 
     // Función para eliminar una unidad
-    public static String eliminarUnidad(String codUni) {
+    public String eliminarUnidad(String codUni) {
         java.sql.Connection con = null;
         
         try {
-            con = BaseDatos.getConnection();
+            con = getConnection();
             if (con == null) {
                 return "Error: No se pudo conectar a la base de datos";
             }

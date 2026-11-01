@@ -1,4 +1,4 @@
-package com.mycompany.gestorui.model.services.crud;
+package com.hospital.service.CRUD;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -7,13 +7,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.mycompany.gestorui.model.entidades.Medico;
-import com.mycompany.gestorui.model.entidades.Turno;
-import com.mycompany.gestorui.model.utils.BaseDatos;
+import com.hospital.model.Entidades.Medico;
+import com.hospital.model.Entidades.Turno;
 
-public class crudTurno {
+@org.springframework.stereotype.Service
+public class crudTurno extends com.hospital.service.JdbcServiceSupport {
 
-    public static List<Turno> obtenerTurnos() {
+    private final crudMedico medicoService;
+
+    public crudTurno(javax.sql.DataSource dataSource, crudMedico medicoService) {
+        super(dataSource);
+        this.medicoService = medicoService;
+    }
+
+    public List<Turno> obtenerTurnos() {
         List<Turno> turnos = new ArrayList<>();
         String sql = "SELECT * FROM public.\"Turno\" ORDER BY \"numTur\"";
         
@@ -22,7 +29,7 @@ public class crudTurno {
         ResultSet rs = null;
         
         try {
-            con = BaseDatos.getConnection();
+            con = getConnection();
             if (con == null) {
                 System.err.println("Error: No se pudo conectar a la base de datos");
                 return turnos;
@@ -32,7 +39,7 @@ public class crudTurno {
             rs = ps.executeQuery();
             
             // Obtener todos los médicos para referencia
-            List<Medico> medicos = crudMedico.obtenerMedicos();
+            List<Medico> medicos = medicoService.obtenerMedicos();
             
             while (rs.next()) {
                 Turno turno = new Turno(0, 0, null, null, null, null);
@@ -70,10 +77,10 @@ public class crudTurno {
         return turnos;
     }
 
-    public static Map<String, Object> insertarTurno(int numTur, int cantAtendidos, String estadoTur, String codUni,
+    public Map<String, Object> insertarTurno(int numTur, int cantAtendidos, String estadoTur, String codUni,
             String codMed) {
         
-        java.sql.Connection con = BaseDatos.getConnection();          
+        java.sql.Connection con = getConnection();          
         String function = "SELECT * FROM public.insertarTurno(?, ?, ?, ?, ?)";
 
         try (PreparedStatement ps = con.prepareStatement(function)) {
@@ -100,10 +107,10 @@ public class crudTurno {
         return Map.of("existe", false, "mensaje", "Sin resultado");
     }
 
-    public static Map<String, Object> modificarTurno(int numActual, int numNuevo, int cantAtendidos, String estadoTur,
+    public Map<String, Object> modificarTurno(int numActual, int numNuevo, int cantAtendidos, String estadoTur,
             String codUni, String codMed) {
 
-        java.sql.Connection con = BaseDatos.getConnection();          
+        java.sql.Connection con = getConnection();          
         String function = "SELECT * FROM public.modificarTurno(?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement ps = con.prepareStatement(function)) {
@@ -131,9 +138,9 @@ public class crudTurno {
         return Map.of("existe", false, "mensaje", "Sin resultado");
     }
 
-    public static String eliminarTurno(int numTur) {
+    public String eliminarTurno(int numTur) {
 
-        java.sql.Connection con = BaseDatos.getConnection();  
+        java.sql.Connection con = getConnection();  
         String function = "SELECT public.eliminarTurno(?)";
 
         try (PreparedStatement ps = con.prepareStatement(function)) {

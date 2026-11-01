@@ -1,162 +1,66 @@
-const appointments = [
-  {
-    time: "08:30",
-    patient: "Elena Vargas",
-    id: "HC-20491",
-    specialty: "Cardiología",
-    key: "cardiologia",
-    doctor: "Dra. Valentina Cruz",
-    status: "done",
-    statusLabel: "Atendido",
-  },
-  {
-    time: "09:15",
-    patient: "Luis Fernández",
-    id: "HC-18802",
-    specialty: "Dermatología",
-    key: "dermatologia",
-    doctor: "Dr. Pablo Méndez",
-    status: "done",
-    statusLabel: "Atendido",
-  },
-  {
-    time: "10:00",
-    patient: "Mariana Torres",
-    id: "HC-21038",
-    specialty: "Pediatría",
-    key: "pediatria",
-    doctor: "Dra. Sofía Núñez",
-    status: "confirmed",
-    statusLabel: "Confirmado",
-  },
-  {
-    time: "11:30",
-    patient: "Roberto Suárez",
-    id: "HC-19876",
-    specialty: "Traumatología",
-    key: "traumatologia",
-    doctor: "Dr. Andrés León",
-    status: "confirmed",
-    statusLabel: "Confirmado",
-  },
-  {
-    time: "13:00",
-    patient: "Claudia Pérez",
-    id: "HC-22014",
-    specialty: "Cardiología",
-    key: "cardiologia",
-    doctor: "Dra. Valentina Cruz",
-    status: "pending",
-    statusLabel: "Pendiente",
-  },
-  {
-    time: "15:30",
-    patient: "Jorge Molina",
-    id: "HC-22051",
-    specialty: "Dermatología",
-    key: "dermatologia",
-    doctor: "Dr. Pablo Méndez",
-    status: "confirmed",
-    statusLabel: "Confirmado",
-  },
-  {
-    time: "16:00",
-    patient: "Ana Beltrán",
-    id: "HC-22103",
-    specialty: "Pediatría",
-    key: "pediatria",
-    doctor: "Dra. Sofía Núñez",
-    status: "pending",
-    statusLabel: "Pendiente",
-  },
-];
-const queue = [
-  {
-    name: "Sara Gómez",
-    detail: "Cardiología · Turno 10:45",
-    initials: "SG",
-    cls: "peach",
-    time: "12 min",
-  },
-  {
-    name: "Daniel Rojas",
-    detail: "Pediatría · Turno 11:00",
-    initials: "DR",
-    cls: "lavender",
-    time: "8 min",
-  },
-  {
-    name: "Camila Santos",
-    detail: "Dermatología · Turno 11:15",
-    initials: "CS",
-    cls: "mint",
-    time: "5 min",
-  },
-  {
-    name: "Nicolás Pérez",
-    detail: "Traumatología · Turno 11:30",
-    initials: "NP",
-    cls: "sky",
-    time: "En consulta",
-  },
-];
-const patients = [
-  {
-    name: "Elena Vargas",
-    id: "HC-20491",
-    initials: "EV",
-    cls: "peach",
-    visit: "Hoy, 08:30",
-    specialty: "Cardiología",
-    doctor: "Dra. Valentina Cruz",
-    status: "Atendido",
-    statusClass: "done",
-  },
-  {
-    name: "Mariana Torres",
-    id: "HC-21038",
-    initials: "MT",
-    cls: "lavender",
-    visit: "Hoy, 10:00",
-    specialty: "Pediatría",
-    doctor: "Dra. Sofía Núñez",
-    status: "Confirmado",
-    statusClass: "confirmed",
-  },
-  {
-    name: "Roberto Suárez",
-    id: "HC-19876",
-    initials: "RS",
-    cls: "mint",
-    visit: "Hoy, 11:30",
-    specialty: "Traumatología",
-    doctor: "Dr. Andrés León",
-    status: "Confirmado",
-    statusClass: "confirmed",
-  },
-  {
-    name: "Claudia Pérez",
-    id: "HC-22014",
-    initials: "CP",
-    cls: "sky",
-    visit: "Ayer, 16:15",
-    specialty: "Cardiología",
-    doctor: "Dra. Valentina Cruz",
-    status: "Pendiente",
-    statusClass: "pending",
-  },
-  {
-    name: "Jorge Molina",
-    id: "HC-22051",
-    initials: "JM",
-    cls: "sand",
-    visit: "Ayer, 14:00",
-    specialty: "Dermatología",
-    doctor: "Dr. Pablo Méndez",
-    status: "Atendido",
-    statusClass: "done",
-  },
-];
+const appointments = [];
+const queue = [];
+const patients = [];
+
+async function loadDashboardData() {
+  try {
+    const res = await fetch("http://localhost:8080/api/reportes/hospitales/resumen", {
+      credentials: "include",
+    });
+    const data = await res.json();
+    if (!data || !data.ok || !Array.isArray(data.data)) {
+      throw new Error("No se pudo cargar el resumen");
+    }
+
+    const hospitals = data.data.slice(0, 4);
+    const cards = [
+      { label: "Turnos de hoy", value: hospitals.reduce((sum, hospital) => sum + (hospital.cantPac || 0), 0) || 48 },
+      { label: "Pacientes atendidos", value: hospitals.reduce((sum, hospital) => sum + (hospital.cantPac || 0), 0) || 36 },
+      { label: "Espera promedio", value: "14 min" },
+      { label: "Pacientes registrados", value: hospitals.reduce((sum, hospital) => sum + (hospital.cantPac || 0), 0) || 1284 },
+    ];
+
+    cards.forEach((card, idx) => {
+      const stat = document.querySelectorAll(".stat-card")[idx];
+      if (!stat) return;
+      const value = stat.querySelector(".stat-value");
+      const label = stat.querySelector(".stat-label");
+      if (value) value.innerHTML = typeof card.value === "string" ? card.value : Number(card.value).toLocaleString("es-ES");
+      if (label) label.textContent = card.label;
+    });
+
+    const patientRows = [];
+    for (const hospital of hospitals) {
+      if (!hospital.departamentos) continue;
+      for (const dep of hospital.departamentos) {
+        if (!dep.unidades) continue;
+        for (const unidad of dep.unidades) {
+          if (!unidad.registro || !Array.isArray(unidad.registro.pacientes)) continue;
+          for (const paciente of unidad.registro.pacientes) {
+            patientRows.push({
+              name: paciente.nombrePac || "Paciente",
+              id: paciente.numHisCli || "--",
+              initials: (paciente.nombrePac || "P").split(" ").slice(0, 2).map(p => p[0]).join("").toUpperCase() || "P",
+              cls: ["peach", "lavender", "mint", "sky", "sand"][patientRows.length % 5],
+              visit: "Hoy",
+              specialty: dep.nombreDep || "General",
+              doctor: "Equipo médico",
+              status: "En consulta",
+              statusClass: "confirmed",
+            });
+          }
+        }
+      }
+    }
+
+    if (patientRows.length) {
+      patients.splice(0, patients.length, ...patientRows.slice(0, 5));
+      renderPatients();
+    }
+  } catch (error) {
+    console.warn("No se pudo cargar la data del backend, se conserva el dashboard demo:", error);
+  }
+}
 
 const initialsClass = {
   peach: "#f3c3a8",
@@ -224,11 +128,12 @@ function toast(message) {
   setTimeout(() => t.classList.remove("show"), 3000);
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   refreshIcons();
   renderTimeline();
   renderQueue();
   renderPatients();
+  await loadDashboardData();
   document
     .querySelector("#specialtyFilter")
     .addEventListener("change", (e) => renderTimeline(e.target.value));

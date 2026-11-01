@@ -1,4 +1,4 @@
-package com.mycompany.gestorui.model.services.reportes;
+package com.hospital.service.REPORTES;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -7,16 +7,20 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import com.mycompany.gestorui.model.entidades.Consulta;
-import com.mycompany.gestorui.model.entidades.Departamento;
-import com.mycompany.gestorui.model.entidades.Hospital;
-import com.mycompany.gestorui.model.entidades.Paciente;
-import com.mycompany.gestorui.model.entidades.Registro;
-import com.mycompany.gestorui.model.entidades.Turno;
-import com.mycompany.gestorui.model.entidades.Unidad;
-import com.mycompany.gestorui.model.utils.BaseDatos;
+import com.hospital.model.Entidades.Consulta;
+import com.hospital.model.Entidades.Departamento;
+import com.hospital.model.Entidades.Hospital;
+import com.hospital.model.Entidades.Paciente;
+import com.hospital.model.Entidades.Registro;
+import com.hospital.model.Entidades.Turno;
+import com.hospital.model.Entidades.Unidad;
 
-public class PacienteService {
+@org.springframework.stereotype.Service
+public class PacienteService extends com.hospital.service.JdbcServiceSupport {
+
+    public PacienteService(javax.sql.DataSource dataSource) {
+        super(dataSource);
+    }
 
     // Reporte 1: Listado de pacientes de un departamento , departamentos o una unidad
     public LinkedList<Hospital> obtenerPacientesDepartamento(String area, String codigo) {
@@ -32,11 +36,10 @@ public class PacienteService {
                 function = "SELECT * FROM public.listadoPacientes(NULL,?,NULL)";
             case "Unidad" ->
                 function = "SELECT * FROM public.listadoPacientes(NULL,NULL,?)";
-            default -> {
-            }
+            default -> throw new IllegalArgumentException("Área no válida: " + area);
         }
 
-        try (java.sql.Connection con = BaseDatos.getConnection()) {
+        try (java.sql.Connection con = getConnection()) {
 
             PreparedStatement ps = con.prepareStatement(function);
 
@@ -100,7 +103,7 @@ public class PacienteService {
             }
 
         } catch (SQLException ex) {
-            System.getLogger(PacienteService.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+            throw new IllegalStateException("No se pudo consultar el listado de pacientes.", ex);
         }
 
         return lista;
@@ -120,11 +123,10 @@ public class PacienteService {
                 function = "SELECT * FROM public.pacientesNoAtendidos(NULL,?,NULL)";
             case "Unidad" ->
                 function = "SELECT * FROM public.pacientesNoAtendidos(NULL,NULL,?)";
-            default -> {
-            }
+            default -> throw new IllegalArgumentException("Área no válida: " + area);
         }
 
-        try (java.sql.Connection con = BaseDatos.getConnection()) {
+        try (java.sql.Connection con = getConnection()) {
             PreparedStatement ps = con.prepareStatement(function);
             ps.setString(1, codigo);
 
@@ -187,7 +189,7 @@ public class PacienteService {
             }
 
         } catch (SQLException ex) {
-            System.getLogger(PacienteService.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+            throw new IllegalStateException("No se pudo consultar el listado de pacientes no atendidos.", ex);
         }
 
         return lista;

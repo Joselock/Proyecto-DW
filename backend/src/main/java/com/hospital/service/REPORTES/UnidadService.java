@@ -1,4 +1,4 @@
-package com.mycompany.gestorui.model.services.reportes;
+package com.hospital.service.REPORTES;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -6,15 +6,19 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import com.mycompany.gestorui.model.entidades.Departamento;
-import com.mycompany.gestorui.model.entidades.Hospital;
-import com.mycompany.gestorui.model.entidades.Informe;
-import com.mycompany.gestorui.model.entidades.Medico;
-import com.mycompany.gestorui.model.entidades.Registro;
-import com.mycompany.gestorui.model.entidades.Unidad;
-import com.mycompany.gestorui.model.utils.BaseDatos;
+import com.hospital.model.Entidades.Departamento;
+import com.hospital.model.Entidades.Hospital;
+import com.hospital.model.Entidades.Informe;
+import com.hospital.model.Entidades.Medico;
+import com.hospital.model.Entidades.Registro;
+import com.hospital.model.Entidades.Unidad;
 
-public class UnidadService {
+@org.springframework.stereotype.Service
+public class UnidadService extends com.hospital.service.JdbcServiceSupport {
+
+    public UnidadService(javax.sql.DataSource dataSource) {
+        super(dataSource);
+    }
 
     //Reporte 8: Listado de unidades que deben revisar turno 
     public LinkedList<Hospital> listadoUnidades() {
@@ -23,7 +27,7 @@ public class UnidadService {
 
         String function = "SELECT * FROM public.revisarTurnos()";
 
-        try (java.sql.Connection con = BaseDatos.getConnection()) {
+        try (java.sql.Connection con = getConnection()) {
             PreparedStatement ps = con.prepareStatement(function);
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -79,7 +83,7 @@ public class UnidadService {
             }
 
         } catch (SQLException ex) {
-            System.getLogger(UnidadService.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+            throw new IllegalStateException("No se pudo consultar las unidades con turnos por revisar.", ex);
         }
 
         return listado;

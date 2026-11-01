@@ -1,4 +1,4 @@
-package com.mycompany.gestorui.model.services.reportes;
+package com.hospital.service.REPORTES;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -7,15 +7,19 @@ import java.sql.Time;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import com.mycompany.gestorui.model.entidades.Departamento;
-import com.mycompany.gestorui.model.entidades.Hospital;
-import com.mycompany.gestorui.model.entidades.Informe;
-import com.mycompany.gestorui.model.entidades.Registro;
-import com.mycompany.gestorui.model.entidades.Turno;
-import com.mycompany.gestorui.model.entidades.Unidad;
-import com.mycompany.gestorui.model.utils.BaseDatos;
+import com.hospital.model.Entidades.Departamento;
+import com.hospital.model.Entidades.Hospital;
+import com.hospital.model.Entidades.Informe;
+import com.hospital.model.Entidades.Registro;
+import com.hospital.model.Entidades.Turno;
+import com.hospital.model.Entidades.Unidad;
 
-public class HospitalService {
+@org.springframework.stereotype.Service
+public class HospitalService extends com.hospital.service.JdbcServiceSupport {
+
+    public HospitalService(javax.sql.DataSource dataSource) {
+        super(dataSource);
+    }
 
     // Reporte 3: Obtener resumen de hospitales
     public LinkedList<Hospital> resumenHospitales() {
@@ -23,7 +27,7 @@ public class HospitalService {
 
         String function = "SELECT * FROM public.resumenHospitales()";
 
-        try (java.sql.Connection con = BaseDatos.getConnection();) {
+        try (java.sql.Connection con = getConnection();) {
             PreparedStatement ps = con.prepareStatement(function);
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -39,7 +43,7 @@ public class HospitalService {
             }
 
         } catch (SQLException ex) {
-            System.getLogger(HospitalService.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+            throw new IllegalStateException("No se pudo consultar el resumen de hospitales.", ex);
         }
 
         return resumen;
@@ -49,7 +53,7 @@ public class HospitalService {
     public LinkedList<Hospital> hospitalesMayorCantidadPacientes() {
         LinkedList<Hospital> listado = new LinkedList<>();
 
-        try (java.sql.Connection con = BaseDatos.getConnection();) {
+        try (java.sql.Connection con = getConnection();) {
 
             String function = "SELECT * FROM public.listadoMasDeCien()";
 
@@ -64,8 +68,8 @@ public class HospitalService {
                 }
             }
 
-        } catch (Exception ex) {
-            System.getLogger(HospitalService.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+        } catch (SQLException ex) {
+            throw new IllegalStateException("No se pudo consultar los hospitales con más de cien pacientes.", ex);
         }
 
         return listado;
@@ -78,7 +82,7 @@ public class HospitalService {
 
         String function = "SELECT * FROM public.resumenProceso()";
 
-        try (java.sql.Connection con = BaseDatos.getConnection();) {
+        try (java.sql.Connection con = getConnection();) {
             PreparedStatement ps = con.prepareStatement(function);
 
             try (ResultSet rs = ps.executeQuery();) {
@@ -143,7 +147,7 @@ public class HospitalService {
                 }
             }
         } catch (SQLException ex) {
-            System.getLogger(HospitalService.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+            throw new IllegalStateException("No se pudo consultar el resumen del proceso.", ex);
         }
 
         return resumen;

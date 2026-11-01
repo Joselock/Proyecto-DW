@@ -1,4 +1,4 @@
-package com.mycompany.gestorui.model.services.crud;
+package com.hospital.service.CRUD;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -8,16 +8,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.mycompany.gestorui.model.entidades.Hospital;
-import com.mycompany.gestorui.model.utils.BaseDatos;
+import com.hospital.model.Entidades.Hospital;
 
-public class crudHospital {
+@org.springframework.stereotype.Service
+public class crudHospital extends com.hospital.service.JdbcServiceSupport {
 
-    public static List<Hospital> obtenerHospitales() {
+    public crudHospital(javax.sql.DataSource dataSource) {
+        super(dataSource);
+    }
+
+    public List<Hospital> obtenerHospitales() {
         List<Hospital> hospitales = new ArrayList<>();
        String function = "SELECT * FROM public.\"Hospital\" ORDER BY \"codHos\"";
 
-        try (java.sql.Connection con = BaseDatos.getConnection();
+        try (java.sql.Connection con = getConnection();
                 PreparedStatement ps = con.prepareStatement(function);
                 ResultSet rs = ps.executeQuery()) {
 
@@ -39,8 +43,8 @@ public class crudHospital {
     }
 
     // Funcion para insertar un hospital
-    public static Map<String, Object> insertarHospital(String codHos, String nomHos) {
-        java.sql.Connection con = BaseDatos.getConnection();
+    public Map<String, Object> insertarHospital(String codHos, String nomHos) {
+        java.sql.Connection con = getConnection();
 
         String function = "SELECT * FROM public.insertarHospital(?, ?)";
 
@@ -67,8 +71,8 @@ public class crudHospital {
     }
 
     // Funcion para modificar un hospital
-    public static Map<String, Object> modificarHospital(String oldCod, String newCod, String nomHos) {
-        java.sql.Connection con = BaseDatos.getConnection();
+    public Map<String, Object> modificarHospital(String oldCod, String newCod, String nomHos) {
+        java.sql.Connection con = getConnection();
 
         String function = "SELECT * FROM public.modificarHospital(?, ?, ?)";
 
@@ -93,8 +97,8 @@ public class crudHospital {
     }
 
     // Funcion para eliminar un hospital
-    public static String eliminarHospital(String codHos) {
-        java.sql.Connection con = BaseDatos.getConnection();
+    public String eliminarHospital(String codHos) {
+        java.sql.Connection con = getConnection();
 
         String sql = "SELECT public.eliminarHospital(?)";
         try (PreparedStatement ps = con.prepareStatement(sql)) {

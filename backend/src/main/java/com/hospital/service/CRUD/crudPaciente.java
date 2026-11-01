@@ -1,4 +1,4 @@
-package com.mycompany.gestorui.model.services.crud;
+package com.hospital.service.CRUD;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -9,12 +9,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.mycompany.gestorui.model.entidades.Paciente;
-import com.mycompany.gestorui.model.utils.BaseDatos;
+import com.hospital.model.Entidades.Paciente;
 
-public class crudPaciente {
+@org.springframework.stereotype.Service
+public class crudPaciente extends com.hospital.service.JdbcServiceSupport {
 
-    public static List<Paciente> obtenerPacientes() {
+    public crudPaciente(javax.sql.DataSource dataSource) {
+        super(dataSource);
+    }
+
+    public List<Paciente> obtenerPacientes() {
         List<Paciente> pacientes = new ArrayList<>();
         // JOIN para obtener estPac desde la tabla Registro
         String sql = "SELECT p.\"numHisCli\", p.\"nomPac\", p.\"dirPac\", p.\"fechaN\", r.\"codUni\", r.\"estPac\" " +
@@ -27,7 +31,7 @@ public class crudPaciente {
         ResultSet rs = null;
         
         try {
-            con = BaseDatos.getConnection();
+            con = getConnection();
             if (con == null) {
                 System.err.println("Error: No se pudo conectar a la base de datos");
                 return pacientes;
@@ -63,10 +67,10 @@ public class crudPaciente {
         return pacientes;
     }
 
-    public static Map<String, Object> insertarPaciente(String numHistoria, String nomPac, String direccion,
+    public Map<String, Object> insertarPaciente(String numHistoria, String nomPac, String direccion,
             LocalDate fechaNac, String estadoPac, String codUni) {
 
-        java.sql.Connection con = BaseDatos.getConnection();        
+        java.sql.Connection con = getConnection();        
         String function = "SELECT * FROM public.insertarPaciente(?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement ps = con.prepareStatement(function)) {
@@ -95,10 +99,10 @@ public class crudPaciente {
         return Map.of("existe", false, "mensaje", "Sin resultado");
     }
 
-    public static Map<String, Object> modificarPaciente(String oldHistoria, String newHistoria, String estPac,
+    public Map<String, Object> modificarPaciente(String oldHistoria, String newHistoria, String estPac,
             String nomPac, String direccion, LocalDate fechaN, String codUni) {
         
-        java.sql.Connection con = BaseDatos.getConnection();          
+        java.sql.Connection con = getConnection();          
         String function = "SELECT * FROM public.modificarPaciente(?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement ps = con.prepareStatement(function)) {
@@ -128,9 +132,9 @@ public class crudPaciente {
         return Map.of("existe", false, "mensaje", "Sin resultado");
     }
 
-    public static String eliminarPaciente(String numHistoria) {
+    public String eliminarPaciente(String numHistoria) {
 
-        java.sql.Connection con = BaseDatos.getConnection();  
+        java.sql.Connection con = getConnection();  
         String function = "SELECT public.eliminarPaciente(?)";
 
         try (PreparedStatement ps = con.prepareStatement(function)) {

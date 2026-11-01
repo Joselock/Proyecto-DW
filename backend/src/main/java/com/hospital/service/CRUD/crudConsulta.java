@@ -1,4 +1,4 @@
-package com.mycompany.gestorui.model.services.crud;
+package com.hospital.service.CRUD;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -7,13 +7,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.mycompany.gestorui.model.entidades.Consulta;
-import com.mycompany.gestorui.model.utils.BaseDatos;
+import com.hospital.model.Entidades.Consulta;
 
-public class crudConsulta {
+@org.springframework.stereotype.Service
+public class crudConsulta extends com.hospital.service.JdbcServiceSupport {
+
+    public crudConsulta(javax.sql.DataSource dataSource) {
+        super(dataSource);
+    }
 
     
-    public static List<Consulta> obtenerConsultas() {
+    public List<Consulta> obtenerConsultas() {
         List<Consulta> consultas = new ArrayList<>();
         String sql = "SELECT * FROM public.\"Consulta\" ORDER BY \"numTur\"";
         
@@ -22,7 +26,7 @@ public class crudConsulta {
         ResultSet rs = null;
         
         try {
-            con = BaseDatos.getConnection();
+            con = getConnection();
             if (con == null) {
                 System.err.println("Error: No se pudo conectar a la base de datos");
                 return consultas;
@@ -56,9 +60,9 @@ public class crudConsulta {
         return consultas;
     }
 
-    public static Map<String, Object> insertarConsulta(int numTur, String numHistoria, boolean atendido, String causa) {
+    public Map<String, Object> insertarConsulta(int numTur, String numHistoria, boolean atendido, String causa) {
 
-        java.sql.Connection con = BaseDatos.getConnection();  
+        java.sql.Connection con = getConnection();  
         String function = "SELECT * FROM public.insertarConsulta(?, ?, ?, ?)";
 
         try (PreparedStatement ps = con.prepareStatement(function)) {
@@ -83,10 +87,10 @@ public class crudConsulta {
         return Map.of("existe", false, "mensaje", "Sin resultado");
     }
 
-    public static Map<String, Object> modificarConsulta(int numActual, int numNuevo, String numHistoria, boolean atendido,
+    public Map<String, Object> modificarConsulta(int numActual, int numNuevo, String numHistoria, boolean atendido,
             String causa) {
 
-        java.sql.Connection con = BaseDatos.getConnection();          
+        java.sql.Connection con = getConnection();          
         String function = "SELECT * FROM public.modificarConsulta(?, ?, ?, ?, ?)";
 
         try (PreparedStatement ps = con.prepareStatement(function)) {
@@ -112,9 +116,9 @@ public class crudConsulta {
         return Map.of("existe", false, "mensaje", "Sin resultado");
     }
 
-    public static Map<String,Object> eliminarConsulta(int numTurno,String numHistoria){
+    public Map<String,Object> eliminarConsulta(int numTurno,String numHistoria){
 
-        java.sql.Connection con = BaseDatos.getConnection();          
+        java.sql.Connection con = getConnection();          
         String function = "SELECT * FROM public.eliminarConsulta(?,?)";
 
         try (PreparedStatement ps = con.prepareStatement(function)) {
