@@ -129,6 +129,28 @@ body {
     align-items: center;
 }
 
+
+.trapecio {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    /*background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .02));*/
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.info-login .trapecio {
+    clip-path: polygon(0 0, 70% 0, 100% 100%, 0 100%);
+    background-image: url(../assets/img/login.jpg);
+}
+
+.info-register .trapecio {
+    clip-path: polygon(30% 0, 100% 0, 100% 100%, 0 100%);
+    background-image: url(../assets/img/register.jpeg);
+}
+
 /* ==========================================================
    POSICIONES
    translateX(0)     → mitad izquierda
