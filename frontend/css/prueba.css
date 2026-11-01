@@ -74,7 +74,6 @@ body {
     position: absolute;
     inset: 0;
     overflow: hidden;
-    /* ← ahora recorta aquí, no los tracks */
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.4s ease;
@@ -87,7 +86,7 @@ body {
     pointer-events: auto;
 }
 
-/* Los tracks ya no recortan ni forman grid:
+/* Los tracks no recortan ni forman grid:
    cubren toda el área, y dentro viven los paneles absolutos. */
 .info-track,
 .form-track {
@@ -285,8 +284,40 @@ body {
 }
 
 /* ==========================================================
-   INPUTS: todos del mismo ancho y alto (incluye los envueltos
-   en .input-wrap y los que no lo están)
+   TIMING DE OPACIDAD
+   - Salientes: fade-out rápido al principio
+   - Entrantes: fade-in retrasado a la segunda mitad
+   ========================================================== */
+.app[data-state="register"] .info-login,
+.app[data-state="register"] .form-login-panel {
+    transition:
+        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+        opacity 0.25s ease;
+}
+
+.app[data-state="register"] .info-register,
+.app[data-state="register"] .form-register-panel {
+    transition:
+        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+        opacity 0.3s ease 0.3s;
+}
+
+.app[data-state="login"] .info-login,
+.app[data-state="login"] .form-login-panel {
+    transition:
+        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+        opacity 0.3s ease 0.3s;
+}
+
+.app[data-state="login"] .info-register,
+.app[data-state="login"] .form-register-panel {
+    transition:
+        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+        opacity 0.25s ease;
+}
+
+/* ==========================================================
+   INPUTS: todos del mismo ancho y alto 
    ========================================================== */
 .entradas input,
 .entradas .input-wrap,
@@ -315,7 +346,7 @@ body {
 }
 
 /* ==========================================================
-   PASOS DEL REGISTRO (animación suave)
+   PASOS DEL REGISTRO 
    ========================================================== */
 
 /* Contenedor de pasos: relativo para solapar durante la transición */
@@ -431,38 +462,7 @@ body {
 }
 
 
-/* ==========================================================
-   TIMING DE OPACIDAD
-   - Salientes: fade-out rápido al principio
-   - Entrantes: fade-in retrasado a la segunda mitad
-   ========================================================== */
-.app[data-state="register"] .info-login,
-.app[data-state="register"] .form-login-panel {
-    transition:
-        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
-        opacity 0.25s ease;
-}
 
-.app[data-state="register"] .info-register,
-.app[data-state="register"] .form-register-panel {
-    transition:
-        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
-        opacity 0.3s ease 0.3s;
-}
-
-.app[data-state="login"] .info-login,
-.app[data-state="login"] .form-login-panel {
-    transition:
-        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
-        opacity 0.3s ease 0.3s;
-}
-
-.app[data-state="login"] .info-register,
-.app[data-state="login"] .form-register-panel {
-    transition:
-        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
-        opacity 0.25s ease;
-}
 
 /* ==========================================================
    ESTILOS DE CONTENIDO 

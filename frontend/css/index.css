@@ -127,6 +127,7 @@ body {
 
 .form-panel {
     align-items: center;
+    /*overflow-y: auto;*/
 }
 
 
@@ -208,6 +209,15 @@ body {
     color: inherit;
 }
 
+.form-error {
+    min-height: 1.2em;
+    margin-top: 8px;
+    color: #ffb4b4;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+
 
 /* ==========================================================
    POSICIONES
@@ -270,6 +280,157 @@ body {
     opacity: 1;
 }
 
+.form-register-panel .step[hidden] {
+    display: none;
+}
+
+/* ==========================================================
+   INPUTS: todos del mismo ancho y alto (incluye los envueltos
+   en .input-wrap y los que no lo están)
+   ========================================================== */
+.entradas input,
+.entradas .input-wrap,
+.entradas .input-wrap input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Misma altura mínima para todos los inputs */
+.entradas input {
+    min-height: 46px;
+    /* ajusta si tus contraseñas miden distinto */
+    line-height: 1.2;
+}
+
+/* El wrapper no debe meter padding extra */
+.entradas .input-wrap {
+    padding: 0;
+    margin: 0;
+}
+
+/* El botón del ojo no debe alterar el tamaño del input */
+.entradas .input-wrap input {
+    padding-right: 48px;
+    /* mantiene el hueco del ojo */
+}
+
+/* ==========================================================
+   PASOS DEL REGISTRO (animación suave)
+   ========================================================== */
+
+/* Contenedor de pasos: relativo para solapar durante la transición */
+.form-register-panel .steps-viewport {
+    position: relative;
+    width: 100%;
+}
+
+/* Cada paso: absoluto, oculto, desplazado según dirección */
+.form-register-panel .step {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(24px);
+    transition:
+        opacity 0.35s ease,
+        transform 0.35s cubic-bezier(0.65, 0, 0.35, 1),
+        visibility 0s linear 0.35s;
+    pointer-events: none;
+}
+
+/* Paso activo: vuelve al flujo, visible y centrado */
+.form-register-panel .step.is-active {
+    position: relative;
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+    transition:
+        opacity 0.35s ease,
+        transform 0.35s cubic-bezier(0.65, 0, 0.35, 1),
+        visibility 0s linear 0s;
+    pointer-events: auto;
+}
+
+/* Saliente hacia la izquierda (avanzar) */
+.form-register-panel .step.is-leaving-left {
+    opacity: 0;
+    visibility: visible;
+    transform: translateX(-24px);
+    pointer-events: auto;
+}
+
+/* Saliente hacia la derecha (volver) */
+.form-register-panel .step.is-leaving-right {
+    opacity: 0;
+    visibility: visible;
+    transform: translateX(24px);
+    pointer-events: auto;
+}
+
+/* Fallback: si el JS no ha inicializado, respeta hidden */
+.form-register-panel .step[hidden] {
+    display: none;
+}
+
+/* Siguiente mide como un input */
+.form-register-panel .step .boton-Inicio {
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* Fila Volver (pequeño) + Registrarse (ancho) */
+.step-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.boton-volver {
+    flex: 0 0 auto;
+    padding: 10px 14px;
+    margin-top: 25px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.85);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+    white-space: nowrap;
+}
+
+.boton-volver:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #fff;
+}
+
+.step-actions .boton-Inicio {
+    flex: 1;
+    width: auto;
+    margin-top: 0;
+}
+
+
+/* Reducir movimiento si el usuario lo pide */
+@media (prefers-reduced-motion: reduce) {
+
+    .form-register-panel .step,
+    .form-register-panel .step.is-active {
+        transition: opacity 0.01s linear;
+        transform: none !important;
+    }
+}
+
+.form-register-panel .step.is-active input,
+.form-register-panel .step.is-active button,
+.form-register-panel .step.is-active .input-wrap {
+    pointer-events: auto;
+}
+
+
 /* ==========================================================
    TIMING DE OPACIDAD
    - Salientes: fade-out rápido al principio
@@ -306,6 +467,7 @@ body {
 /* ==========================================================
    ESTILOS DE CONTENIDO 
    ========================================================== */
+
 .info-panel h2 {
     font-size: 2rem;
     color: #fff;
