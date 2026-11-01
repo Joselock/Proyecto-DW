@@ -81,12 +81,24 @@
           <!-- Formulario de LOGIN -->
           <div class="form-panel form-login-panel">
             <h2>Sign In</h2>
-            <div class="entradas">
-              <h4>Profile Name</h4>
-              <input type="text" />
+            <form class="entradas" id="loginForm">
+              <h4>Email</h4>
+              <input
+                type="email"
+                id="loginEmail"
+                name="email"
+                required
+                autocomplete="username"
+              />
               <h4>Password</h4>
               <div class="input-wrap">
-                <input type="password" id="loginPass" />
+                <input
+                  type="password"
+                  id="loginPass"
+                  name="password"
+                  required
+                  autocomplete="current-password"
+                />
                 <button
                   type="button"
                   class="toggle-pass"
@@ -96,22 +108,37 @@
                   <i class="bi bi-eye"></i>
                 </button>
               </div>
-              <button type="button" class="boton-Inicio">Entrar</button>
+              <button type="submit" class="boton-Inicio" id="loginSubmit">
+                Entrar
+              </button>
+              <p id="loginError" class="form-error" role="alert"></p>
               <p><a href="#">¿Forgot password?</a></p>
-            </div>
+            </form>
           </div>
 
           <!-- Formulario de REGISTRO -->
           <div class="form-panel form-register-panel">
             <h2>Register</h2>
-            <div class="entradas">
+            <form class="entradas" id="registerForm">
               <h4>Nombre completo</h4>
-              <input type="text" />
+              <input type="text" id="registerNombre" name="nombre" />
               <h4>Correo electrónico</h4>
-              <input type="email" />
+              <input
+                type="email"
+                id="registerEmail"
+                name="email"
+                required
+                autocomplete="email"
+              />
               <h4>Password</h4>
               <div class="input-wrap">
-                <input type="password" id="loginPass" />
+                <input
+                  type="password"
+                  id="registerPass"
+                  name="password"
+                  required
+                  autocomplete="new-password"
+                />
                 <button
                   type="button"
                   class="toggle-pass"
@@ -123,7 +150,12 @@
               </div>
               <h4>Confirm password</h4>
               <div class="input-wrap">
-                <input type="password" id="loginPass" />
+                <input
+                  type="password"
+                  id="registerPassConfirm"
+                  required
+                  autocomplete="new-password"
+                />
                 <button
                   type="button"
                   class="toggle-pass"
@@ -133,12 +165,15 @@
                   <i class="bi bi-eye"></i>
                 </button>
               </div>
-              <button type="button" class="boton-Inicio">Registrarse</button>
-            </div>
+              <button type="submit" class="boton-Inicio" id="registerSubmit">
+                Registrarse
+              </button>
+              <p id="registerError" class="form-error" role="alert"></p>
+            </form>
           </div>
         </div>
       </section>
     </div>
-    <script src="./js/auth.js"></script>
+    <script type="module" src="./js/auth.js"></script>
   </body>
 </html>

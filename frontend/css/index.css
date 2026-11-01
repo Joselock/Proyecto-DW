@@ -130,55 +130,84 @@ body {
 }
 
 
-/* ==========================================================
-   TRAPEZOIDES DETRÁS DE LOS INFO-PANELS
-   ========================================================== */
-
-/* Estilo común a los dos trapezoides */
-.info-login::before,
-.info-register::before {
-    content: "";
+.trapecio {
     position: absolute;
     inset: 0;
-    /* cubre todo el panel */
     z-index: -1;
-    /* detrás del texto/botón del panel */
     pointer-events: none;
-    /* no bloquea clics */
-    background: linear-gradient(180deg,
-            rgba(255, 255, 255, 0.08),
-            rgba(255, 255, 255, 0.02));
-    /* Opcional: borde suave para que se vea la diagonal */
-    border-radius: 2px;
 }
 
-/* LOGIN (panel izquierdo): 90° en el borde izquierdo,
-   diagonal hacia la derecha */
-.info-login::before {
-    clip-path: polygon(0 0,
-            /* esquina sup-izq (90°) */
-            70% 0,
-            /* esquina sup-der, punto de inicio de la diagonal */
-            100% 100%,
-            /* esquina inf-der, fin de la diagonal */
-            0 100%
-            /* esquina inf-izq (90°) */
-        );
+.info-login .trapecio {
+    clip-path: polygon(0 0, 70% 0, 100% 100%, 0 100%);
+
+    /* Capa 1 (arriba): degradado oscuro
+       Capa 2 (abajo): la imagen */
+    background:
+        linear-gradient(180deg,
+            rgba(0, 0, 0, 0.65),
+            rgba(0, 0, 0, 0.45)),
+        url(../assets/img/login.jpg) center / cover no-repeat;
 }
 
-/* REGISTER (panel derecho): 90° en el borde derecho,
-   diagonal hacia la izquierda */
-.info-register::before {
-    clip-path: polygon(30% 0,
-            /* esquina sup-izq, inicio de la diagonal */
-            100% 0,
-            /* esquina sup-der (90°) */
-            100% 100%,
-            /* esquina inf-der (90°) */
-            0 100%
-            /* esquina inf-izq, fin de la diagonal */
-        );
+.info-register .trapecio {
+    clip-path: polygon(30% 0, 100% 0, 100% 100%, 0 100%);
+
+    background:
+        linear-gradient(180deg,
+            rgba(0, 0, 0, 0.65),
+            rgba(0, 0, 0, 0.45)),
+        url(../assets/img/register.jpeg) center / cover no-repeat;
 }
+
+/* ==========================================================
+   TOGGLE CONTRASEÑA 
+   ========================================================== */
+.input-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.input-wrap input {
+    width: 100%;
+    padding-right: 48px;
+    /* hueco para el botón */
+}
+
+.toggle-pass {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.65);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    transition: color 0.2s, background 0.2s;
+}
+
+.toggle-pass:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.toggle-pass:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.6);
+    outline-offset: 2px;
+}
+
+.toggle-pass i {
+    font-size: 20px;
+    line-height: 1;
+    pointer-events: none;
+    /* el clic va al <button> */
+    color: inherit;
+}
+
 
 /* ==========================================================
    POSICIONES
