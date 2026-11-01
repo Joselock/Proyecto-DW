@@ -135,21 +135,30 @@ body {
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    /*background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .02));*/
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
 }
 
 .info-login .trapecio {
     clip-path: polygon(0 0, 70% 0, 100% 100%, 0 100%);
-    background-image: url(../assets/img/login.jpg);
+
+    /* Capa 1 (arriba): degradado oscuro
+       Capa 2 (abajo): la imagen */
+    background:
+        linear-gradient(180deg,
+            rgba(0, 0, 0, 0.65),
+            rgba(0, 0, 0, 0.45)),
+        url(../assets/img/login.jpg) center / cover no-repeat;
 }
 
 .info-register .trapecio {
     clip-path: polygon(30% 0, 100% 0, 100% 100%, 0 100%);
-    background-image: url(../assets/img/register.jpeg);
+
+    background:
+        linear-gradient(180deg,
+            rgba(0, 0, 0, 0.65),
+            rgba(0, 0, 0, 0.45)),
+        url(../assets/img/register.jpeg) center / cover no-repeat;
 }
+
 
 /* ==========================================================
    POSICIONES
