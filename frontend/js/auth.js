@@ -7,8 +7,25 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------------------------------------------------------
   // Cambio de estado global
   // ---------------------------------------------------------
-  const setState = (state) => {
+  /*const setState = (state) => {
     app.dataset.state = state;
+  };*/
+  const setState = (state) => {
+    const prev = app.dataset.state;
+    app.dataset.state = state;
+
+    if (prev === "home" && (state === "login" || state === "register")) {
+      const auth = document.getElementById("auth");
+      if (!auth) return;
+      auth.classList.remove("auth-entering");
+      void auth.offsetWidth;
+      auth.classList.add("auth-entering");
+      clearTimeout(auth._enterTimer);
+      auth._enterTimer = setTimeout(
+        () => auth.classList.remove("auth-entering"),
+        800,
+      );
+    }
   };
 
   // Botones desde HOME
