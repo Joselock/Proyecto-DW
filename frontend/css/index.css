@@ -40,6 +40,7 @@ body {
     text-align: center;
     gap: 24px;
     z-index: 2;
+    animation: homeFadeIn 0.6s ease both;
     transition: opacity 0.4s ease;
 }
 
@@ -68,13 +69,40 @@ body {
 }
 
 /* ==========================================================
-   AUTH 
+   ENTRADA SUAVE DEL HOME
+   ========================================================== */
+@keyframes homeFadeIn {
+    from {
+        opacity: 0;
+        translate: 0 12px;
+    }
+
+    to {
+        opacity: 1;
+        translate: 0 0;
+    }
+}
+
+.home {
+    animation: homeFadeIn 0.6s ease both;
+}
+
+/* Cuando se sale de home, que el fade-out sea suave */
+.app:not([data-state="home"]) .home {
+    animation: none;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+
+/* ==========================================================
+   AUTHENTICATION 
    ========================================================== */
 .auth {
     position: absolute;
     inset: 0;
     overflow: hidden;
-    /* ← ahora recorta aquí, no los tracks */
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.4s ease;
@@ -87,7 +115,7 @@ body {
     pointer-events: auto;
 }
 
-/* Los tracks ya no recortan ni forman grid:
+/* Los tracks no recortan ni forman grid:
    cubren toda el área, y dentro viven los paneles absolutos. */
 .info-track,
 .form-track {
@@ -228,26 +256,46 @@ body {
    ========================================================== */
 
 /* ---------- LOGIN (y HOME, que prepara login) ---------- */
-.app[data-state="home"] .info-login,
+.app[data-state="home"] .info-login {
+    transform: translateX(-100%);
+    opacity: 0;
+}
+
+.app[data-state="home"] .form-login-panel {
+    transform: translateX(200%);
+    opacity: 0;
+}
+
+/* Register "aparcado": un poco más a la derecha que su posición final */
+.app[data-state="home"] .info-register {
+    transform: translateX(200%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.app[data-state="home"] .form-register-panel {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ---------- LOGIN ---------- */
 .app[data-state="login"] .info-login {
     transform: translateX(0);
     opacity: 1;
 }
 
-.app[data-state="home"] .form-login-panel,
 .app[data-state="login"] .form-login-panel {
     transform: translateX(100%);
     opacity: 1;
 }
 
-.app[data-state="home"] .info-register,
 .app[data-state="login"] .info-register {
     transform: translateX(200%);
     opacity: 0;
     pointer-events: none;
 }
 
-.app[data-state="home"] .form-register-panel,
 .app[data-state="login"] .form-register-panel {
     transform: translateX(-100%);
     opacity: 0;
@@ -285,8 +333,104 @@ body {
 }
 
 /* ==========================================================
-   INPUTS: todos del mismo ancho y alto (incluye los envueltos
-   en .input-wrap y los que no lo están)
+   TIMING DE OPACIDAD
+   - Salientes: fade-out rápido al principio
+   - Entrantes: fade-in retrasado a la segunda mitad
+   ========================================================== */
+.app[data-state="register"] .info-login,
+.app[data-state="register"] .form-login-panel {
+    transition:
+        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+        opacity 0.15s ease;
+}
+
+.app[data-state="register"] .info-register,
+.app[data-state="register"] .form-register-panel {
+    transition:
+        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+        opacity 0.3s ease 0.35s;
+}
+
+.app[data-state="login"] .info-login,
+.app[data-state="login"] .form-login-panel {
+    transition:
+        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+        opacity 0.3s ease 0.35s;
+}
+
+.app[data-state="login"] .info-register,
+.app[data-state="login"] .form-register-panel {
+    transition:
+        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+        opacity 0.15s ease;
+}
+
+/* ==========================================================
+   ENTRADA DESDE HOME (login y register usan la MISMA animación)
+   ========================================================== */
+
+@keyframes enterToZero {
+
+    /* de -100% a 0% */
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes enterToHalf {
+
+    /* de 200% a 100% */
+    from {
+        transform: translateX(200%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(100%);
+        opacity: 1;
+    }
+}
+
+.app[data-state="login"] .auth.auth-entering .info-login,
+.app[data-state="register"] .auth.auth-entering .form-register-panel {
+    animation: enterToZero 0.65s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+.app[data-state="login"] .auth.auth-entering .form-login-panel,
+.app[data-state="register"] .auth.auth-entering .info-register {
+    animation: enterToHalf 0.65s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+
+/* Register entrando desde home — MISMA duración y curva */
+.app[data-state="register"] .auth.auth-entering .info-register {
+    animation: enterToHalf 0.65s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+.app[data-state="register"] .auth.auth-entering .form-register-panel {
+    animation: enterToZero 0.65s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+/* Mientras dura la entrada, que la animación mande (sin transiciones que compitan) */
+.auth.auth-entering .info-panel,
+.auth.auth-entering .form-panel {
+    transition: none !important;
+}
+
+/* El auth visible desde el frame 0 durante la entrada, para que no lave la animación */
+.auth.auth-entering {
+    transition: none !important;
+    opacity: 1 !important;
+}
+
+/* ==========================================================
+   INPUTS: todos del mismo ancho y alto 
    ========================================================== */
 .entradas input,
 .entradas .input-wrap,
@@ -315,7 +459,7 @@ body {
 }
 
 /* ==========================================================
-   PASOS DEL REGISTRO (animación suave)
+   PASOS DEL REGISTRO 
    ========================================================== */
 
 /* Contenedor de pasos: relativo para solapar durante la transición */
@@ -431,38 +575,7 @@ body {
 }
 
 
-/* ==========================================================
-   TIMING DE OPACIDAD
-   - Salientes: fade-out rápido al principio
-   - Entrantes: fade-in retrasado a la segunda mitad
-   ========================================================== */
-.app[data-state="register"] .info-login,
-.app[data-state="register"] .form-login-panel {
-    transition:
-        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
-        opacity 0.25s ease;
-}
 
-.app[data-state="register"] .info-register,
-.app[data-state="register"] .form-register-panel {
-    transition:
-        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
-        opacity 0.3s ease 0.3s;
-}
-
-.app[data-state="login"] .info-login,
-.app[data-state="login"] .form-login-panel {
-    transition:
-        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
-        opacity 0.3s ease 0.3s;
-}
-
-.app[data-state="login"] .info-register,
-.app[data-state="login"] .form-register-panel {
-    transition:
-        transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
-        opacity 0.25s ease;
-}
 
 /* ==========================================================
    ESTILOS DE CONTENIDO 

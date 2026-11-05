@@ -1,0 +1,11 @@
+# Estado local de start.sh / stop.sh
+.run/
+
+# Maven
+backend/target/
+backend/bin/
+
+# Entorno
+.env
+.env.*
+!.env.example

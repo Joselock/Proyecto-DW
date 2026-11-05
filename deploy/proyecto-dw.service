@@ -1,0 +1,18 @@
+[Unit]
+Description=Proyecto DW (Spring Boot sirve API + frontend)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/ignacio/Documentos/Code/Proyecto-DW
+Environment=NO_OPEN=1
+Environment=JAVA_HOME=/usr/lib/jvm/jdk-25-oracle
+Environment=PATH=/usr/lib/jvm/jdk-25-oracle/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/ignacio/Documentos/Code/Proyecto-DW/start.sh
+ExecStop=/home/ignacio/Documentos/Code/Proyecto-DW/stop.sh
+TimeoutStartSec=180
+
+[Install]
+WantedBy=default.target

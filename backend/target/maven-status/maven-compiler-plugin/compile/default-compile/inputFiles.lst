@@ -16,7 +16,6 @@
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/CRUD/crudMedico.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/model/Entidades/Consulta.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/REPORTES/PacienteService.java
-/home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/controller/ApiExceptionHandler.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/CRUD/crudPaciente.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/model/Entidades/Turno.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/HospitalApplication.java
@@ -31,5 +30,6 @@
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/model/Entidades/Informe.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/config/CorsConfig.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/CRUD/crudHospital.java
+/home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/exception/ApiExceptionHandler.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/REPORTES/HospitalService.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/REPORTES/ConsultaService.java
