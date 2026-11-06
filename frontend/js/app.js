@@ -1,12 +1,17 @@
+import { api } from "./api";
+
 const appointments = [];
 const queue = [];
 const patients = [];
 
 async function loadDashboardData() {
   try {
-    const res = await fetch("http://localhost:8080/api/reportes/hospitales/resumen", {
-      credentials: "include",
-    });
+    const res = await fetch(
+      "http://localhost:8080/api/reportes/hospitales/resumen",
+      {
+        credentials: "include",
+      },
+    );
     const data = await res.json();
     if (!data || !data.ok || !Array.isArray(data.data)) {
       throw new Error("No se pudo cargar el resumen");
@@ -14,10 +19,31 @@ async function loadDashboardData() {
 
     const hospitals = data.data.slice(0, 4);
     const cards = [
-      { label: "Turnos de hoy", value: hospitals.reduce((sum, hospital) => sum + (hospital.cantPac || 0), 0) || 48 },
-      { label: "Pacientes atendidos", value: hospitals.reduce((sum, hospital) => sum + (hospital.cantPac || 0), 0) || 36 },
+      {
+        label: "Turnos de hoy",
+        value:
+          hospitals.reduce(
+            (sum, hospital) => sum + (hospital.cantPac || 0),
+            0,
+          ) || 48,
+      },
+      {
+        label: "Pacientes atendidos",
+        value:
+          hospitals.reduce(
+            (sum, hospital) => sum + (hospital.cantPac || 0),
+            0,
+          ) || 36,
+      },
       { label: "Espera promedio", value: "14 min" },
-      { label: "Pacientes registrados", value: hospitals.reduce((sum, hospital) => sum + (hospital.cantPac || 0), 0) || 1284 },
+      {
+        label: "Pacientes registrados",
+        value:
+          hospitals.reduce(
+            (sum, hospital) => sum + (hospital.cantPac || 0),
+            0,
+          ) || 1284,
+      },
     ];
 
     cards.forEach((card, idx) => {
@@ -25,7 +51,11 @@ async function loadDashboardData() {
       if (!stat) return;
       const value = stat.querySelector(".stat-value");
       const label = stat.querySelector(".stat-label");
-      if (value) value.innerHTML = typeof card.value === "string" ? card.value : Number(card.value).toLocaleString("es-ES");
+      if (value)
+        value.innerHTML =
+          typeof card.value === "string"
+            ? card.value
+            : Number(card.value).toLocaleString("es-ES");
       if (label) label.textContent = card.label;
     });
 
@@ -35,13 +65,22 @@ async function loadDashboardData() {
       for (const dep of hospital.departamentos) {
         if (!dep.unidades) continue;
         for (const unidad of dep.unidades) {
-          if (!unidad.registro || !Array.isArray(unidad.registro.pacientes)) continue;
+          if (!unidad.registro || !Array.isArray(unidad.registro.pacientes))
+            continue;
           for (const paciente of unidad.registro.pacientes) {
             patientRows.push({
               name: paciente.nombrePac || "Paciente",
               id: paciente.numHisCli || "--",
-              initials: (paciente.nombrePac || "P").split(" ").slice(0, 2).map(p => p[0]).join("").toUpperCase() || "P",
-              cls: ["peach", "lavender", "mint", "sky", "sand"][patientRows.length % 5],
+              initials:
+                (paciente.nombrePac || "P")
+                  .split(" ")
+                  .slice(0, 2)
+                  .map((p) => p[0])
+                  .join("")
+                  .toUpperCase() || "P",
+              cls: ["peach", "lavender", "mint", "sky", "sand"][
+                patientRows.length % 5
+              ],
               visit: "Hoy",
               specialty: dep.nombreDep || "General",
               doctor: "Equipo médico",
@@ -58,7 +97,10 @@ async function loadDashboardData() {
       renderPatients();
     }
   } catch (error) {
-    console.warn("No se pudo cargar la data del backend, se conserva el dashboard demo:", error);
+    console.warn(
+      "No se pudo cargar la data del backend, se conserva el dashboard demo:",
+      error,
+    );
   }
 }
 
