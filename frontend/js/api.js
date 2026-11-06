@@ -1,5 +1,5 @@
 // ==========================================================
-// api.js — Capa de comunicación con el backend Spring Boot
+// Capa de comunicación con el backend Spring Boot
 // ==========================================================
 
 const API_BASE = "http://localhost:8080/api";
@@ -47,7 +47,11 @@ async function apiFetch(path, { method = "GET", body } = {}) {
     };
   }
 
-  if (data === null || typeof data !== "object" || typeof data.ok !== "boolean") {
+  if (
+    data === null ||
+    typeof data !== "object" ||
+    typeof data.ok !== "boolean"
+  ) {
     return { ok: false, error: "El servidor devolvió una respuesta inválida." };
   }
 
@@ -109,19 +113,27 @@ export const api = {
   },
 
   listadoPacientes(area, codigo) {
-    return apiFetch(`/reportes/pacientes?area=${encodeURIComponent(area)}&codigo=${encodeURIComponent(codigo)}`);
+    return apiFetch(
+      `/reportes/pacientes?area=${encodeURIComponent(area)}&codigo=${encodeURIComponent(codigo)}`,
+    );
   },
 
   pacientesNoAtendidos(area, codigo) {
-    return apiFetch(`/reportes/pacientes/no-atendidos?area=${encodeURIComponent(area)}&codigo=${encodeURIComponent(codigo)}`);
+    return apiFetch(
+      `/reportes/pacientes/no-atendidos?area=${encodeURIComponent(area)}&codigo=${encodeURIComponent(codigo)}`,
+    );
   },
 
   informeDuranteConsultas(area, codigo) {
-    return apiFetch(`/reportes/consultas/informe?area=${encodeURIComponent(area)}&codigo=${encodeURIComponent(codigo)}`);
+    return apiFetch(
+      `/reportes/consultas/informe?area=${encodeURIComponent(area)}&codigo=${encodeURIComponent(codigo)}`,
+    );
   },
 
   consultasExitosas(area, codigo) {
-    return apiFetch(`/reportes/consultas/exitosas?area=${encodeURIComponent(area)}&codigo=${encodeURIComponent(codigo)}`);
+    return apiFetch(
+      `/reportes/consultas/exitosas?area=${encodeURIComponent(area)}&codigo=${encodeURIComponent(codigo)}`,
+    );
   },
 
   unidadesTurnosPorRevisar() {
