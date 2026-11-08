@@ -2,7 +2,13 @@
 // Capa de comunicación con el backend Spring Boot
 // ==========================================================
 
-const API_BASE = "http://localhost:8080/api";
+// El backend sirve también el frontend, así que la API debe apuntar al mismo
+// origen desde el que se abrió la página. Así la cookie de sesión funciona
+// tanto en localhost como en 127.0.0.1, otra IP o un puerto distinto.
+const API_BASE =
+  window.location.protocol === "file:"
+    ? "http://localhost:8080/api"
+    : `${window.location.origin}/api`;
 
 /**
  * Wrapper de fetch que:
