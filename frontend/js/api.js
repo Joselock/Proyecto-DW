@@ -2,17 +2,41 @@
 // Capa de comunicación con el backend Spring Boot
 // ==========================================================
 
-// El backend sirve también el frontend, así que la API debe apuntar al mismo
-// origen desde el que se abrió la página. Así la cookie de sesión funciona
-// tanto en localhost como en 127.0.0.1, otra IP o un puerto distinto.
-const API_BASE =
-  window.location.protocol === "file:"
-    ? "http://localhost:8080/api"
-    : `${window.location.origin}/api`;
+// Spring Boot sirve el frontend y la API en el mismo puerto (8080). Pero si el
+// HTML se abre con otro servidor (Live Server, http-server, etc.) el POST a
+// /api/login llega a ese servidor estático y devuelve 405 Method Not Allowed.
+// Por eso probamos primero el backend en el puerto 8080 del mismo host y luego
+// el mismo origen. Las cookies no distinguen puertos, así que la sesión se
+// mantiene aunque el frontend venga de otro puerto.
+const BACKEND_PORT = "8080";
+
+function apiBaseCandidates() {
+  const { protocol, hostname, origin, port } = window.location;
+  const bases = [];
+
+  if (protocol === "file:") {
+    bases.push(`http://localhost:${BACKEND_PORT}/api`);
+  } else {
+    // Si el propio Spring sirve la página, el mismo origen es el backend.
+    if (port === BACKEND_PORT) bases.push(`${origin}/api`);
+
+    // Si la página viene de otro servidor, el backend sigue en el puerto 8080.
+    bases.push(`${protocol}//${hostname}:${BACKEND_PORT}/api`);
+
+    // Último recurso: mismo origen (útil si se configuró un proxy /api).
+    bases.push(`${origin}/api`);
+  }
+
+  return [...new Set(bases)];
+}
+
+// Una vez que encontramos el backend, dejamos de probar candidatos.
+let resolvedApiBase = null;
 
 /**
  * Wrapper de fetch que:
  *  - incluye cookies de sesión (credentials: "include")
+ *  - detecta automáticamente la URL real del backend
  *  - normaliza errores en { ok: false, error }
  */
 async function apiFetch(path, { method = "GET", body } = {}) {
@@ -25,53 +49,74 @@ async function apiFetch(path, { method = "GET", body } = {}) {
     options.body = JSON.stringify(body);
   }
 
-  let res;
-  try {
-    res = await fetch(API_BASE + path, options);
-  } catch {
-    return {
+  const candidates = resolvedApiBase ? [resolvedApiBase] : apiBaseCandidates();
+  const attempts = [];
+
+  for (const base of candidates) {
+    let res;
+    try {
+      res = await fetch(base + path, options);
+    } catch {
+      attempts.push({
+        base,
+        error: {
+          ok: false,
+          status: 0,
+          error: `No se pudo conectar con el backend en ${base}. Verificá que el servidor esté corriendo.`,
+        },
+      });
+      continue;
+    }
+
+    // El backend siempre responde JSON con un campo booleano "ok". Si la
+    // respuesta no tiene esa forma, este origen no es la API (por ejemplo,
+    // un servidor estático que contesta 405 a POST).
+    const contentType = res.headers.get("content-type") || "";
+    let data = null;
+    if (contentType.includes("json")) {
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
+    }
+
+    if (data && typeof data === "object" && typeof data.ok === "boolean") {
+      if (!res.ok && !data.error) {
+        data.error = `Error ${res.status} del servidor.`;
+      }
+      resolvedApiBase = base;
+      return data;
+    }
+
+    attempts.push({
+      base,
+      error: {
+        ok: false,
+        status: res.status,
+        error:
+          res.status === 404 || res.status === 405
+            ? `La API no está disponible en ${base} (HTTP ${res.status}).`
+            : res.ok
+              ? "El servidor devolvió una respuesta inválida."
+              : `Error ${res.status} del servidor.`,
+      },
+    });
+  }
+
+  // Si ningún candidato respondió como backend, mostramos el error del
+  // candidato que apunta al puerto del backend, que es el más informativo.
+  const backendAttempt =
+    attempts.find((attempt) => attempt.base.includes(`:${BACKEND_PORT}/api`)) ||
+    attempts[attempts.length - 1];
+
+  return (
+    backendAttempt?.error || {
       ok: false,
       status: 0,
       error: "No se pudo conectar con el servidor.",
-    };
-  }
-
-  let data;
-  try {
-    data = await res.json();
-  } catch {
-    return {
-      ok: false,
-      status: res.status,
-      error: res.ok
-        ? "El servidor devolvió una respuesta inválida."
-        : `Error ${res.status} del servidor.`,
-    };
-  }
-
-  if (!res.ok) {
-    return {
-      ok: false,
-      status: res.status,
-      error:
-        (typeof data?.error === "string" && data.error) ||
-        `Error ${res.status} del servidor.`,
-    };
-  }
-
-  if (
-    data === null ||
-    typeof data !== "object" ||
-    typeof data.ok !== "boolean"
-  ) {
-    return {
-      ok: false,
-      status: res.status,
-      error: "El servidor devolvió una respuesta inválida.",
-    };
-  }
-
-  return data;
+    }
+  );
 }
 
 // ---------- Endpoints ----------
