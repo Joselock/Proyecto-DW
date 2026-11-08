@@ -3,7 +3,7 @@ package com.hospital.model.EntidadesJPA;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "\"DataUser\"")
+@Table(name = "\"data_user\"")
 @IdClass(UserId.class)   // reutilizamos la misma PK compuesta
 public class DataUser {
 

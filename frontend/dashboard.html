@@ -39,15 +39,15 @@
           </button>
           <button class="nav-item" data-section="Turnos">
             <i data-lucide="calendar-days"></i><span>Turnos</span
-            ><span class="nav-badge">12</span>
+            ><span class="nav-badge" id="turnosBadge">0</span>
           </button>
           <button class="nav-item" data-section="Pacientes">
             <i data-lucide="users"></i><span>Pacientes</span>
           </button>
-          <button class="nav-item" data-section="Profesionales">
+          <button class="nav-item" data-section="Profesionales" data-admin-only>
             <i data-lucide="stethoscope"></i><span>Profesionales</span>
           </button>
-          <button class="nav-item" data-section="Reportes">
+          <button class="nav-item" data-section="Reportes" data-admin-only>
             <i data-lucide="bar-chart-3"></i><span>Reportes</span>
           </button>
         </nav>
@@ -74,13 +74,52 @@
             </button>
           </div>
           <div class="user-profile">
-            <div class="avatar user-avatar">JI</div>
+            <div class="avatar user-avatar" id="sidebarAvatar">JI</div>
             <div class="user-copy">
-              <strong>Jose Ignacio Bravo</strong><span>Administradora</span>
+              <strong id="sidebarUserName">Jose Ignacio Bravo</strong
+              ><span id="sidebarUserRole">Administrador</span>
             </div>
-            <button class="icon-btn ghost" title="Opciones de cuenta">
-              <i data-lucide="more-horizontal"></i>
-            </button>
+            <div class="account-menu">
+              <button
+                class="icon-btn ghost account-trigger"
+                id="accountMenuBtn"
+                type="button"
+                title="Opciones de cuenta"
+                aria-haspopup="menu"
+                aria-expanded="false"
+                aria-controls="accountDropdown"
+              >
+                <i data-lucide="more-horizontal"></i>
+              </button>
+              <div
+                class="account-dropdown"
+                id="accountDropdown"
+                role="menu"
+                aria-labelledby="accountMenuBtn"
+                hidden
+              >
+                <div class="account-dropdown-head">
+                  <strong id="accountMenuName">Jose Ignacio Bravo</strong>
+                  <span id="accountMenuEmail">correo@ejemplo.com</span>
+                </div>
+                <button
+                  class="account-menu-item"
+                  type="button"
+                  role="menuitem"
+                  data-account-action="edit"
+                >
+                  <i data-lucide="pencil"></i><span>Editar</span>
+                </button>
+                <button
+                  class="account-menu-item danger"
+                  type="button"
+                  role="menuitem"
+                  data-account-action="logout"
+                >
+                  <i data-lucide="log-out"></i><span>Cerrar sesión</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </aside>
@@ -104,23 +143,26 @@
             ><button class="icon-btn notification" title="Notificaciones">
               <i data-lucide="bell"></i><span></span>
             </button>
-            <div class="avatar top-avatar">JI</div>
+            <div class="avatar top-avatar" id="topAvatar">JI</div>
           </div>
         </header>
 
         <div class="page-content">
-          <section class="welcome-row">
+          <section class="view" id="view-Resumen" data-view="Resumen">
+            <div class="welcome-row">
             <div>
               <p class="eyebrow" id="fechahoy">Lunes, 14 de octubre de 2024</p>
-              <h1>Buenos días, Jose Ignacio <span class="wave">✦</span></h1>
-              <p class="subhead">
+              <h1 id="welcomeTitle">
+                Buenos días, Jose Ignacio <span class="wave">✦</span>
+              </h1>
+              <p class="subhead" id="welcomeSubhead">
                 Aquí tienes lo que está pasando hoy en tu hospital.
               </p>
             </div>
             <button class="primary-btn" id="newAppointment">
               <i data-lucide="plus"></i><span>Nuevo turno</span>
             </button>
-          </section>
+            </div>
 
           <section class="stats-grid" aria-label="Resumen del día">
             <article class="stat-card">
@@ -131,9 +173,9 @@
                   ><i data-lucide="trending-up"></i> 8.4%</span
                 >
               </div>
-              <div class="stat-value">48</div>
+              <div class="stat-value">0</div>
               <div class="stat-label">Turnos de hoy</div>
-              <div class="stat-foot">vs. 44 la semana pasada</div>
+              <div class="stat-foot">vs. 0 la semana pasada</div>
             </article>
             <article class="stat-card">
               <div class="stat-head">
@@ -143,9 +185,9 @@
                   ><i data-lucide="trending-up"></i> 12.2%</span
                 >
               </div>
-              <div class="stat-value">36</div>
+              <div class="stat-value">0</div>
               <div class="stat-label">Pacientes atendidos</div>
-              <div class="stat-foot">75% de la agenda completada</div>
+              <div class="stat-foot">0% de la agenda completada</div>
             </article>
             <article class="stat-card">
               <div class="stat-head">
@@ -153,9 +195,9 @@
                   ><i data-lucide="clock-3"></i></span
                 ><span class="trend neutral">En tiempo real</span>
               </div>
-              <div class="stat-value">14 <small>min</small></div>
+              <div class="stat-value">0 <small>min</small></div>
               <div class="stat-label">Espera promedio</div>
-              <div class="stat-foot">6 min menos que ayer</div>
+              <div class="stat-foot">0 min menos que ayer</div>
             </article>
             <article class="stat-card">
               <div class="stat-head">
@@ -163,9 +205,9 @@
                   ><i data-lucide="user-plus"></i></span
                 ><span class="trend neutral">Este mes</span>
               </div>
-              <div class="stat-value">1,284</div>
+              <div class="stat-value">0</div>
               <div class="stat-label">Pacientes registrados</div>
-              <div class="stat-foot">+86 pacientes nuevos</div>
+              <div class="stat-foot">+0 pacientes nuevos</div>
             </article>
           </section>
 
@@ -223,11 +265,11 @@
                 <span class="live-pill"><span></span> En vivo</span>
               </div>
               <div class="queue-summary">
-                <div><strong>05</strong><span>En espera</span></div>
+                <div><strong>00</strong><span>En espera</span></div>
                 <div>
-                  <strong class="green-text">02</strong><span>En consulta</span>
+                  <strong class="green-text">00</strong><span>En consulta</span>
                 </div>
-                <div><strong>08</strong><span>Atendidos</span></div>
+                <div><strong>00</strong><span>Atendidos</span></div>
               </div>
               <div class="queue-list" id="queueList"></div>
               <button class="outline-btn full-btn" id="manageQueue">
@@ -274,6 +316,353 @@
               </table>
             </div>
           </section>
+          </section>
+
+          <!-- ============================ TURNOS ============================ -->
+          <section class="view" id="view-Turnos" data-view="Turnos" hidden>
+            <div class="welcome-row">
+              <div>
+                <p class="eyebrow">Agenda hospitalaria</p>
+                <h1>Turnos <span class="demo-pill" id="turnosDemoPill" hidden>Datos de ejemplo</span></h1>
+                <p class="subhead">
+                  Organiza, confirma y da seguimiento a la agenda de tu equipo.
+                </p>
+              </div>
+              <div class="view-actions">
+                <button class="outline-btn" id="exportTurnos">
+                  <i data-lucide="download"></i><span>Exportar</span>
+                </button>
+                <button class="primary-btn" id="newTurnoBtn">
+                  <i data-lucide="plus"></i><span>Nuevo turno</span>
+                </button>
+              </div>
+            </div>
+
+            <section class="stats-grid" aria-label="Resumen de turnos">
+              <article class="stat-card">
+                <div class="stat-head">
+                  <span class="stat-icon teal"
+                    ><i data-lucide="calendar-check-2"></i></span
+                  ><span class="trend neutral">Hoy</span>
+                </div>
+                <div class="stat-value" id="turnosHoyValue">0</div>
+                <div class="stat-label">Turnos de hoy</div>
+                <div class="stat-foot">Total programado en la agenda</div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-head">
+                  <span class="stat-icon blue"
+                    ><i data-lucide="circle-check-big"></i></span
+                  ><span class="trend positive">Confirmados</span>
+                </div>
+                <div class="stat-value" id="turnosConfirmadosValue">0</div>
+                <div class="stat-label">Confirmados</div>
+                <div class="stat-foot">Pacientes con asistencia confirmada</div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-head">
+                  <span class="stat-icon amber"
+                    ><i data-lucide="clock-3"></i></span
+                  ><span class="trend neutral">Por confirmar</span>
+                </div>
+                <div class="stat-value" id="turnosPendientesValue">0</div>
+                <div class="stat-label">Pendientes</div>
+                <div class="stat-foot">Requieren confirmación del paciente</div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-head">
+                  <span class="stat-icon coral"
+                    ><i data-lucide="check-check"></i></span
+                  ><span class="trend positive">Completados</span>
+                </div>
+                <div class="stat-value" id="turnosAtendidosValue">0</div>
+                <div class="stat-label">Atendidos</div>
+                <div class="stat-foot">Consultas finalizadas el día de hoy</div>
+              </article>
+            </section>
+
+            <section class="content-grid">
+              <article class="panel appointments-panel">
+                <div class="panel-heading">
+                  <div>
+                    <h2>Agenda del día</h2>
+                    <p>Turnos programados para hoy</p>
+                  </div>
+                  <div class="date-switcher">
+                    <button
+                      class="icon-btn small"
+                      id="turnosPrevDay"
+                      title="Día anterior"
+                    >
+                      <i data-lucide="chevron-left"></i></button
+                    ><span id="turnosAgendaDate">Hoy</span
+                    ><button
+                      class="icon-btn small"
+                      id="turnosNextDay"
+                      title="Día siguiente"
+                    >
+                      <i data-lucide="chevron-right"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="agenda-toolbar">
+                  <div class="search-field">
+                    <i data-lucide="search"></i
+                    ><input
+                      id="turnoSearch"
+                      type="search"
+                      placeholder="Buscar paciente..."
+                    />
+                  </div>
+                  <div class="select-wrap">
+                    <i data-lucide="filter"></i
+                    ><select
+                      id="turnoSpecialtyFilter"
+                      aria-label="Filtrar turnos por especialidad"
+                    >
+                      <option value="all">Todas las especialidades</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="timeline" id="turnoTimeline"></div>
+              </article>
+
+              <article class="panel content-panel">
+                <div class="panel-heading">
+                  <div>
+                    <h2>Por especialidad</h2>
+                    <p>Carga de la agenda de hoy</p>
+                  </div>
+                  <span class="live-pill"><span></span> En vivo</span>
+                </div>
+                <div class="specialty-list" id="turnoSpecialtySummary"></div>
+                <div class="panel-note">
+                  <i data-lucide="info"></i>
+                  <span
+                    >La distribución se actualiza automáticamente con cada
+                    turno confirmado.</span
+                  >
+                </div>
+              </article>
+            </section>
+
+            <section class="panel list-panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Todos los turnos</h2>
+                  <p>Seguimiento completo de la agenda</p>
+                </div>
+                <div class="panel-actions">
+                  <div class="select-wrap">
+                    <i data-lucide="list-filter"></i
+                    ><select
+                      id="turnoStatusFilter"
+                      aria-label="Filtrar turnos por estado"
+                    >
+                      <option value="all">Todos los estados</option>
+                      <option value="confirmed">Confirmados</option>
+                      <option value="pending">Pendientes</option>
+                      <option value="done">Atendidos</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Turno</th>
+                      <th>Paciente</th>
+                      <th>Fecha y hora</th>
+                      <th>Especialidad</th>
+                      <th>Profesional</th>
+                      <th>Estado</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="turnosTable"></tbody>
+                </table>
+              </div>
+              <div class="table-footer">
+                <span id="turnosCount">0 turnos</span>
+                <span class="table-hint"
+                  >Los cambios se sincronizan con recepción</span
+                >
+              </div>
+            </section>
+          </section>
+
+          <!-- =========================== PACIENTES ========================== -->
+          <section class="view" id="view-Pacientes" data-view="Pacientes" hidden>
+            <div class="welcome-row">
+              <div>
+                <p class="eyebrow">Gestión clínica</p>
+                <h1>Pacientes <span class="demo-pill" id="pacientesDemoPill" hidden>Datos de ejemplo</span></h1>
+                <p class="subhead">
+                  Consulta la información, el historial y la actividad de tus
+                  pacientes.
+                </p>
+              </div>
+              <div class="view-actions">
+                <button class="outline-btn" id="exportPacientes">
+                  <i data-lucide="download"></i><span>Exportar</span>
+                </button>
+                <button class="primary-btn" id="newPacienteBtn">
+                  <i data-lucide="user-plus"></i><span>Registrar paciente</span>
+                </button>
+              </div>
+            </div>
+
+            <section class="stats-grid" aria-label="Resumen de pacientes">
+              <article class="stat-card">
+                <div class="stat-head">
+                  <span class="stat-icon teal"
+                    ><i data-lucide="users"></i></span
+                  ><span class="trend neutral">Directorio</span>
+                </div>
+                <div class="stat-value" id="pacientesTotalValue">0</div>
+                <div class="stat-label">Pacientes registrados</div>
+                <div class="stat-foot">Total en el sistema</div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-head">
+                  <span class="stat-icon blue"
+                    ><i data-lucide="heart-pulse"></i></span
+                  ><span class="trend positive">En seguimiento</span>
+                </div>
+                <div class="stat-value" id="pacientesActivosValue">0</div>
+                <div class="stat-label">Pacientes activos</div>
+                <div class="stat-foot">Con atención en los últimos 30 días</div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-head">
+                  <span class="stat-icon amber"
+                    ><i data-lucide="user-round-plus"></i></span
+                  ><span class="trend neutral">Este mes</span>
+                </div>
+                <div class="stat-value" id="pacientesNuevosValue">0</div>
+                <div class="stat-label">Nuevos registros</div>
+                <div class="stat-foot">Pacientes incorporados este mes</div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-head">
+                  <span class="stat-icon coral"
+                    ><i data-lucide="calendar-clock"></i></span
+                  ><span class="trend neutral">Agenda</span>
+                </div>
+                <div class="stat-value" id="pacientesTurnoValue">0</div>
+                <div class="stat-label">Con turno pendiente</div>
+                <div class="stat-foot">Pacientes esperando atención</div>
+              </article>
+            </section>
+
+            <section class="panel patients-panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Directorio de pacientes</h2>
+                  <p>Información general y último contacto</p>
+                </div>
+                <div class="panel-actions">
+                  <div class="search-field">
+                    <i data-lucide="search"></i
+                    ><input
+                      id="pacientesSearch"
+                      type="search"
+                      placeholder="Buscar por nombre o documento..."
+                    />
+                  </div>
+                  <div class="select-wrap">
+                    <i data-lucide="list-filter"></i
+                    ><select
+                      id="pacientesEstadoFilter"
+                      aria-label="Filtrar pacientes por estado"
+                    >
+                      <option value="all">Todos los estados</option>
+                      <option value="active">Activos</option>
+                      <option value="pending">Con turno pendiente</option>
+                      <option value="inactive">Inactivos</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Paciente</th>
+                      <th>Documento</th>
+                      <th>Edad</th>
+                      <th>Última visita</th>
+                      <th>Especialidad</th>
+                      <th>Estado</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="pacientesTable"></tbody>
+                </table>
+              </div>
+              <div class="table-footer">
+                <span id="pacientesCount">0 pacientes</span>
+                <span class="table-hint"
+                  >Los datos clínicos están protegidos</span
+                >
+              </div>
+            </section>
+
+            <section class="content-grid">
+              <article class="panel content-panel">
+                <div class="panel-heading">
+                  <div>
+                    <h2>Pacientes por especialidad</h2>
+                    <p>Distribución del directorio</p>
+                  </div>
+                </div>
+                <div
+                  class="specialty-list"
+                  id="pacientesSpecialtySummary"
+                ></div>
+              </article>
+              <article class="panel content-panel">
+                <div class="panel-heading">
+                  <div>
+                    <h2>Actividad reciente</h2>
+                    <p>Últimos movimientos del directorio</p>
+                  </div>
+                  <span class="live-pill"><span></span> En vivo</span>
+                </div>
+                <div class="activity-list" id="pacientesActivity"></div>
+              </article>
+            </section>
+          </section>
+
+          <!-- ====================== MÓDULOS GENÉRICOS ======================= -->
+          <section class="view" id="view-generic" data-view="generic" hidden>
+            <div class="welcome-row">
+              <div>
+                <p class="eyebrow" id="genericEyebrow">Módulo</p>
+                <h1 id="genericTitle">Módulo</h1>
+                <p class="subhead" id="genericSubhead">
+                  Contenido disponible próximamente.
+                </p>
+              </div>
+            </div>
+            <article class="panel placeholder-panel">
+              <div class="placeholder-icon" id="genericIcon">
+                <i data-lucide="sparkles"></i>
+              </div>
+              <span class="status-chip pending" id="genericBadge"
+                >En preparación</span
+              >
+              <h2 id="genericHeading">Estamos trabajando en este módulo</h2>
+              <p id="genericText">
+                Muy pronto podrás gestionar esta sección desde el mismo panel.
+              </p>
+              <button class="outline-btn" data-goto="Resumen">
+                <i data-lucide="arrow-left"></i><span>Volver al resumen</span>
+              </button>
+            </article>
+          </section>
+
           <footer class="page-footer">
             <span>Clara Health OS · Todos los datos están protegidos</span
             ><span>Última actualización: hace 2 min</span>
@@ -350,6 +739,175 @@
         </form>
       </div>
     </div>
+
+    <div class="modal-backdrop" id="patientModalBackdrop" aria-hidden="true">
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="patientModalTitle"
+      >
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">Nuevo registro</p>
+            <h2 id="patientModalTitle">Registrar paciente</h2>
+          </div>
+          <button class="icon-btn" id="closePatientModal" title="Cerrar">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <form id="patientForm">
+          <label
+            >Nombre completo<input
+              required
+              name="patientName"
+              placeholder="Nombre y apellidos"
+          /></label>
+          <div class="form-row">
+            <label
+              >Documento<input
+                required
+                name="document"
+                placeholder="N.º de historia clínica"
+            /></label>
+            <label
+              >Fecha de nacimiento<input required name="birthDate" type="date"
+            /></label>
+          </div>
+          <div class="form-row">
+            <label
+              >Especialidad<select name="specialty">
+                <option>Cardiología</option>
+                <option>Dermatología</option>
+                <option>Pediatría</option>
+                <option>Traumatología</option>
+                <option>Medicina general</option>
+              </select></label
+            ><label
+              >Teléfono<input
+                required
+                name="phone"
+                type="tel"
+                placeholder="Número de contacto"
+            /></label>
+          </div>
+          <label
+            >Observaciones <span class="optional">Opcional</span
+            ><textarea
+              name="notes"
+              rows="3"
+              placeholder="Alergias, antecedentes o información relevante"
+            ></textarea>
+          </label>
+          <div class="form-actions">
+            <button type="button" class="outline-btn" id="cancelPatientModal">
+              Cancelar</button
+            ><button class="primary-btn" type="submit">
+              <i data-lucide="user-plus"></i>Guardar paciente
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="profileModalBackdrop" aria-hidden="true">
+      <div
+        class="modal profile-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="profileModalTitle"
+      >
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">Mi cuenta</p>
+            <h2 id="profileModalTitle">Editar perfil</h2>
+          </div>
+          <button
+            class="icon-btn"
+            id="closeProfileModal"
+            type="button"
+            title="Cerrar"
+          >
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <form id="profileForm">
+          <div class="profile-summary">
+            <div class="avatar user-avatar" id="profileAvatar">JI</div>
+            <div class="profile-summary-copy">
+              <strong id="profileDisplayName">Jose Ignacio Bravo</strong>
+              <span class="status-chip confirmed" id="profileDisplayRole"
+                >Administrador</span
+              >
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label
+              >Nombre de usuario<input
+                name="username"
+                readonly
+                aria-readonly="true"
+            /></label>
+            <label
+              >Correo electrónico<input
+                name="email"
+                type="email"
+                readonly
+                aria-readonly="true"
+            /></label>
+          </div>
+
+          <label
+            >Nombre completo<input
+              name="nombre"
+              required
+              placeholder="Nombre y apellidos"
+          /></label>
+
+          <div class="form-row">
+            <label
+              >Especialidad<input
+                name="especialidad"
+                placeholder="Área o especialidad"
+            /></label>
+            <label
+              >Teléfono<input
+                name="telefono"
+                type="tel"
+                placeholder="Número de contacto"
+            /></label>
+          </div>
+
+          <label
+            >Dirección<input
+              name="direccion"
+              placeholder="Dirección de contacto"
+          /></label>
+
+          <p class="profile-note">
+            <i data-lucide="info"></i>
+            <span
+              >El nombre de usuario, el correo y el rol no se pueden modificar
+              desde aquí.</span
+            >
+          </p>
+
+          <div class="form-actions">
+            <button
+              type="button"
+              class="outline-btn"
+              id="cancelProfileModal"
+            >
+              Cancelar</button
+            ><button class="primary-btn" type="submit">
+              <i data-lucide="save"></i>Guardar cambios
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <div class="toast" id="toast">
       <i data-lucide="check-circle-2"></i
       ><span>Turno creado correctamente</span>

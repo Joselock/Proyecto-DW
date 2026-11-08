@@ -23,7 +23,11 @@ async function apiFetch(path, { method = "GET", body } = {}) {
   try {
     res = await fetch(API_BASE + path, options);
   } catch {
-    return { ok: false, error: "No se pudo conectar con el servidor." };
+    return {
+      ok: false,
+      status: 0,
+      error: "No se pudo conectar con el servidor.",
+    };
   }
 
   let data;
@@ -32,6 +36,7 @@ async function apiFetch(path, { method = "GET", body } = {}) {
   } catch {
     return {
       ok: false,
+      status: res.status,
       error: res.ok
         ? "El servidor devolvió una respuesta inválida."
         : `Error ${res.status} del servidor.`,
@@ -41,6 +46,7 @@ async function apiFetch(path, { method = "GET", body } = {}) {
   if (!res.ok) {
     return {
       ok: false,
+      status: res.status,
       error:
         (typeof data?.error === "string" && data.error) ||
         `Error ${res.status} del servidor.`,
@@ -52,7 +58,11 @@ async function apiFetch(path, { method = "GET", body } = {}) {
     typeof data !== "object" ||
     typeof data.ok !== "boolean"
   ) {
-    return { ok: false, error: "El servidor devolvió una respuesta inválida." };
+    return {
+      ok: false,
+      status: res.status,
+      error: "El servidor devolvió una respuesta inválida.",
+    };
   }
 
   return data;
@@ -88,6 +98,11 @@ export const api = {
   /** GET /api/me  → devuelve el usuario logueado (para proteger dashboard) */
   me() {
     return apiFetch("/me");
+  },
+
+  /** PUT /api/me → actualiza los datos del perfil del usuario logueado */
+  updateProfile(data) {
+    return apiFetch("/me", { method: "PUT", body: data });
   },
 
   /** POST /api/logout */

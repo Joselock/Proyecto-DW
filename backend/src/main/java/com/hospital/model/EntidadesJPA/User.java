@@ -4,7 +4,8 @@ import jakarta.persistence.*;
 import java.util.Objects;
 
 @Entity
-@Table(name = "\"User\"")   // ← comillas dobles porque "User" es palabra reservada
+// "user" es palabra reservada en PostgreSQL, por eso se mantiene entre comillas.
+@Table(name = "\"user\"")
 @IdClass(UserId.class)
 public class User {
 
@@ -19,6 +20,10 @@ public class User {
     @Column(length = 255, nullable = false)
     private String password;
 
+    // Rol del usuario dentro del sistema: ADMIN o MEDICO
+    @Column(length = 20)
+    private String role;
+
     // Relación 1:1 con DataUser (perfil extendido)
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private DataUser dataUser;
@@ -32,6 +37,9 @@ public class User {
 
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
+
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
 
     public DataUser getDataUser() { return dataUser; }
     public void setDataUser(DataUser dataUser) { this.dataUser = dataUser; }

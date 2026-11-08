@@ -41,6 +41,21 @@ public class AuthService {
         return user;
     }
 
+    @Transactional(readOnly = true)
+    public User obtenerPorUsername(String username) {
+        return userRepository.findByUsername(username).orElse(null);
+    }
+
+    /**
+     * Devuelve el rol efectivo del usuario. Los usuarios creados antes de
+     * existir la columna role se consideran MEDICO hasta que un administrador
+     * los promueva.
+     */
+    public String rolEfectivo(User user) {
+        String role = user.getRole();
+        return role == null || role.isBlank() ? "MEDICO" : role.toUpperCase(Locale.ROOT);
+    }
+
     @Transactional
     public void registrar(String username, String email, String password, String nombre,
                           String especialidad, String direccion, String telefono) {
@@ -57,10 +72,15 @@ public class AuthService {
             throw new IllegalStateException("Ese correo electrónico ya está registrado.");
         }
 
+        // El primer usuario que se registra queda como administrador para
+        // poder configurar el resto del sistema. Los siguientes son médicos.
+        boolean esPrimerUsuario = userRepository.count() == 0;
+
         User user = new User();
         user.setUsername(normalizedUsername);
         user.setEmail(normalizedEmail);
         user.setPassword(passwordEncoder.encode(password));
+        user.setRole(esPrimerUsuario ? "ADMIN" : "MEDICO");
 
         DataUser profile = new DataUser();
         profile.setUsername(normalizedUsername);
@@ -73,6 +93,38 @@ public class AuthService {
         user.setDataUser(profile);
 
         userRepository.save(user);
+    }
+
+    @Transactional
+    public User actualizarPerfil(String username, String nombre, String especialidad,
+                                 String direccion, String telefono) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("El usuario no existe."));
+
+        DataUser profile = user.getDataUser();
+        if (profile == null) {
+            profile = new DataUser();
+            profile.setUsername(user.getUsername());
+            profile.setEmail(user.getEmail());
+            profile.setUser(user);
+            user.setDataUser(profile);
+        }
+
+        profile.setNombre(validarCampo("nombre", nombre, 100));
+        profile.setEspecialidad(validarCampo("especialidad", especialidad, 100));
+        profile.setDireccion(validarCampo("dirección", direccion, 100));
+        profile.setTelefono(validarCampo("teléfono", telefono, 20));
+
+        return user;
+    }
+
+    private String validarCampo(String campo, String value, int maxLength) {
+        String normalized = blankToNull(value);
+        if (normalized != null && normalized.length() > maxLength) {
+            throw new IllegalArgumentException(
+                    "El campo " + campo + " no puede superar " + maxLength + " caracteres.");
+        }
+        return normalized;
     }
 
     private String blankToNull(String value) {

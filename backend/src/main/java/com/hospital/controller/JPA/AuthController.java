@@ -44,16 +44,9 @@ public class AuthController {
             request.changeSessionId();
             session.setAttribute("username", user.getUsername());
             session.setAttribute("email", user.getEmail());
+            session.setAttribute("role", authService.rolEfectivo(user));
 
-            Map<String, Object> userData = new HashMap<>();
-            userData.put("username", user.getUsername());
-            userData.put("email", user.getEmail());
-            if (user.getDataUser() != null) {
-                userData.put("nombre", user.getDataUser().getNombre());
-                userData.put("especialidad", user.getDataUser().getEspecialidad());
-            }
-
-            return ResponseEntity.ok(Map.of("ok", true, "user", userData));
+            return ResponseEntity.ok(Map.of("ok", true, "user", datosUsuario(user)));
 
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(401)
@@ -90,11 +83,45 @@ public class AuthController {
             return ResponseEntity.status(401)
                     .body(Map.of("ok", false, "error", "Debes iniciar sesión."));
         }
-        return ResponseEntity.ok(Map.of(
-                "ok", true,
-                "user", Map.of(
-                        "username", session.getAttribute("username"),
-                        "email", session.getAttribute("email"))));
+
+        User user = authService.obtenerPorUsername((String) session.getAttribute("username"));
+        if (user == null) {
+            session.invalidate();
+            return ResponseEntity.status(401)
+                    .body(Map.of("ok", false, "error", "Debes iniciar sesión."));
+        }
+
+        return ResponseEntity.ok(Map.of("ok", true, "user", datosUsuario(user)));
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<?> updateMe(@RequestBody Map<String, String> body,
+                                      HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("username") == null) {
+            return ResponseEntity.status(401)
+                    .body(Map.of("ok", false, "error", "Debes iniciar sesión."));
+        }
+
+        User user = authService.obtenerPorUsername((String) session.getAttribute("username"));
+        if (user == null) {
+            session.invalidate();
+            return ResponseEntity.status(401)
+                    .body(Map.of("ok", false, "error", "Debes iniciar sesión."));
+        }
+
+        try {
+            User updated = authService.actualizarPerfil(
+                    user.getUsername(),
+                    body.get("nombre"),
+                    body.get("especialidad"),
+                    body.get("direccion"),
+                    body.get("telefono"));
+            return ResponseEntity.ok(Map.of("ok", true, "user", datosUsuario(updated)));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("ok", false, "error", e.getMessage()));
+        }
     }
 
     @PostMapping("/logout")
@@ -104,5 +131,19 @@ public class AuthController {
             session.invalidate();
         }
         return ResponseEntity.ok(Map.of("ok", true));
+    }
+
+    private Map<String, Object> datosUsuario(User user) {
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("username", user.getUsername());
+        userData.put("email", user.getEmail());
+        userData.put("role", authService.rolEfectivo(user));
+        if (user.getDataUser() != null) {
+            userData.put("nombre", user.getDataUser().getNombre());
+            userData.put("especialidad", user.getDataUser().getEspecialidad());
+            userData.put("direccion", user.getDataUser().getDireccion());
+            userData.put("telefono", user.getDataUser().getTelefono());
+        }
+        return userData;
     }
 }
