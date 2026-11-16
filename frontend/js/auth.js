@@ -113,11 +113,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const registerSubmit = document.getElementById("registerSubmit");
   const registerNext = document.getElementById("registerNext");
   const registerBack = document.getElementById("registerBack");
+  const hospitalSelect = document.getElementById("registerHospital");
+  const unidadSelect = document.getElementById("registerUnidad");
+  const medicoSelect = document.getElementById("registerMedico");
+  const adminNotice = document.getElementById("registerAdminNotice");
+  const medicoSelector = document.getElementById("registerMedicoSelector");
 
   const step1 = registerForm?.querySelector('.step[data-step="1"]');
   const step2 = registerForm?.querySelector('.step[data-step="2"]');
 
   let currentStep = 1;
+  let opcionesRegistro = null;
 
   // Inicialización: quitar hidden y activar paso 1
   if (step1 && step2) {
@@ -125,6 +131,117 @@ document.addEventListener("DOMContentLoaded", () => {
     step2.hidden = false;
     step1.classList.add("is-active");
     step2.classList.remove("is-active");
+  }
+
+  // --- Selector hospital -> unidad -> médico ---
+  const llenarSelect = (select, items, valueKey, labelFn, placeholder) => {
+    if (!select) return;
+    select.innerHTML = "";
+    const first = document.createElement("option");
+    first.value = "";
+    first.textContent = placeholder;
+    select.appendChild(first);
+
+    for (const item of items) {
+      const option = document.createElement("option");
+      option.value = item[valueKey];
+      option.textContent = labelFn(item);
+      select.appendChild(option);
+    }
+    select.value = "";
+  };
+
+  const limpiarMedicos = () => {
+    if (!medicoSelect) return;
+    llenarSelect(medicoSelect, [], "codMed", () => "", "Selecciona un médico");
+    medicoSelect.disabled = true;
+  };
+
+  const cargarOpcionesRegistro = async () => {
+    try {
+      const res = await api.registroOpciones();
+      if (!res.ok) {
+        registerError.textContent =
+          res.error || "No se pudieron cargar las opciones de registro.";
+        return;
+      }
+
+      opcionesRegistro = res.data || {};
+      const esPrimerUsuario = Boolean(opcionesRegistro.primerUsuario);
+
+      if (adminNotice) adminNotice.hidden = !esPrimerUsuario;
+      if (medicoSelector) medicoSelector.hidden = esPrimerUsuario;
+
+      [hospitalSelect, unidadSelect, medicoSelect].forEach((select) => {
+        if (!select) return;
+        select.required = !esPrimerUsuario;
+        select.disabled = esPrimerUsuario;
+      });
+
+      if (esPrimerUsuario) return;
+
+      llenarSelect(
+        hospitalSelect,
+        opcionesRegistro.hospitales || [],
+        "codHos",
+        (hospital) => hospital.nomHos,
+        "Selecciona un hospital",
+      );
+      llenarSelect(
+        unidadSelect,
+        [],
+        "codUni",
+        (unidad) => unidad.nomUni,
+        "Selecciona una unidad",
+      );
+      unidadSelect.disabled = true;
+      limpiarMedicos();
+    } catch (error) {
+      registerError.textContent =
+        "No se pudieron cargar las opciones de registro.";
+      console.error("Error al cargar las opciones de registro:", error);
+    }
+  };
+
+  hospitalSelect?.addEventListener("change", () => {
+    const codHos = hospitalSelect.value;
+    const unidades = (opcionesRegistro?.unidades || []).filter(
+      (unidad) => unidad.codHos === codHos,
+    );
+
+    llenarSelect(
+      unidadSelect,
+      unidades,
+      "codUni",
+      (unidad) => unidad.nomUni,
+      "Selecciona una unidad",
+    );
+    unidadSelect.disabled = !codHos;
+    limpiarMedicos();
+  });
+
+  unidadSelect?.addEventListener("change", () => {
+    const codUni = unidadSelect.value;
+    const medicos = (opcionesRegistro?.medicos || []).filter(
+      (medico) => medico.codUni === codUni,
+    );
+
+    llenarSelect(
+      medicoSelect,
+      medicos,
+      "codMed",
+      (medico) => `${medico.nomMed} — ${medico.espMed}`,
+      "Selecciona un médico",
+    );
+    medicoSelect.disabled = !codUni;
+  });
+
+  registerForm?.addEventListener("change", () => {
+    registerError.textContent = "";
+  });
+
+  if (registerForm) {
+    cargarOpcionesRegistro();
   }
 
   // --- Animación entre pasos ---
@@ -225,13 +342,16 @@ document.addEventListener("DOMContentLoaded", () => {
       username: document.getElementById("registerUsername").value.trim(),
       email,
       password,
-      nombre: document.getElementById("registerNombre").value.trim(),
-      especialidad: document
-        .getElementById("registerEspecialidad")
-        .value.trim(),
-      direccion: document.getElementById("registerDireccion").value.trim(),
-      telefono: document.getElementById("registerTelefono").value.trim(),
     };
+
+    if (opcionesRegistro && !opcionesRegistro.primerUsuario) {
+      data.codMed = medicoSelect?.value || "";
+      if (!data.codMed) {
+        registerError.textContent =
+          "Selecciona el médico al que pertenece la cuenta.";
+        return;
+      }
+    }
 
     registerSubmit.disabled = true;
     registerSubmit.textContent = "Registrando...";
@@ -244,8 +364,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       registerForm.reset();
       goToStep(1);
+      unidadSelect && (unidadSelect.disabled = true);
+      limpiarMedicos();
       setState("login");
       document.getElementById("loginEmail").value = data.email;
+      cargarOpcionesRegistro();
     } catch (error) {
       registerError.textContent =
         "No se pudo completar el registro. Inténtalo de nuevo.";

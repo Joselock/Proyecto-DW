@@ -8,9 +8,11 @@
 --     * Las tablas del dominio hospitalario del ERD entregado.
 --     * La tabla "Unidad", que faltaba en el ERD pero ya es usada por las
 --       funciones de database/CRUD y database/Reportes.
---     * Las tablas de usuarios que ya existían: "user" y "data_user".
+--     * La tabla de usuarios "user".
 --     * La tabla "reset_tokens" documentada en el proyecto.
 --     * La relación 1:1 entre "Medico" y "user" mediante Medico.username.
+--     * Los datos personales y profesionales del usuario se guardan en
+--       "Medico"; no se duplican en una tabla de perfil aparte.
 --
 -- IMPORTANTE:
 --   1. Este script RECREA el esquema. Elimina las tablas del esquema public
@@ -61,13 +63,14 @@ CREATE SEQUENCE public.seq_num_informe
 
 -- ----------------------------------------------------------------------------
 -- 1.1 user
---     Credenciales de acceso. La clave primaria compuesta (username, email)
---     es la que espera la entidad JPA User (@IdClass UserId).
+--     Credenciales de acceso. Solo guarda lo que es propio de la cuenta:
+--     username, email, contraseña y rol. El nombre, la especialidad, la
+--     dirección y el teléfono viven en "Medico".
 --
---     Se agregan restricciones UNIQUE individuales porque:
---       * AuthService busca por username y por email por separado.
---       * La relación Medico -> user se apoya en username, que debe ser
---         único para poder ser referenciado por una clave foránea.
+--     email es UNIQUE porque:
+--       * AuthService permite iniciar sesión por correo.
+--       * reset_tokens referencia el correo del usuario.
+--     username es la PK y la referencia la relación Medico -> user.
 -- ----------------------------------------------------------------------------
 CREATE TABLE public."user" (
     username varchar(100) NOT NULL,
@@ -75,8 +78,7 @@ CREATE TABLE public."user" (
     password varchar(255) NOT NULL,
     role     varchar(20)  DEFAULT 'MEDICO',
 
-    CONSTRAINT "user_pkey" PRIMARY KEY (username, email),
-    CONSTRAINT "user_username_key" UNIQUE (username),
+    CONSTRAINT "user_pkey" PRIMARY KEY (username),
     CONSTRAINT "user_email_key" UNIQUE (email),
 
     CONSTRAINT "user_username_chk" CHECK (btrim(username) <> ''),
@@ -92,30 +94,7 @@ COMMENT ON COLUMN public."user".role IS
     'ADMIN: acceso total. MEDICO: operación diaria. NULL se interpreta como MEDICO.';
 
 -- ----------------------------------------------------------------------------
--- 1.2 data_user
---     Perfil extendido de la cuenta. Mantiene la misma clave compuesta que
---     la entidad JPA DataUser: (username, email).
--- ----------------------------------------------------------------------------
-CREATE TABLE public."data_user" (
-    username     varchar(100) NOT NULL,
-    email        varchar(100) NOT NULL,
-    nombre       varchar(100),
-    especialidad varchar(100),
-    direccion    varchar(100),
-    telefono     varchar(20),
-
-    CONSTRAINT "data_user_pkey" PRIMARY KEY (username, email),
-    CONSTRAINT "data_user_user_fkey" FOREIGN KEY (username, email)
-        REFERENCES public."user" (username, email)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE
-);
-
-COMMENT ON TABLE public."data_user" IS
-    'Perfil de la cuenta: nombre, especialidad, dirección y teléfono de contacto.';
-
--- ----------------------------------------------------------------------------
--- 1.3 reset_tokens
+-- 1.2 reset_tokens
 --     Soporte para recuperación de contraseña (previsto en la documentación).
 --     Si el proyecto no lo usa todavía, la tabla puede quedarse vacía.
 -- ----------------------------------------------------------------------------
@@ -287,6 +266,10 @@ COMMENT ON CONSTRAINT "Paciente_fechaN_chk" ON public."Paciente" IS
 --
 --     El usuario vinculado debe tener rol MEDICO. Esa validación de rol se
 --     deja a la aplicación para no impedir promociones a ADMIN.
+--
+--     La ficha del profesional también es el perfil del usuario: nomMed,
+--     espMed, telMed y dirMed reemplazan los campos que antes guardaba
+--     data_user. No se duplican datos.
 -- ----------------------------------------------------------------------------
 CREATE TABLE public."Medico" (
     "codMed"  varchar(10)  NOT NULL,
@@ -297,6 +280,7 @@ CREATE TABLE public."Medico" (
     "codUni"  varchar(10)  NOT NULL,
     "exp"     integer      NOT NULL DEFAULT 0,
     "datCon"  varchar(100) NOT NULL,
+    "dirMed"  varchar(100),
     username  varchar(100),
 
     CONSTRAINT "Medico_pkey" PRIMARY KEY ("codMed"),
@@ -316,13 +300,16 @@ CREATE TABLE public."Medico" (
     CONSTRAINT "Medico_espMed_chk" CHECK (btrim("espMed") <> ''),
     CONSTRAINT "Medico_numLic_chk" CHECK (btrim("numLic") <> ''),
     CONSTRAINT "Medico_telMed_chk" CHECK (btrim("telMed") <> ''),
-    CONSTRAINT "Medico_datCon_chk" CHECK (btrim("datCon") <> '')
+    CONSTRAINT "Medico_datCon_chk" CHECK (btrim("datCon") <> ''),
+    CONSTRAINT "Medico_dirMed_chk" CHECK ("dirMed" IS NULL OR btrim("dirMed") <> '')
 );
 
 CREATE INDEX idx_medico_coduni ON public."Medico" ("codUni");
 
 COMMENT ON TABLE public."Medico" IS
-    'Profesional médico asignado a una unidad.';
+    'Profesional médico asignado a una unidad. También es el perfil del usuario vinculado.';
+COMMENT ON COLUMN public."Medico"."dirMed" IS
+    'Dirección de contacto del profesional. Reemplaza data_user.direccion.';
 COMMENT ON COLUMN public."Medico".username IS
     'Cuenta de usuario (rol MEDICO) vinculada al profesional. Relación 1:1 opcional.';
 

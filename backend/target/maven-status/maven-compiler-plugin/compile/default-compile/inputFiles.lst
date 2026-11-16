@@ -7,6 +7,7 @@
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/model/Entidades/Paciente.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/REPORTES/TurnosRevisadosService.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/CRUD/crudInforme.java
+/home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/REPORTES/ReportesContextoService.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/CRUD/crudUnidad.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/CRUD/crudDepartamento.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/model/Entidades/Registro.java
@@ -20,10 +21,8 @@
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/model/Entidades/Turno.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/HospitalApplication.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/model/Entidades/Medico.java
-/home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/model/EntidadesJPA/UserId.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/config/SecurityConfig.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/CRUD/crudTurno.java
-/home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/model/EntidadesJPA/DataUser.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/JPA/AuthService.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/repository/JPA/UserRepository.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/CRUD/crudConsulta.java

@@ -61,10 +61,7 @@ public class AuthController {
                     body.get("username"),
                     body.get("email"),
                     body.get("password"),
-                    body.get("nombre"),
-                    body.get("especialidad"),
-                    body.get("direccion"),
-                    body.get("telefono"));
+                    body.get("codMed"));
             return ResponseEntity.status(201)
                     .body(Map.of("ok", true, "message", "Registro completado."));
         } catch (IllegalArgumentException e) {
@@ -74,6 +71,15 @@ public class AuthController {
             return ResponseEntity.status(409)
                     .body(Map.of("ok", false, "error", e.getMessage()));
         }
+    }
+
+    /**
+     * Opciones para el formulario de registro: si es el primer usuario,
+     * hospitales, unidades y médicos que todavía no tienen cuenta.
+     */
+    @GetMapping("/registro/opciones")
+    public ResponseEntity<?> opcionesRegistro() {
+        return ResponseEntity.ok(Map.of("ok", true, "data", authService.opcionesRegistro()));
     }
 
     @GetMapping("/me")
@@ -138,11 +144,11 @@ public class AuthController {
         userData.put("username", user.getUsername());
         userData.put("email", user.getEmail());
         userData.put("role", authService.rolEfectivo(user));
-        if (user.getDataUser() != null) {
-            userData.put("nombre", user.getDataUser().getNombre());
-            userData.put("especialidad", user.getDataUser().getEspecialidad());
-            userData.put("direccion", user.getDataUser().getDireccion());
-            userData.put("telefono", user.getDataUser().getTelefono());
+
+        // El perfil del usuario son los datos del médico vinculado.
+        Map<String, Object> perfil = authService.perfilMedico(user.getUsername());
+        if (perfil != null) {
+            userData.putAll(perfil);
         }
         return userData;
     }

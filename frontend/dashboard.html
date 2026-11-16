@@ -652,6 +652,769 @@
             </section>
           </section>
 
+          <!-- ========================= PROFESIONALES ======================== -->
+          <section
+            class="view"
+            id="view-Profesionales"
+            data-view="Profesionales"
+            hidden
+          >
+            <div class="welcome-row">
+              <div>
+                <p class="eyebrow">Equipo médico</p>
+                <h1>
+                  Profesionales
+                  <span class="scope-pill" id="profesionalesScopePill" hidden
+                    >Mi hospital</span
+                  >
+                </h1>
+                <p class="subhead">
+                  Directorio de médicos asignados al hospital de tu sesión.
+                </p>
+              </div>
+              <div class="view-actions">
+                <button class="outline-btn" id="refreshProfesionales">
+                  <i data-lucide="refresh-cw"></i><span>Actualizar</span>
+                </button>
+              </div>
+            </div>
+
+            <section class="stats-grid" aria-label="Resumen de profesionales">
+              <article class="stat-card">
+                <div class="stat-head">
+                  <span class="stat-icon teal"
+                    ><i data-lucide="stethoscope"></i></span
+                  ><span class="trend neutral">Equipo</span>
+                </div>
+                <div class="stat-value" id="profesionalesTotalValue">0</div>
+                <div class="stat-label">Médicos en el hospital</div>
+                <div class="stat-foot">Profesionales con unidad asignada</div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-head">
+                  <span class="stat-icon blue"
+                    ><i data-lucide="badge-check"></i></span
+                  ><span class="trend neutral">Especialidades</span>
+                </div>
+                <div class="stat-value" id="profesionalesEspecialidadesValue">
+                  0
+                </div>
+                <div class="stat-label">Especialidades cubiertas</div>
+                <div class="stat-foot">Áreas clínicas con atención</div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-head">
+                  <span class="stat-icon amber"
+                    ><i data-lucide="building-2"></i></span
+                  ><span class="trend neutral">Estructura</span>
+                </div>
+                <div class="stat-value" id="profesionalesUnidadesValue">0</div>
+                <div class="stat-label">Unidades activas</div>
+                <div class="stat-foot">Departamentos con profesionales</div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-head">
+                  <span class="stat-icon coral"
+                    ><i data-lucide="award"></i></span
+                  ><span class="trend positive">Trayectoria</span>
+                </div>
+                <div class="stat-value" id="profesionalesExperienciaValue">
+                  0 <small>años</small>
+                </div>
+                <div class="stat-label">Experiencia promedio</div>
+                <div class="stat-foot">Promedio del equipo médico</div>
+              </article>
+            </section>
+
+            <section class="panel hospital-banner" id="profesionalesBanner">
+              <div class="hospital-banner-icon">
+                <i data-lucide="hospital"></i>
+              </div>
+              <div class="hospital-banner-copy">
+                <span class="hospital-banner-label"
+                  >Hospital en contexto</span
+                >
+                <strong id="profesionalesHospitalName"
+                  >Resolviendo hospital…</strong
+                >
+                <span id="profesionalesHospitalMeta"
+                  >Cargando la información de la sesión.</span
+                >
+              </div>
+              <span class="status-chip confirmed" id="profesionalesScopeChip"
+                >Solo administradores</span
+              >
+            </section>
+
+            <section class="panel list-panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>Equipo médico</h2>
+                  <p>Información profesional, contacto y unidad asignada</p>
+                </div>
+                <div class="panel-actions">
+                  <div class="search-field">
+                    <i data-lucide="search"></i
+                    ><input
+                      id="profesionalesSearch"
+                      type="search"
+                      placeholder="Buscar por nombre, licencia o especialidad..."
+                    />
+                  </div>
+                  <div class="select-wrap">
+                    <i data-lucide="filter"></i
+                    ><select
+                      id="profesionalesSpecialtyFilter"
+                      aria-label="Filtrar profesionales por especialidad"
+                    >
+                      <option value="all">Todas las especialidades</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="doctor-grid" id="profesionalesGrid"></div>
+              <div class="table-footer">
+                <span id="profesionalesCount">0 profesionales</span>
+                <span class="table-hint"
+                  >Los datos se obtienen del hospital vinculado a tu
+                  cuenta</span
+                >
+              </div>
+            </section>
+          </section>
+
+          <!-- =========================== REPORTES =========================== -->
+          <section class="view" id="view-Reportes" data-view="Reportes" hidden>
+            <div class="welcome-row">
+              <div>
+                <p class="eyebrow">Analítica hospitalaria</p>
+                <h1>
+                  Reportes
+                  <span class="scope-pill" id="reportesScopePill" hidden
+                    >Vista global</span
+                  >
+                </h1>
+                <p class="subhead">
+                  Los nueve reportes de gestión reunidos en un solo tablero.
+                </p>
+              </div>
+              <div class="view-actions">
+                <button class="outline-btn" id="exportReportes">
+                  <i data-lucide="download"></i><span>Exportar</span>
+                </button>
+                <button class="primary-btn" id="refreshReportes">
+                  <i data-lucide="refresh-cw"></i><span>Actualizar</span>
+                </button>
+              </div>
+            </div>
+
+            <section class="panel report-toolbar">
+              <div class="report-toolbar-copy">
+                <span class="report-toolbar-icon"
+                  ><i data-lucide="sliders-horizontal"></i
+                ></span>
+                <div>
+                  <strong>Ámbito del análisis</strong>
+                  <span
+                    >Selecciona el hospital, departamento o unidad que quieres
+                    analizar.</span
+                  >
+                </div>
+              </div>
+              <div class="report-toolbar-controls">
+                <label class="compact-label"
+                  >Área
+                  <select id="reporteAreaFilter" aria-label="Área del reporte">
+                    <option value="Hospital">Hospital</option>
+                    <option value="Departamento">Departamento</option>
+                    <option value="Unidad">Unidad</option>
+                  </select>
+                </label>
+                <label class="compact-label"
+                  >Contexto
+                  <select id="reporteScopeFilter" aria-label="Contexto del reporte">
+                    <option value="">Cargando contextos…</option>
+                  </select>
+                </label>
+              </div>
+            </section>
+
+            <section class="stats-grid" aria-label="Indicadores globales">
+              <article class="stat-card">
+                <div class="stat-head">
+                  <span class="stat-icon teal"
+                    ><i data-lucide="network"></i></span
+                  ><span class="trend neutral">Red</span>
+                </div>
+                <div class="stat-value" id="reportesHospitalesValue">0</div>
+                <div class="stat-label">Hospitales analizados</div>
+                <div class="stat-foot">Cobertura del reporte global</div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-head">
+                  <span class="stat-icon blue"
+                    ><i data-lucide="stethoscope"></i></span
+                  ><span class="trend neutral">Equipo</span>
+                </div>
+                <div class="stat-value" id="reportesMedicosValue">0</div>
+                <div class="stat-label">Médicos registrados</div>
+                <div class="stat-foot">Profesionales en la red</div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-head">
+                  <span class="stat-icon amber"
+                    ><i data-lucide="users"></i></span
+                  ><span class="trend neutral">Pacientes</span>
+                </div>
+                <div class="stat-value" id="reportesPacientesValue">0</div>
+                <div class="stat-label">Pacientes en admisión</div>
+                <div class="stat-foot">Total de registros vigentes</div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-head">
+                  <span class="stat-icon coral"
+                    ><i data-lucide="activity"></i></span
+                  ><span class="trend positive">Cobertura</span>
+                </div>
+                <div class="stat-value" id="reportesUnidadesValue">0</div>
+                <div class="stat-label">Unidades operativas</div>
+                <div class="stat-foot">Áreas con actividad registrada</div>
+              </article>
+            </section>
+
+            <nav
+              class="report-nav"
+              id="reportesNav"
+              aria-label="Índice de reportes"
+            ></nav>
+
+            <div class="reports-list" id="reportesList">
+              <div class="panel report-loading">
+                <span class="loading-ring"></span>
+                <div>
+                  <strong>Cargando reportes…</strong>
+                  <span>Consultando la información hospitalaria.</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ========================= CONFIGURACIÓN ======================== -->
+          <section
+            class="view"
+            id="view-Configuración"
+            data-view="Configuración"
+            hidden
+          >
+            <div class="welcome-row">
+              <div>
+                <p class="eyebrow">Administración</p>
+                <h1>Configuración</h1>
+                <p class="subhead">
+                  Ajusta tu cuenta y las preferencias de la interfaz.
+                </p>
+              </div>
+              <div class="view-actions">
+                <button class="outline-btn" id="settingsReset">
+                  <i data-lucide="rotate-ccw"></i><span>Restablecer</span>
+                </button>
+                <button class="primary-btn" id="settingsSave">
+                  <i data-lucide="save"></i><span>Guardar preferencias</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="settings-layout">
+              <div class="settings-main">
+                <section class="panel settings-panel">
+                  <div class="panel-heading">
+                    <div>
+                      <h2>Perfil de la cuenta</h2>
+                      <p>Datos personales y acceso al sistema</p>
+                    </div>
+                    <button class="text-btn" id="settingsEditProfile">
+                      Editar perfil <i data-lucide="arrow-up-right"></i>
+                    </button>
+                  </div>
+                  <div class="settings-profile">
+                    <div class="avatar user-avatar" id="settingsAvatar">JI</div>
+                    <div class="settings-profile-copy">
+                      <strong id="settingsUserName">Usuario</strong>
+                      <span id="settingsUserEmail">correo@ejemplo.com</span>
+                      <div class="settings-tags">
+                        <span
+                          class="status-chip confirmed"
+                          id="settingsUserRole"
+                          >Administrador</span
+                        >
+                        <span class="status-chip done" id="settingsUsername"
+                          >@usuario</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+                  <div class="settings-detail-grid">
+                    <div>
+                      <span>Especialidad</span>
+                      <strong id="settingsSpecialty">Sin especificar</strong>
+                    </div>
+                    <div>
+                      <span>Teléfono</span>
+                      <strong id="settingsPhone">Sin registrar</strong>
+                    </div>
+                    <div>
+                      <span>Dirección</span>
+                      <strong id="settingsAddress">Sin registrar</strong>
+                    </div>
+                    <div>
+                      <span>Hospital en contexto</span>
+                      <strong id="settingsHospital">Global</strong>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="panel settings-panel">
+                  <div class="panel-heading">
+                    <div>
+                      <h2>Preferencias de la interfaz</h2>
+                      <p>Personaliza la densidad y el acento visual</p>
+                    </div>
+                  </div>
+                  <div class="settings-form">
+                    <label class="setting-field">
+                      <span>Densidad de la interfaz</span>
+                      <select id="prefDensity">
+                        <option value="comfortable">Cómoda</option>
+                        <option value="compact">Compacta</option>
+                      </select>
+                    </label>
+                    <label class="setting-field">
+                      <span>Color de acento</span>
+                      <select id="prefAccent">
+                        <option value="teal">Verde clínico</option>
+                        <option value="blue">Azul sereno</option>
+                        <option value="coral">Coral suave</option>
+                        <option value="amber">Ámbar cálido</option>
+                      </select>
+                    </label>
+                    <label class="setting-field">
+                      <span>Formato de fecha</span>
+                      <select id="prefDateFormat">
+                        <option value="long">Largo</option>
+                        <option value="short">Corto</option>
+                      </select>
+                    </label>
+                    <label class="setting-field">
+                      <span>Animaciones</span>
+                      <select id="prefAnimations">
+                        <option value="on">Activadas</option>
+                        <option value="off">Reducidas</option>
+                      </select>
+                    </label>
+                  </div>
+                  <p class="settings-note">
+                    <i data-lucide="info"></i>
+                    <span
+                      >Las preferencias se guardan en este navegador y se
+                      aplican de inmediato.</span
+                    >
+                  </p>
+                </section>
+
+                <section class="panel settings-panel">
+                  <div class="panel-heading">
+                    <div>
+                      <h2>Notificaciones y privacidad</h2>
+                      <p>Controla los avisos y la información visible</p>
+                    </div>
+                  </div>
+                  <div class="settings-toggles">
+                    <label class="setting-row">
+                      <span class="setting-icon teal"
+                        ><i data-lucide="bell"></i
+                      ></span>
+                      <span class="setting-copy">
+                        <strong>Notificaciones de turnos</strong>
+                        <span>Avisos cuando un turno cambie de estado.</span>
+                      </span>
+                      <span class="switch"
+                        ><input type="checkbox" id="prefNotifications" /><span
+                          ></span
+                        ></span
+                      >
+                    </label>
+                    <label class="setting-row">
+                      <span class="setting-icon blue"
+                        ><i data-lucide="mail"></i
+                      ></span>
+                      <span class="setting-copy">
+                        <strong>Resumen por correo</strong>
+                        <span>Recibir un resumen diario de la operación.</span>
+                      </span>
+                      <span class="switch"
+                        ><input type="checkbox" id="prefEmailDigest" /><span
+                          ></span
+                        ></span
+                      >
+                    </label>
+                    <label class="setting-row">
+                      <span class="setting-icon amber"
+                        ><i data-lucide="eye"></i
+                      ></span>
+                      <span class="setting-copy">
+                        <strong>Mostrar tarjeta de ayuda</strong>
+                        <span>Mantener el acceso rápido al centro de ayuda.</span>
+                      </span>
+                      <span class="switch"
+                        ><input type="checkbox" id="prefHelpCard" /><span
+                          ></span
+                        ></span
+                      >
+                    </label>
+                    <label class="setting-row">
+                      <span class="setting-icon coral"
+                        ><i data-lucide="shield-check"></i
+                      ></span>
+                      <span class="setting-copy">
+                        <strong>Datos sensibles protegidos</strong>
+                        <span
+                          >Oculta documentos y datos clínicos en pantallas
+                          compartidas.</span
+                        >
+                      </span>
+                      <span class="switch"
+                        ><input type="checkbox" id="prefPrivacy" /><span
+                          ></span
+                        ></span
+                      >
+                    </label>
+                  </div>
+                  <p class="settings-status" id="settingsStatus">
+                    Preferencias al día.
+                  </p>
+                </section>
+              </div>
+
+              <aside class="settings-side">
+                <section class="panel settings-panel session-card">
+                  <div class="panel-heading">
+                    <div>
+                      <h2>Sesión actual</h2>
+                      <p>Control de acceso</p>
+                    </div>
+                  </div>
+                  <div class="session-list">
+                    <div>
+                      <span>Rol</span>
+                      <strong id="settingsSessionRole">Administrador</strong>
+                    </div>
+                    <div>
+                      <span>Usuario</span>
+                      <strong id="settingsSessionUser">—</strong>
+                    </div>
+                    <div>
+                      <span>Correo</span>
+                      <strong id="settingsSessionEmail">—</strong>
+                    </div>
+                    <div>
+                      <span>Estado</span>
+                      <strong class="green-text">Sesión activa</strong>
+                    </div>
+                    <div>
+                      <span>Última actualización</span>
+                      <strong id="settingsLastUpdate">Hace un momento</strong>
+                    </div>
+                  </div>
+                  <div class="session-actions">
+                    <button class="outline-btn full-btn" id="settingsLogout">
+                      <i data-lucide="log-out"></i><span>Cerrar sesión</span>
+                    </button>
+                  </div>
+                </section>
+
+                <section class="panel settings-panel info-card">
+                  <span class="info-card-icon"
+                    ><i data-lucide="shield-check"></i
+                  ></span>
+                  <h3>Acceso seguro</h3>
+                  <p>
+                    Tu contraseña se almacena cifrada con BCrypt y la sesión
+                    usa cookies HttpSession. El nombre de usuario, el correo y
+                    el rol solo pueden cambiarse desde administración.
+                  </p>
+                  <button class="text-btn" data-goto="Ayuda">
+                    Ir al centro de ayuda <i data-lucide="arrow-right"></i>
+                  </button>
+                </section>
+              </aside>
+            </div>
+          </section>
+
+          <!-- =========================== CENTRO DE AYUDA ==================== -->
+          <section class="view" id="view-Ayuda" data-view="Ayuda" hidden>
+            <div class="welcome-row">
+              <div>
+                <p class="eyebrow">Soporte</p>
+                <h1>Centro de ayuda</h1>
+                <p class="subhead">
+                  Guías rápidas, preguntas frecuentes y canales de contacto.
+                </p>
+              </div>
+              <div class="view-actions">
+                <button class="outline-btn" id="helpContactShortcut">
+                  <i data-lucide="messages-square"></i><span>Contactar soporte</span>
+                </button>
+              </div>
+            </div>
+
+            <section class="panel help-hero">
+              <div class="help-hero-copy">
+                <span class="help-hero-icon"
+                  ><i data-lucide="life-buoy"></i
+                ></span>
+                <div>
+                  <h2>¿En qué podemos ayudarte?</h2>
+                  <p>
+                    Busca una guía o una respuesta entre las preguntas
+                    frecuentes del sistema.
+                  </p>
+                </div>
+              </div>
+              <div class="search-field help-search">
+                <i data-lucide="search"></i
+                ><input
+                  id="helpSearch"
+                  type="search"
+                  placeholder="Buscar en el centro de ayuda..."
+                />
+              </div>
+              <div class="help-tags">
+                <button type="button" data-help-tag="turnos">Turnos</button>
+                <button type="button" data-help-tag="pacientes">Pacientes</button>
+                <button type="button" data-help-tag="reportes">Reportes</button>
+                <button type="button" data-help-tag="cuenta">Cuenta</button>
+              </div>
+            </section>
+
+            <section class="help-grid" aria-label="Guías rápidas">
+              <article class="panel guide-card" data-help-text="turnos agenda programar confirmar" >
+                <span class="guide-icon teal"
+                  ><i data-lucide="calendar-plus"></i
+                ></span>
+                <h3>Programar un turno</h3>
+                <p>
+                  Crea un turno, asígnalo a un profesional y confirma la
+                  asistencia del paciente.
+                </p>
+                <button class="text-btn" data-goto="Turnos">
+                  Ver turnos <i data-lucide="arrow-right"></i>
+                </button>
+              </article>
+              <article class="panel guide-card" data-help-text="pacientes directorio registrar ficha historia" >
+                <span class="guide-icon blue"
+                  ><i data-lucide="user-plus"></i
+                ></span>
+                <h3>Registrar un paciente</h3>
+                <p>
+                  Incorpora la ficha demográfica y consulta su historial y
+                  actividad reciente.
+                </p>
+                <button class="text-btn" data-goto="Pacientes">
+                  Ver pacientes <i data-lucide="arrow-right"></i>
+                </button>
+              </article>
+              <article class="panel guide-card" data-help-text="reportes analítica hospital indicadores" >
+                <span class="guide-icon amber"
+                  ><i data-lucide="bar-chart-3"></i
+                ></span>
+                <h3>Leer los reportes</h3>
+                <p>
+                  Consulta los nueve reportes de gestión y cambia el ámbito
+                  entre hospital, departamento y unidad.
+                </p>
+                <button class="text-btn" data-goto="Reportes">
+                  Ver reportes <i data-lucide="arrow-right"></i>
+                </button>
+              </article>
+              <article class="panel guide-card" data-help-text="cuenta perfil contraseña sesión seguridad" >
+                <span class="guide-icon coral"
+                  ><i data-lucide="user-cog"></i
+                ></span>
+                <h3>Gestionar tu cuenta</h3>
+                <p>
+                  Actualiza tus datos de contacto, revisa tu rol y cierra la
+                  sesión de forma segura.
+                </p>
+                <button class="text-btn" data-goto="Configuración">
+                  Ir a configuración <i data-lucide="arrow-right"></i>
+                </button>
+              </article>
+            </section>
+
+            <div class="content-grid help-content">
+              <article class="panel content-panel">
+                <div class="panel-heading">
+                  <div>
+                    <h2>Preguntas frecuentes</h2>
+                    <p>Respuestas rápidas para el trabajo diario</p>
+                  </div>
+                  <span class="live-pill"><span></span> Actualizado</span>
+                </div>
+                <div class="faq-list" id="helpFaqList">
+                  <details
+                    class="faq-item"
+                    open
+                    data-help-text="roles admin medico permisos profesionales reportes"
+                  >
+                    <summary>
+                      ¿Quién puede ver Profesionales y Reportes?
+                      <i data-lucide="chevron-down"></i>
+                    </summary>
+                    <p>
+                      Solo las cuentas con rol <strong>ADMIN</strong>. Los
+                      usuarios con rol <strong>MEDICO</strong> trabajan con
+                      Resumen, Turnos, Pacientes, Configuración y Ayuda; el panel
+                      oculta las secciones reservadas.
+                    </p>
+                  </details>
+                  <details
+                    class="faq-item"
+                    data-help-text="profesionales médicos hospital usuario"
+                  >
+                    <summary>
+                      ¿Qué médicos aparecen en Profesionales?
+                      <i data-lucide="chevron-down"></i>
+                    </summary>
+                    <p>
+                      El sistema resuelve el hospital vinculado a tu cuenta de
+                      usuario y muestra únicamente los médicos asignados a ese
+                      hospital. Si la cuenta no tiene un médico vinculado, se
+                      muestra la red completa con el alcance global.
+                    </p>
+                  </details>
+                  <details
+                    class="faq-item"
+                    data-help-text="reportes ámbito hospital departamento unidad"
+                  >
+                    <summary>
+                      ¿Cómo cambio el ámbito de los reportes?
+                      <i data-lucide="chevron-down"></i>
+                    </summary>
+                    <p>
+                      Usa los selectores <strong>Área</strong> y
+                      <strong>Contexto</strong> del tablero de reportes. Los
+                      reportes que aceptan filtros se recalculan para el
+                      hospital, departamento o unidad seleccionados.
+                    </p>
+                  </details>
+                  <details
+                    class="faq-item"
+                    data-help-text="turnos nuevo confirmar pendiente atendido"
+                  >
+                    <summary>
+                      ¿Qué significan los estados de un turno?
+                      <i data-lucide="chevron-down"></i>
+                    </summary>
+                    <p>
+                      <strong>Confirmado</strong> indica asistencia confirmada;
+                      <strong>Pendiente</strong> requiere confirmación;
+                      <strong>Atendido</strong> significa que la consulta ya
+                      finalizó.
+                    </p>
+                  </details>
+                  <details
+                    class="faq-item"
+                    data-help-text="contraseña cuenta correo perfil"
+                  >
+                    <summary>
+                      ¿Cómo actualizo mis datos personales?
+                      <i data-lucide="chevron-down"></i>
+                    </summary>
+                    <p>
+                      Abre el menú de tu cuenta en la barra lateral y elige
+                      <strong>Editar</strong>, o entra a Configuración y pulsa
+                      <strong>Editar perfil</strong>. El nombre de usuario, el
+                      correo y el rol no se modifican desde allí.
+                    </p>
+                  </details>
+                  <details
+                    class="faq-item"
+                    data-help-text="exportar descargar csv reportes"
+                  >
+                    <summary>
+                      ¿Los reportes se pueden exportar?
+                      <i data-lucide="chevron-down"></i>
+                    </summary>
+                    <p>
+                      El botón <strong>Exportar</strong> del tablero genera una
+                      descarga CSV con el resumen de hospitales visible en
+                      pantalla. La exportación completa por reporte está prevista
+                      como siguiente mejora.
+                    </p>
+                  </details>
+                </div>
+                <div class="empty-state" id="helpEmpty" hidden>
+                  No encontramos resultados para esa búsqueda.
+                </div>
+              </article>
+
+              <article class="panel content-panel">
+                <div class="panel-heading">
+                  <div>
+                    <h2>Canales de contacto</h2>
+                    <p>Estamos para acompañarte</p>
+                  </div>
+                </div>
+                <div class="contact-list">
+                  <a class="contact-item" href="mailto:soporte@clara.health">
+                    <span class="contact-icon teal"
+                      ><i data-lucide="mail"></i
+                    ></span>
+                    <span class="contact-copy">
+                      <strong>Soporte por correo</strong>
+                      <span>soporte@clara.health</span>
+                    </span>
+                    <i data-lucide="arrow-up-right"></i>
+                  </a>
+                  <a class="contact-item" href="tel:+5802125550100">
+                    <span class="contact-icon blue"
+                      ><i data-lucide="phone"></i
+                    ></span>
+                    <span class="contact-copy">
+                      <strong>Mesa de ayuda</strong>
+                      <span>+58 0212 555 0100 · Lun a vie, 8:00 a 18:00</span>
+                    </span>
+                    <i data-lucide="arrow-up-right"></i>
+                  </a>
+                  <button class="contact-item" id="helpChatButton">
+                    <span class="contact-icon amber"
+                      ><i data-lucide="messages-square"></i
+                    ></span>
+                    <span class="contact-copy">
+                      <strong>Chat interno</strong>
+                      <span>Conversa con el equipo de soporte</span>
+                    </span>
+                    <i data-lucide="arrow-up-right"></i>
+                  </button>
+                </div>
+                <div class="help-status-card">
+                  <div>
+                    <span class="status-dot"></span>
+                    <strong>Servicios operativos</strong>
+                  </div>
+                  <span id="helpApiStatus">Verificando conexión…</span>
+                </div>
+                <div class="panel-note">
+                  <i data-lucide="clock"></i>
+                  <span
+                    >Tiempo de respuesta estimado: menos de 24 horas
+                    hábiles.</span
+                  >
+                </div>
+              </article>
+            </div>
+          </section>
+
           <!-- ====================== MÓDULOS GENÉRICOS ======================= -->
           <section class="view" id="view-generic" data-view="generic" hidden>
             <div class="welcome-row">
@@ -875,32 +1638,42 @@
             /></label>
           </div>
 
-          <label
-            >Nombre completo<input
-              name="nombre"
-              required
-              placeholder="Nombre y apellidos"
-          /></label>
-
-          <div class="form-row">
+          <div id="profileProfessionalFields">
             <label
-              >Especialidad<input
-                name="especialidad"
-                placeholder="Área o especialidad"
+              >Nombre completo<input
+                name="nombre"
+                required
+                placeholder="Nombre y apellidos"
             /></label>
+
+            <div class="form-row">
+              <label
+                >Especialidad<input
+                  name="especialidad"
+                  placeholder="Área o especialidad"
+              /></label>
+              <label
+                >Teléfono<input
+                  name="telefono"
+                  type="tel"
+                  placeholder="Número de contacto"
+              /></label>
+            </div>
+
             <label
-              >Teléfono<input
-                name="telefono"
-                type="tel"
-                placeholder="Número de contacto"
+              >Dirección<input
+                name="direccion"
+                placeholder="Dirección de contacto"
             /></label>
           </div>
 
-          <label
-            >Dirección<input
-              name="direccion"
-              placeholder="Dirección de contacto"
-          /></label>
+          <p class="profile-note" id="profileNoMedico" hidden>
+            <i data-lucide="info"></i>
+            <span
+              >Esta cuenta de administrador no tiene una ficha de médico
+              asociada, por eso no hay datos profesionales para editar.</span
+            >
+          </p>
 
           <p class="profile-note">
             <i data-lucide="info"></i>
@@ -913,7 +1686,7 @@
           <div class="form-actions">
             <button type="button" class="outline-btn" id="cancelProfileModal">
               Cancelar</button
-            ><button class="primary-btn" type="submit">
+            ><button class="primary-btn" type="submit" id="profileSubmit">
               <i data-lucide="save"></i>Guardar cambios
             </button>
           </div>

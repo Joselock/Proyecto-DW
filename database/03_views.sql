@@ -31,7 +31,8 @@ COMMENT ON VIEW public."vw_JerarquiaHospitalaria" IS
     'Hospital, departamento y unidad en una sola fila.';
 
 -- ----------------------------------------------------------------------------
--- Médico + cuenta de usuario + perfil + ubicación
+-- Médico + cuenta de usuario + ubicación
+-- El perfil del usuario son los datos del propio médico.
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE VIEW public."vw_MedicoUsuario" AS
 SELECT
@@ -40,15 +41,12 @@ SELECT
     m."espMed",
     m."numLic",
     m."telMed",
+    m."dirMed",
     m."exp",
     m."datCon",
     m.username,
     u.email,
     u.role,
-    du.nombre       AS nombre_cuenta,
-    du.especialidad AS especialidad_cuenta,
-    du.direccion,
-    du.telefono     AS telefono_cuenta,
     m."codUni",
     un."nomUni",
     dep."codDep",
@@ -58,9 +56,6 @@ SELECT
 FROM public."Medico" m
 LEFT JOIN public."user" u
     ON u.username = m.username
-LEFT JOIN public."data_user" du
-    ON du.username = u.username
-   AND du.email = u.email
 JOIN public."Unidad" un
     ON un."codUni" = m."codUni"
 JOIN public."Departamento" dep

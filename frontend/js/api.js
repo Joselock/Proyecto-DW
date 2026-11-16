@@ -129,8 +129,14 @@ export const api = {
 
   /** POST /api/register */
   register(data) {
-    // data = { username, email, password, nombre, especialidad, direccion, telefono }
+    // data = { username, email, password, codMed }
+    // codMed se omite cuando el registro crea al primer administrador.
     return apiFetch("/register", { method: "POST", body: data });
+  },
+
+  /** GET /api/registro/opciones → hospitales, unidades y médicos sin cuenta */
+  registroOpciones() {
+    return apiFetch("/registro/opciones");
   },
 
   /** POST /api/forgot-password */
@@ -159,6 +165,16 @@ export const api = {
   /** POST /api/logout */
   logout() {
     return apiFetch("/logout", { method: "POST" });
+  },
+
+  /** Contexto hospitalario del usuario (hospital, jerarquía y alcance) */
+  contextoReportes() {
+    return apiFetch("/reportes/contexto");
+  },
+
+  /** Médicos del hospital vinculado al usuario (o todos si no tiene hospital) */
+  profesionalesHospital() {
+    return apiFetch("/reportes/profesionales");
   },
 
   /** Reportes del backend */

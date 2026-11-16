@@ -1,26 +1,36 @@
 -- ============================================================================
--- PROYECTO-DW · MIGRACIÓN NO DESTRUCTIVA
+-- PROYECTO-DW · MIGRACIÓN NO DESTRUCTIVA (PASO 1 DE 2)
 -- Archivo : database/02_migracion_medico_usuario.sql
 --
 -- Objetivo:
---   Agregar la relación 1:1 entre "Medico" y "user" sobre una base que ya
---   tiene datos, sin borrar tablas ni información.
+--   Adaptar una base que ya tiene datos al modelo en el que el usuario se
+--   vincula con un médico y los datos del perfil viven en "Medico".
+--
+--   Este paso NO elimina data_user. Solo prepara el modelo:
+--     1. Agrega UNIQUE(email) a "user" si falta.
+--     2. Agrega la columna Medico.username si falta.
+--     3. Agrega UNIQUE(username) a "Medico" si falta.
+--     4. Agrega la FK Medico.username -> user.username.
+--     5. Agrega Medico."dirMed".
+--
+--   La PK de "user" no se puede simplificar todavía: data_user depende de la
+--   PK compuesta (username, email). Esa simplificación se hace en el paso 2.
+--
+--   Después de ejecutarlo:
+--     * Vincule las cuentas existentes a su médico (bloque final).
+--     * Ejecute database/02b_eliminar_data_user.sql, que copia la dirección,
+--       elimina data_user y simplifica la PK de "user".
 --
 -- Cuándo usarlo:
---   * Si ya tiene la base creada y solo quiere incorporar la relación.
+--   * Si ya tiene la base creada y quiere incorporar el modelo sin perder
+--     pacientes, médicos, turnos ni consultas.
 --   * Si va a crear la base desde cero, use directamente 01_schema.sql.
---
--- Qué hace:
---   1. Verifica que existan las tablas "user" y "Medico".
---   2. Agrega UNIQUE(username) y UNIQUE(email) a "user" si faltan.
---   3. Agrega la columna Medico.username si falta.
---   4. Agrega UNIQUE(username) a "Medico" si falta.
---   5. Agrega la clave foránea Medico.username -> user.username.
 --
 -- Seguridad:
 --   * El script es idempotente: puede ejecutarse varias veces.
---   * Si detecta usuarios o médicos duplicados que impidan crear los UNIQUE,
---     se detiene con un mensaje claro en lugar de borrar datos.
+--   * No borra pacientes, médicos, turnos, consultas ni informes.
+--   * Si detecta duplicados que impidan crear los UNIQUE, se detiene con un
+--     mensaje claro en lugar de borrar datos.
 -- ============================================================================
 
 BEGIN;
@@ -58,25 +68,8 @@ BEGIN
 END $$;
 
 -- ----------------------------------------------------------------------------
--- 1. UNIQUE(username) en "user"
---    Necesario para que Medico.username pueda ser clave foránea.
--- ----------------------------------------------------------------------------
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1
-        FROM pg_constraint
-        WHERE conrelid = 'public."user"'::regclass
-          AND conname = 'user_username_key'
-    ) THEN
-        ALTER TABLE public."user"
-            ADD CONSTRAINT "user_username_key" UNIQUE (username);
-    END IF;
-END $$;
-
--- ----------------------------------------------------------------------------
--- 2. UNIQUE(email) en "user"
---    AuthService busca usuarios por email y espera un resultado único.
+-- 1. UNIQUE(email) en "user"
+--    Necesario para el login por correo y para reset_tokens.
 -- ----------------------------------------------------------------------------
 DO $$
 BEGIN
@@ -92,7 +85,7 @@ BEGIN
 END $$;
 
 -- ----------------------------------------------------------------------------
--- 3. Columna Medico.username
+-- 2. Columna Medico.username
 -- ----------------------------------------------------------------------------
 ALTER TABLE public."Medico"
     ADD COLUMN IF NOT EXISTS username varchar(100);
@@ -101,7 +94,7 @@ COMMENT ON COLUMN public."Medico".username IS
     'Cuenta de usuario (rol MEDICO) vinculada al profesional. Relación 1:1 opcional.';
 
 -- ----------------------------------------------------------------------------
--- 4. UNIQUE(username) en "Medico"
+-- 3. UNIQUE(username) en "Medico"
 --    Evita que una misma cuenta quede vinculada a dos médicos.
 -- ----------------------------------------------------------------------------
 DO $$
@@ -128,7 +121,7 @@ BEGIN
 END $$;
 
 -- ----------------------------------------------------------------------------
--- 5. Clave foránea Medico.username -> user.username
+-- 4. Clave foránea Medico.username -> user.username
 --    ON DELETE SET NULL: eliminar la cuenta no elimina el registro médico.
 -- ----------------------------------------------------------------------------
 DO $$
@@ -147,6 +140,30 @@ BEGIN
     END IF;
 END $$;
 
+-- ----------------------------------------------------------------------------
+-- 5. Columna Medico.dirMed
+--    Reemplaza data_user.direccion. La copia de datos se hace en el paso 2.
+-- ----------------------------------------------------------------------------
+ALTER TABLE public."Medico"
+    ADD COLUMN IF NOT EXISTS "dirMed" varchar(100);
+
+COMMENT ON COLUMN public."Medico"."dirMed" IS
+    'Dirección de contacto del profesional. Reemplaza data_user.direccion.';
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conrelid = 'public."Medico"'::regclass
+          AND conname = 'Medico_dirMed_chk'
+    ) THEN
+        ALTER TABLE public."Medico"
+            ADD CONSTRAINT "Medico_dirMed_chk"
+            CHECK ("dirMed" IS NULL OR btrim("dirMed") <> '');
+    END IF;
+END $$;
+
 COMMIT;
 
 -- ============================================================================
@@ -158,12 +175,9 @@ COMMIT;
 -- UPDATE public."Medico" m
 -- SET username = u.username
 -- FROM public."user" u
--- JOIN public."data_user" d
---   ON d.username = u.username
---  AND d.email = u.email
 -- WHERE u.role = 'MEDICO'
 --   AND m.username IS NULL
---   AND lower(btrim(d.nombre)) = lower(btrim(m."nomMed"));
+--   AND lower(btrim(m."nomMed")) = lower(btrim(u.username));
 --
 -- Después de vincular, verifique que cada usuario haya quedado en un solo
 -- médico:
@@ -173,4 +187,8 @@ COMMIT;
 -- WHERE username IS NOT NULL
 -- GROUP BY username
 -- HAVING count(*) > 1;
+--
+-- Cuando todas las cuentas estén vinculadas (o cuando acepte descartar el
+-- perfil de las cuentas sin médico), ejecute:
+--   database/02b_eliminar_data_user.sql
 -- ============================================================================

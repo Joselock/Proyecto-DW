@@ -121,34 +121,30 @@
           <div class="form-panel form-register-panel">
             <form class="entradas" id="registerForm" data-step="1">
               <h2>Registro</h2>
-              <!-- PASO 1: datos personales -->
+              <!-- PASO 1: médico al que pertenece la cuenta -->
               <div class="step" data-step="1">
-                <h4>Nombre completo</h4>
-                <input type="text" id="registerNombre" name="nombre" required />
+                <p class="register-notice" id="registerAdminNotice" hidden>
+                  Esta es la primera cuenta del sistema. Se creará como
+                  administrador y no se vinculará a un médico.
+                </p>
 
-                <h4>Especialidad</h4>
-                <input
-                  type="text"
-                  id="registerEspecialidad"
-                  name="especialidad"
-                  required
-                />
+                <div id="registerMedicoSelector">
+                  <h4>Hospital</h4>
+                  <select id="registerHospital" required>
+                    <option value="">Selecciona un hospital</option>
+                  </select>
 
-                <h4>Dirección</h4>
-                <input
-                  type="text"
-                  id="registerDireccion"
-                  name="direccion"
-                  required
-                />
+                  <h4>Unidad</h4>
+                  <select id="registerUnidad" required disabled>
+                    <option value="">Selecciona una unidad</option>
+                  </select>
 
-                <h4>Teléfono</h4>
-                <input
-                  type="tel"
-                  id="registerTelefono"
-                  name="telefono"
-                  required
-                />
+                  <h4>Médico</h4>
+                  <select id="registerMedico" required disabled>
+                    <option value="">Selecciona un médico</option>
+                  </select>
+                </div>
+
                 <button type="button" class="boton-Inicio" id="registerNext">
                   Siguiente
                 </button>
