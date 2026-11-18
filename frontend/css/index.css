@@ -122,7 +122,7 @@ body {
     color: rgba(255, 255, 255, 0.6);
 }
 
-/* Tamaños y posiciones (en px, ya está bien) */
+/* Tamaños y posiciones*/
 .glass li:nth-child(1) {
     --box-size: 150px;
     left: 35%;
@@ -191,6 +191,77 @@ body {
     left: 85%;
     animation-delay: 0s;
     animation-duration: 11s;
+}
+
+/* Delays negativos: los cuadros ya están repartidos desde el primer frame */
+.glass li:nth-child(11) {
+    --box-size: 90px;
+    left: 22%;
+    animation-delay: -4s;
+    animation-duration: 27s;
+}
+
+.glass li:nth-child(12) {
+    --box-size: 28px;
+    left: 48%;
+    animation-delay: -9s;
+    animation-duration: 14s;
+}
+
+.glass li:nth-child(13) {
+    --box-size: 130px;
+    left: 58%;
+    animation-delay: -6s;
+    animation-duration: 24s;
+}
+
+.glass li:nth-child(14) {
+    --box-size: 18px;
+    left: 90%;
+    animation-delay: -18s;
+    animation-duration: 19s;
+}
+
+.glass li:nth-child(15) {
+    --box-size: 70px;
+    left: 15%;
+    animation-delay: -11s;
+    animation-duration: 29s;
+}
+
+.glass li:nth-child(16) {
+    --box-size: 22px;
+    left: 45%;
+    animation-delay: -2s;
+    animation-duration: 13s;
+}
+
+.glass li:nth-child(17) {
+    --box-size: 100px;
+    left: 80%;
+    animation-delay: -14s;
+    animation-duration: 36s;
+}
+
+.glass li:nth-child(18) {
+    --box-size: 35px;
+    left: 62%;
+    animation-delay: -7s;
+    animation-duration: 21s;
+}
+
+.glass li:nth-child(19) {
+    --box-size: 12px;
+    left: 32%;
+    animation-delay: -21s;
+    animation-duration: 26s;
+}
+
+.glass li:nth-child(20) {
+    --box-size: 80px;
+    left: 5%;
+    animation-delay: -5s;
+    animation-duration: 31s;
 }
 
 @keyframes spin {
