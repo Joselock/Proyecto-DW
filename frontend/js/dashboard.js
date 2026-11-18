@@ -39,7 +39,8 @@ const GENERIC_SECTIONS = {
   Profesionales: {
     eyebrow: "Equipo médico",
     title: "Profesionales",
-    subhead: "Administra especialidades, disponibilidad y asignación del equipo.",
+    subhead:
+      "Administra especialidades, disponibilidad y asignación del equipo.",
     icon: "stethoscope",
     badge: "Solo administradores",
     badgeClass: "confirmed",
@@ -245,8 +246,7 @@ const REPORT_DEFS = [
     number: 4,
     short: "Más de 100",
     title: "Hospitales con más de 100 pacientes",
-    description:
-      "Hospitales que superan el centenar de pacientes registrados.",
+    description: "Hospitales que superan el centenar de pacientes registrados.",
     scoped: false,
     fetch: () => api.hospitalesMayorCantidadPacientes(),
     columns: [
@@ -276,8 +276,7 @@ const REPORT_DEFS = [
     number: 5,
     short: "Informe consultas",
     title: "Informe durante las consultas",
-    description:
-      "Movimiento de pacientes reportado en cada turno de consulta.",
+    description: "Movimiento de pacientes reportado en cada turno de consulta.",
     scoped: true,
     fetch: (args) => api.informeDuranteConsultas(args.area, args.code),
     columns: [
@@ -501,7 +500,10 @@ const REPORT_DEFS = [
   },
 ];
 
-const DEMO_PATIENTS = [
+const DEMO_PATIENTS = [];
+const DEMO_APPOINTMENTS = [];
+
+/*const DEMO_PATIENTS = [
   {
     id: "HC-1042",
     name: "Valentina Cruz",
@@ -705,7 +707,7 @@ const DEMO_APPOINTMENTS = [
     status: "pending",
     room: "Consultorio 3",
   },
-];
+];*/
 
 const DEMO_ACTIVITIES = [
   {
@@ -1049,8 +1051,7 @@ function extractBackendPatients(hospitals) {
       if (!Array.isArray(department?.unidades)) continue;
 
       for (const unit of department.unidades) {
-        const unitPatients =
-          unit?.registro?.pacientes || unit?.pacientes || [];
+        const unitPatients = unit?.registro?.pacientes || unit?.pacientes || [];
 
         if (!Array.isArray(unitPatients)) continue;
 
@@ -1419,7 +1420,9 @@ function renderTurnosView() {
   );
   setText(
     "turnosPendientesValue",
-    formatNumber(appointments.filter((item) => item.status === "pending").length),
+    formatNumber(
+      appointments.filter((item) => item.status === "pending").length,
+    ),
   );
   setText(
     "turnosAtendidosValue",
@@ -1451,7 +1454,10 @@ function renderPacientesTable() {
     return matchesSearch && matchesStatus;
   });
 
-  setText("pacientesCount", `${items.length} de ${state.viewPatients.length} pacientes`);
+  setText(
+    "pacientesCount",
+    `${items.length} de ${state.viewPatients.length} pacientes`,
+  );
 
   if (!items.length) {
     root.innerHTML =
@@ -1499,7 +1505,10 @@ function renderPacienteActivity() {
   const activities = state.demoMode
     ? DEMO_ACTIVITIES
     : state.viewPatients.slice(0, 4).map((patient, index) => ({
-        title: index % 2 === 0 ? "Última visita registrada" : "Paciente en seguimiento",
+        title:
+          index % 2 === 0
+            ? "Última visita registrada"
+            : "Paciente en seguimiento",
         detail: `${patient.name} · ${patient.specialty}`,
         time: patient.lastVisit,
         tone: ["teal", "blue", "amber", "coral"][index % 4],
@@ -1636,9 +1645,7 @@ function turnoCell(value) {
 
 function meterCell(value) {
   const number = Number(value);
-  const safe = Number.isFinite(number)
-    ? Math.max(0, Math.min(100, number))
-    : 0;
+  const safe = Number.isFinite(number) ? Math.max(0, Math.min(100, number)) : 0;
   return `<div class="report-metric"><div class="report-meter"><span style="width:${safe}%"></span></div><span>${formatPercent(number)}</span></div>`;
 }
 
@@ -1701,7 +1708,9 @@ async function loadContexto() {
   state.contextoReady = true;
 
   const preferred =
-    response.data.hospital?.codigo || response.data.hospitales?.[0]?.codigo || "";
+    response.data.hospital?.codigo ||
+    response.data.hospitales?.[0]?.codigo ||
+    "";
   state.reportes.scope = preferred;
   populateReporteScopes(preferred);
 
@@ -1727,9 +1736,7 @@ function scopeOptionsFor(area) {
   const departments = contexto.departamentos || [];
   const units = contexto.unidades || [];
   const hospitalMap = new Map(hospitals.map((item) => [item.codigo, item]));
-  const departmentMap = new Map(
-    departments.map((item) => [item.codigo, item]),
-  );
+  const departmentMap = new Map(departments.map((item) => [item.codigo, item]));
 
   if (area === "Hospital") {
     return sortByUserHospital(hospitals, (item) => item.codigo).map((item) => ({
@@ -2230,8 +2237,9 @@ function renderProfesionalesGrid() {
             <div class="doctor-meta-row">
               <i data-lucide="building-2"></i>
               <span>${escapeHtml(
-                [doctor.hospital, doctor.departamento].filter(Boolean).join(" · ") ||
-                  "Sin hospital asignado",
+                [doctor.hospital, doctor.departamento]
+                  .filter(Boolean)
+                  .join(" · ") || "Sin hospital asignado",
               )}</span>
             </div>
             <div class="doctor-meta-row">
