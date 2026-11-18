@@ -1,4 +1,4 @@
-ALTER TABLE public."turno" 
+ALTER TABLE public."Turno" 
 ADD COLUMN fecha DATE,
 ADD COLUMN hora TIME,
 ADD COLUMN notaClinica VARCHAR(500);
