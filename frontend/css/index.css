@@ -97,11 +97,13 @@ body {
 }
 
 .glass li {
+    --box-size: 20px;
     position: absolute;
-    display: block;
+    display: grid;
+    place-items: center;
     list-style: none;
-    width: 20px;
-    height: 20px;
+    width: var(--box-size);
+    height: var(--box-size);
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.18);
     bottom: -150px;
@@ -111,83 +113,82 @@ body {
     /* suaviza la animación */
 }
 
+/* El icono escala con el tamaño de su cuadro */
+.glass li i {
+    display: grid;
+    place-items: center;
+    font-size: calc(var(--box-size) * 0.55);
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.6);
+}
+
 /* Tamaños y posiciones (en px, ya está bien) */
 .glass li:nth-child(1) {
+    --box-size: 150px;
     left: 35%;
-    width: 150px;
-    height: 150px;
     animation-delay: 0s;
     animation-duration: 25s;
 }
 
 .glass li:nth-child(2) {
+    --box-size: 20px;
     left: 10%;
-    width: 20px;
-    height: 20px;
     animation-delay: 2s;
     animation-duration: 12s;
 }
 
 .glass li:nth-child(3) {
+    --box-size: 20px;
     left: 70%;
-    width: 20px;
-    height: 20px;
     animation-delay: 4s;
     animation-duration: 15s;
 }
 
 .glass li:nth-child(4) {
+    --box-size: 60px;
     left: 40%;
-    width: 60px;
-    height: 60px;
     animation-delay: 0s;
     animation-duration: 18s;
 }
 
 .glass li:nth-child(5) {
+    --box-size: 20px;
     left: 65%;
-    width: 20px;
-    height: 20px;
     animation-delay: 4s;
     animation-duration: 20s;
 }
 
 .glass li:nth-child(6) {
+    --box-size: 110px;
     left: 75%;
-    width: 110px;
-    height: 110px;
     animation-delay: 3s;
     animation-duration: 22s;
 }
 
 .glass li:nth-child(7) {
+    --box-size: 150px;
     left: 35%;
-    width: 150px;
-    height: 150px;
     animation-delay: 7s;
     animation-duration: 28s;
 }
 
 .glass li:nth-child(8) {
+    --box-size: 25px;
     left: 50%;
-    width: 25px;
-    height: 25px;
     animation-delay: 15s;
     animation-duration: 45s;
 }
 
 .glass li:nth-child(9) {
+    --box-size: 15px;
     left: 20%;
-    width: 15px;
-    height: 15px;
     animation-delay: 2s;
     animation-duration: 35s;
 }
 
 .glass li:nth-child(10) {
+    --box-size: 150px;
     left: 85%;
-    width: 150px;
-    height: 150px;
     animation-delay: 0s;
     animation-duration: 11s;
 }
