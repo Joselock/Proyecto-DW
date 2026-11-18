@@ -1,5 +1,8 @@
 package com.hospital.model.Entidades;
 
+import java.sql.Time;
+import java.sql.Date;
+
 public class Turno {
     private int numTurn;
     private int cantAten;
@@ -9,6 +12,9 @@ public class Turno {
     private Consulta consulta;
     private Medico medico;
     private String codigoUni;
+    private Date fecha;
+    private Time hora;
+    private String notaClinica;
     
     
     public Turno(int numTurn, int cantAten, String estTur, String codUni,Medico medico) {
@@ -18,6 +24,22 @@ public class Turno {
         this.codUni = codUni;
         this.medico = medico;
     }
+
+    
+
+    public Turno(int numTurn, int cantAten, String estTur, String codUni, Medico medico, Date fecha, Time hora,
+            String notaClinica) {
+        this.numTurn = numTurn;
+        this.cantAten = cantAten;
+        this.estTur = estTur;
+        this.codUni = codUni;
+        this.medico = medico;
+        this.fecha = fecha;
+        this.hora = hora;
+        this.notaClinica = notaClinica;
+    }
+
+
 
     public Turno(int numTurn, int cantAten, String estTur, String codUni,Medico medico,String codigoUni) {
         this.numTurn = numTurn;
@@ -115,6 +137,43 @@ public class Turno {
         this.codigoUni = codigoUni;
     }
 
+
+
+    public Date getFecha() {
+        return fecha;
+    }
+
+
+
+    public void setFecha(Date fecha) {
+        this.fecha = fecha;
+    }
+
+
+
+    public Time getHora() {
+        return hora;
+    }
+
+
+
+    public void setHora(Time hora) {
+        this.hora = hora;
+    }
+
+
+
+    public String getNotaClinica() {
+        return notaClinica;
+    }
+
+
+
+    public void setNotaClinica(String notaClinica) {
+        this.notaClinica = notaClinica;
+    }
+
+    
     
 
 }
