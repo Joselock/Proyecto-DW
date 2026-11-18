@@ -7,9 +7,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------------------------------------------------------
   // Cambio de estado global
   // ---------------------------------------------------------
-  /*const setState = (state) => {
-    app.dataset.state = state;
-  };*/
   const setState = (state) => {
     const prev = app.dataset.state;
     app.dataset.state = state;
@@ -290,7 +287,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
     for (const input of inputs) {
       if (!input.checkValidity()) {
-        input.reportValidity(); // ⬅️ muestra "Completa este campo" nativo
+        input.reportValidity(); //muestra "Completa este campo" nativo
         return false;
       }
     }

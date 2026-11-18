@@ -2,12 +2,13 @@
 // Capa de comunicación con el backend Spring Boot
 // ==========================================================
 
-// Spring Boot sirve el frontend y la API en el mismo puerto (8080). Pero si el
-// HTML se abre con otro servidor (Live Server, http-server, etc.) el POST a
-// /api/login llega a ese servidor estático y devuelve 405 Method Not Allowed.
-// Por eso probamos primero el backend en el puerto 8080 del mismo host y luego
-// el mismo origen. Las cookies no distinguen puertos, así que la sesión se
-// mantiene aunque el frontend venga de otro puerto.
+/* Spring Boot sirve el frontend y la API en el mismo puerto (8080). Pero si el
+HTML se abre con otro servidor (Live Server, http-server, etc.) el POST a
+/api/login llega a ese servidor estático y devuelve 405 Method Not Allowed.
+Por eso probamos primero el backend en el puerto 8080 del mismo host y luego
+el mismo origen. Las cookies no distinguen puertos, así que la sesión se
+mantiene aunque el frontend venga de otro puerto.*/
+
 const BACKEND_PORT = "8080";
 
 function apiBaseCandidates() {
@@ -68,9 +69,8 @@ async function apiFetch(path, { method = "GET", body } = {}) {
       continue;
     }
 
-    // El backend siempre responde JSON con un campo booleano "ok". Si la
-    // respuesta no tiene esa forma, este origen no es la API (por ejemplo,
-    // un servidor estático que contesta 405 a POST).
+    /* El backend siempre responde JSON con un campo booleano "ok". Si la
+    respuesta no tiene esa forma, este origen no es la API.*/
     const contentType = res.headers.get("content-type") || "";
     let data = null;
     if (contentType.includes("json")) {
@@ -104,8 +104,8 @@ async function apiFetch(path, { method = "GET", body } = {}) {
     });
   }
 
-  // Si ningún candidato respondió como backend, mostramos el error del
-  // candidato que apunta al puerto del backend, que es el más informativo.
+  /* Si ningún candidato respondió como backend, mostramos el error del
+  candidato que apunta al puerto del backend, que es el más informativo.*/
   const backendAttempt =
     attempts.find((attempt) => attempt.base.includes(`:${BACKEND_PORT}/api`)) ||
     attempts[attempts.length - 1];
@@ -119,10 +119,12 @@ async function apiFetch(path, { method = "GET", body } = {}) {
   );
 }
 
-// ---------- Endpoints ----------
+/* ---------- Endpoints -------------------------------
+-------------------------------------------------------
+-------------------------------------------------------*/
 
 export const api = {
-  /** POST /api/login  → { ok, user } | { ok:false, error } */
+  /** POST /api/login  */
   login(email, password) {
     return apiFetch("/login", { method: "POST", body: { email, password } });
   },
