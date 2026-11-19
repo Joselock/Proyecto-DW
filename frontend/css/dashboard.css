@@ -590,7 +590,13 @@ body {
     display: grid;
     grid-template-columns: minmax(0, 1.58fr) minmax(340px, 1fr);
     gap: 21px;
-    margin-bottom: 21px
+    margin-bottom: 21px;
+    align-items: start
+}
+
+/* Evita que el panel más corto se estire y deje un bloque blanco debajo. */
+.content-grid > .panel {
+    align-self: start
 }
 
 .panel {
@@ -1074,6 +1080,8 @@ td:first-child {
 
 .modal {
     width: min(100%, 510px);
+    max-height: calc(100vh - 36px);
+    overflow-y: auto;
     background: #fff;
     border-radius: 11px;
     box-shadow: 0 20px 55px rgba(13, 34, 52, .25);
@@ -1139,6 +1147,17 @@ td:first-child {
     font-weight: 400;
     color: #a1aeb7;
     margin-left: 4px
+}
+
+.form-help {
+    margin: -6px 0 16px;
+    padding: 9px 11px;
+    background: #f5f9fa;
+    border: 1px solid #e6eef1;
+    border-radius: 7px;
+    color: #71818d;
+    font-size: 11px;
+    line-height: 1.5
 }
 
 .form-actions {
@@ -1484,6 +1503,23 @@ td:first-child {
     font-size: 11px;
     background: #f8fafb;
     border-radius: 7px
+}
+
+/* Los paneles sin datos deben cerrarse justo debajo del botón, sin dejar un
+   bloque blanco grande (cola de atención y agenda del día). */
+.timeline.is-empty,
+.queue-list.is-empty {
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    margin-bottom: 12px
+}
+
+.timeline.is-empty .empty-state,
+.queue-list.is-empty .empty-state {
+    padding: 11px 12px;
+    background: transparent;
+    border: 1px dashed #e2e9ed
 }
 
 /*==============================================================

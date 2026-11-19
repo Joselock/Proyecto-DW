@@ -169,6 +169,40 @@ export const api = {
     return apiFetch("/logout", { method: "POST" });
   },
 
+  /** Pacientes visibles según el rol de la sesión (ADMIN = todos, MEDICO = los suyos) */
+  pacientesPanel(q = "", limit = 5000, offset = 0) {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (q) params.set("q", q);
+    return apiFetch(`/panel/pacientes?${params}`);
+  },
+
+  /** Turnos visibles según el rol de la sesión (ADMIN = todos, MEDICO = los suyos) */
+  turnosPanel(q = "", limit = 5000, offset = 0) {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (q) params.set("q", q);
+    return apiFetch(`/panel/turnos?${params}`);
+  },
+
+  /** Catálogos y perfil para los formularios de altas (filtrados por rol) */
+  catalogosAltas() {
+    return apiFetch("/altas/catalogos");
+  },
+
+  /** Alta real de paciente (Registro + Paciente) */
+  crearPaciente(data) {
+    return apiFetch("/altas/pacientes", { method: "POST", body: data });
+  },
+
+  /** Alta real de turno (Turno + Consulta) */
+  crearTurno(data) {
+    return apiFetch("/altas/turnos", { method: "POST", body: data });
+  },
+
+  /** Alta real de médico. El backend solo la permite para ADMIN. */
+  crearMedico(data) {
+    return apiFetch("/altas/medicos", { method: "POST", body: data });
+  },
+
   /** Contexto hospitalario del usuario (hospital, jerarquía y alcance) */
   contextoReportes() {
     return apiFetch("/reportes/contexto");

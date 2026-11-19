@@ -318,6 +318,12 @@
                   <tbody id="patientsTable"></tbody>
                 </table>
               </div>
+              <div class="table-footer recent-footer">
+                <span id="patientsRecentCount">0 pacientes recientes</span>
+                <span class="table-hint"
+                  >Vista resumida · usa “Ver todos” para el directorio completo</span
+                >
+              </div>
             </section>
           </section>
 
@@ -331,8 +337,9 @@
                   <span class="demo-pill" id="turnosDemoPill" hidden
                     >Datos de ejemplo</span
                   >
+                  <span class="scope-pill" id="turnosScopePill">Cargando…</span>
                 </h1>
-                <p class="subhead">
+                <p class="subhead" id="turnosSubhead">
                   Organiza, confirma y da seguimiento a la agenda de tu equipo.
                 </p>
               </div>
@@ -493,6 +500,7 @@
               </div>
               <div class="table-footer">
                 <span id="turnosCount">0 turnos</span>
+                <span id="turnosMore"></span>
                 <span class="table-hint"
                   >Los cambios se sincronizan con recepción</span
                 >
@@ -515,8 +523,11 @@
                   <span class="demo-pill" id="pacientesDemoPill" hidden
                     >Datos de ejemplo</span
                   >
+                  <span class="scope-pill" id="pacientesScopePill"
+                    >Cargando…</span
+                  >
                 </h1>
-                <p class="subhead">
+                <p class="subhead" id="pacientesSubhead">
                   Consulta la información, el historial y la actividad de tus
                   pacientes.
                 </p>
@@ -620,6 +631,7 @@
               </div>
               <div class="table-footer">
                 <span id="pacientesCount">0 pacientes</span>
+                <span id="pacientesMore"></span>
                 <span class="table-hint"
                   >Los datos clínicos están protegidos</span
                 >
@@ -675,6 +687,9 @@
               <div class="view-actions">
                 <button class="outline-btn" id="refreshProfesionales">
                   <i data-lucide="refresh-cw"></i><span>Actualizar</span>
+                </button>
+                <button class="primary-btn" id="newMedicoBtn" data-admin-only>
+                  <i data-lucide="user-plus"></i><span>Nuevo médico</span>
                 </button>
               </div>
             </div>
@@ -1468,43 +1483,36 @@
           </button>
         </div>
         <form id="appointmentForm">
+          <p class="form-help" id="turnoFormHelp">
+            Selecciona un paciente y un profesional. La unidad se toma de la
+            ficha del profesional.
+          </p>
           <label
-            >Paciente<input
-              required
-              name="patient"
-              placeholder="Nombre completo"
-          /></label>
+            >Paciente<select required name="pacienteId" id="turnoPaciente">
+              <option value="">Cargando pacientes…</option>
+            </select></label
+          >
           <div class="form-row">
             <label
-              >Especialidad<select name="specialty">
-                <option>Cardiología</option>
-                <option>Dermatología</option>
-                <option>Pediatría</option>
-                <option>Traumatología</option>
+              >Profesional<select required name="codMed" id="turnoMedico">
+                <option value="">Cargando profesionales…</option>
               </select></label
             ><label
-              >Fecha<input required name="date" type="date" value="2024-10-14"
-            /></label>
-          </div>
-          <div class="form-row">
-            <label
-              >Hora<input
-                required
-                name="time"
-                type="time"
-                value="16:00" /></label
-            ><label
-              >Profesional<select name="doctor">
-                <option>Dra. Valentina Cruz</option>
-                <option>Dr. Pablo Méndez</option>
-                <option>Dra. Sofía Núñez</option>
+              >Unidad asignada<select name="codUni" id="turnoUnidad" disabled>
+                <option value="">Selecciona un profesional</option>
               </select></label
             >
           </div>
           <label
-            >Nota clínica <span class="optional">Opcional</span
+            >Estado<select name="estado" id="turnoEstado">
+              <option value="pendiente">Pendiente</option>
+              <option value="confirmado">Confirmado</option>
+            </select></label
+          >
+          <label
+            >Motivo de la consulta <span class="optional">Opcional</span
             ><textarea
-              name="note"
+              name="nota"
               rows="3"
               placeholder="Motivo o información adicional"
             ></textarea>
@@ -1512,7 +1520,7 @@
           <div class="form-actions">
             <button type="button" class="outline-btn" id="cancelModal">
               Cancelar</button
-            ><button class="primary-btn" type="submit">
+            ><button class="primary-btn" type="submit" id="appointmentSubmit">
               <i data-lucide="calendar-plus"></i>Confirmar turno
             </button>
           </div>
@@ -1537,53 +1545,149 @@
           </button>
         </div>
         <form id="patientForm">
+          <p class="form-help" id="patientFormHelp">
+            El documento se genera automáticamente si se deja vacío. Especialidad
+            y hospital se deducen de la unidad.
+          </p>
           <label
             >Nombre completo<input
               required
-              name="patientName"
+              name="nombre"
               placeholder="Nombre y apellidos"
           /></label>
           <div class="form-row">
             <label
-              >Documento<input
-                required
-                name="document"
-                placeholder="N.º de historia clínica"
+              >N.º de historia clínica
+              <span class="optional">Opcional</span
+              ><input name="documento" placeholder="Ej. P4201" /></label
+            ><label
+              >Fecha de nacimiento<input required name="fechaNacimiento" type="date"
             /></label>
+          </div>
+          <label
+            >Dirección<input
+              required
+              name="direccion"
+              placeholder="Calle, número y colonia"
+          /></label>
+          <div class="form-row">
             <label
-              >Fecha de nacimiento<input required name="birthDate" type="date"
+              >Estado<select name="estado">
+                <option value="Internado">Internado</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Alta">Alta</option>
+              </select></label
+            ><label
+              >Unidad<select required name="codUni" id="pacienteUnidad">
+                <option value="">Cargando unidades…</option>
+              </select></label
+            >
+          </div>
+          <div class="form-actions">
+            <button type="button" class="outline-btn" id="cancelPatientModal">
+              Cancelar</button
+            ><button class="primary-btn" type="submit" id="patientSubmit">
+              <i data-lucide="user-plus"></i>Guardar paciente
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="medicoModalBackdrop" aria-hidden="true">
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="medicoModalTitle"
+      >
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">Solo administradores</p>
+            <h2 id="medicoModalTitle">Nuevo médico</h2>
+          </div>
+          <button class="icon-btn" id="closeMedicoModal" title="Cerrar">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <form id="medicoForm">
+          <p class="form-help">
+            Selecciona hospital, departamento y unidad: el médico quedará
+            asignado a esa jerarquía.
+          </p>
+          <div class="form-row">
+            <label
+              >Código del médico <span class="optional">Opcional</span
+              ><input name="codMed" placeholder="Ej. M017" /></label
+            ><label
+              >Nombre completo<input
+                required
+                name="nombre"
+                placeholder="Nombre y apellidos"
             /></label>
           </div>
           <div class="form-row">
             <label
-              >Especialidad<select name="specialty">
-                <option>Cardiología</option>
-                <option>Dermatología</option>
-                <option>Pediatría</option>
-                <option>Traumatología</option>
-                <option>Medicina general</option>
-              </select></label
-            ><label
+              >Especialidad<input
+                required
+                name="especialidad"
+                placeholder="Ej. Cardiología"
+            /></label>
+            <label
+              >N.º de licencia<input
+                required
+                name="licencia"
+                placeholder="Número de licencia"
+            /></label>
+          </div>
+          <div class="form-row">
+            <label
               >Teléfono<input
                 required
-                name="phone"
+                name="telefono"
                 type="tel"
                 placeholder="Número de contacto"
             /></label>
+            <label
+              >Años de experiencia<input
+                name="experiencia"
+                type="number"
+                min="0"
+                value="0"
+            /></label>
           </div>
           <label
-            >Observaciones <span class="optional">Opcional</span
-            ><textarea
-              name="notes"
-              rows="3"
-              placeholder="Alergias, antecedentes o información relevante"
-            ></textarea>
-          </label>
+            >Datos de contacto
+            <span class="optional">Opcional</span
+            ><input
+              name="datosContacto"
+              placeholder="Correo, extensión o información de contacto"
+          /></label>
+          <label
+            >Dirección <span class="optional">Opcional</span
+            ><input name="direccion" placeholder="Dirección del profesional"
+          /></label>
+          <div class="form-row">
+            <label
+              >Hospital<select id="medicoHospital">
+                <option value="">Cargando…</option>
+              </select></label
+            ><label
+              >Departamento<select id="medicoDepartamento">
+                <option value="">Cargando…</option>
+              </select></label
+            >
+          </div>
+          <label
+            >Unidad<select required name="codUni" id="medicoUnidad">
+              <option value="">Cargando unidades…</option>
+            </select></label
+          >
           <div class="form-actions">
-            <button type="button" class="outline-btn" id="cancelPatientModal">
+            <button type="button" class="outline-btn" id="cancelMedicoModal">
               Cancelar</button
-            ><button class="primary-btn" type="submit">
-              <i data-lucide="user-plus"></i>Guardar paciente
+            ><button class="primary-btn" type="submit" id="medicoSubmit">
+              <i data-lucide="stethoscope"></i>Guardar médico
             </button>
           </div>
         </form>
@@ -1698,6 +1802,6 @@
       <i data-lucide="check-circle-2"></i
       ><span>Turno creado correctamente</span>
     </div>
-    <script type="module" src="./js/dashboard.js"></script>
+    <script type="module" src="./js/dashboard.js?v=3"></script>
   </body>
 </html>

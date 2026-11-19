@@ -16,7 +16,7 @@ relación entre **médico** y **usuario**. Los datos del perfil viven en
 | `CRUD/` | Funciones PL/pgSQL de alta, modificación y baja. |
 | `Reportes/` | Funciones de los nueve reportes. |
 | `Trigger/` | Funciones y disparadores de informe automático y límite de médicos. |
-| `Datos de Prueba/` | Datos de ejemplo. |
+| `Datos de Prueba/` | Datos de ejemplo. `04_datos_prueba_masivos.sql` carga más de 3.200 pacientes, turnos y consultas, y crea cuentas demo de ADMIN y MEDICO. |
 
 ## Modelo
 
@@ -189,6 +189,27 @@ registrar al mismo médico a la vez, la segunda recibe un error.
 > `ADMIN`, porque hoy es pública.
 
 ## Cómo ejecutar
+
+### Datos masivos y cuentas demo
+
+Sobre una base ya creada con los datos iniciales, carga el conjunto de prueba
+masivo (reejecutable, no duplica filas):
+
+```bash
+psql -U postgres -d sistema -v ON_ERROR_STOP=1 \
+  -f "database/Datos de Prueba/04_datos_prueba_masivos.sql"
+```
+
+Deja 3.800 pacientes, 3.220 turnos y dos cuentas útiles para probar la
+visibilidad por rol:
+
+| Correo | Contraseña | Rol | Alcance en Pacientes / Turnos |
+| --- | --- | --- | --- |
+| `admin.demo@hospital.test` | `hospital123` | `ADMIN` | Todos los hospitales |
+| `medico.demo@hospital.test` | `hospital123` | `MEDICO` | Solo sus pacientes y turnos (ficha `M001`) |
+
+El inicio de sesión de la interfaz pide el correo; el usuario interno es
+`admin.demo` / `medico.demo`.
 
 ### Base nueva
 

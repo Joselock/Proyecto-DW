@@ -17,6 +17,9 @@ const state = {
   pacienteFilters: { search: "", status: "all" },
   contexto: null,
   contextoReady: false,
+  catalogos: null,
+  catalogosLoading: false,
+  catalogosPromise: null,
   profesionales: null,
   profesionalesLoading: false,
   profesionalFilters: { search: "", specialty: "all" },
@@ -31,7 +34,21 @@ const state = {
   },
   settings: null,
   help: { search: "", tag: "" },
+  // Datos reales de las secciones Pacientes y Turnos, filtrados por rol en el backend.
+  panel: {
+    pacientes: [],
+    turnos: [],
+    totalPacientes: 0,
+    totalTurnos: 0,
+    alcance: null,
+    medico: null,
+    cargado: false,
+  },
+  pagina: { pacientes: 0, turnos: 0 },
 };
+
+const PAGE_SIZE = 20;
+const RECENT_PATIENTS_LIMIT = 6;
 
 const ADMIN_ONLY = new Set(["Profesionales", "Reportes"]);
 
@@ -1102,15 +1119,87 @@ function buildAppointmentsFromPatients(patients) {
   }));
 }
 
-function updateResumenStats(hospitals) {
-  const selected = hospitals.slice(0, 4);
-  const total = selected.reduce(
-    (sum, hospital) => sum + (hospital.cantPac || 0),
-    0,
+/* Convierte las filas del endpoint /api/panel al formato que ya usan las
+   tablas del dashboard. El backend es la única fuente de la regla por rol. */
+function mapPacientePanel(row) {
+  return {
+    id: row.id,
+    name: row.nombre || "Paciente",
+    age: row.edad ?? calculateAge(row.nacimiento),
+    phone: "Sin teléfono registrado",
+    specialty: row.departamento || row.unidad || "Medicina general",
+    doctor: row.medico || "Equipo médico",
+    lastVisit: row.ultimaVisita
+      ? formatDateValue(row.ultimaVisita)
+      : row.admision
+        ? formatDateValue(row.admision)
+        : "—",
+    status: row.estatus || "active",
+    isNew: Boolean(row.esNuevo),
+    hospital: row.hospital,
+    departamento: row.departamento,
+    unidad: row.unidad,
+    direccion: row.direccion,
+  };
+}
+
+function mapTurnoPanel(row) {
+  return {
+    id: row.id,
+    numero: row.numero,
+    time: row.hora || "—",
+    patient: row.paciente || "Sin paciente",
+    patientId: row.pacienteId || "—",
+    specialty: row.especialidad || row.unidad || "Medicina general",
+    doctor: row.profesional || "Sin profesional",
+    status: row.estatus || "pending",
+    room: row.consultorio || "Consultorio 1",
+    fecha: row.fecha,
+    hospital: row.hospital,
+    unidad: row.unidad,
+  };
+}
+
+function renderPanelScope() {
+  const global = state.panel.alcance !== "medico";
+  const medico = state.panel.medico || "";
+
+  setText(
+    "pacientesScopePill",
+    global
+      ? "Todos los hospitales"
+      : `Solo mis pacientes${medico ? ` · ${medico}` : ""}`,
   );
+  setText(
+    "turnosScopePill",
+    global ? "Todos los hospitales" : "Solo mis turnos",
+  );
+  setText(
+    "pacientesSubhead",
+    global
+      ? "Directorio completo de pacientes de todos los hospitales de la red."
+      : "Pacientes que atiendes o que están ingresados en tu unidad.",
+  );
+  setText(
+    "turnosSubhead",
+    global
+      ? "Agenda completa de todos los hospitales de la red."
+      : "Turnos asignados exclusivamente a tu ficha profesional.",
+  );
+}
+
+function updateResumenStats() {
+  // Usa el mismo alcance que las secciones Pacientes y Turnos: un ADMIN ve
+  // toda la red y un MEDICO solo sus propios datos.
+  const totalTurnos =
+    state.panel.totalTurnos || state.viewAppointments.length;
+  const totalPacientes = state.panel.totalPacientes || state.viewPatients.length;
+  const atendidos = state.viewAppointments.filter(
+    (turno) => turno.status === "done",
+  ).length;
 
   const cards = $$("#view-Resumen .stat-card");
-  const values = [total, total, null, total];
+  const values = [totalTurnos, atendidos, null, totalPacientes];
 
   cards.forEach((card, index) => {
     if (values[index] === null) return;
@@ -1121,44 +1210,77 @@ function updateResumenStats(hospitals) {
 
 async function loadDashboardData() {
   let backendPatients = [];
+  let backendTurnos = [];
+  let datosPanel = false;
 
-  try {
-    const response = await api.resumenHospitales();
+  const [pacientesRes, turnosRes, resumenRes] = await Promise.all([
+    api.pacientesPanel(),
+    api.turnosPanel(),
+    api.resumenHospitales(),
+  ]);
 
-    if (response.ok && Array.isArray(response.data)) {
-      backendPatients = extractBackendPatients(response.data);
-      updateResumenStats(response.data);
-    } else {
-      console.warn("No se pudo cargar el resumen:", response.error);
-    }
-  } catch (error) {
+  if (!resumenRes.ok) {
+    console.warn("No se pudo cargar el resumen:", resumenRes.error);
+  }
+
+  if (pacientesRes.ok && turnosRes.ok) {
+    const filasPacientes = Array.isArray(pacientesRes.data?.rows)
+      ? pacientesRes.data.rows
+      : [];
+    const filasTurnos = Array.isArray(turnosRes.data?.rows)
+      ? turnosRes.data.rows
+      : [];
+
+    state.panel = {
+      pacientes: filasPacientes,
+      turnos: filasTurnos,
+      totalPacientes: pacientesRes.data?.total ?? filasPacientes.length,
+      totalTurnos: turnosRes.data?.total ?? filasTurnos.length,
+      alcance: turnosRes.data?.alcance || pacientesRes.data?.alcance,
+      medico: turnosRes.data?.medico || pacientesRes.data?.medico,
+      cargado: true,
+    };
+
+    backendPatients = filasPacientes.map(mapPacientePanel);
+    backendTurnos = filasTurnos.map(mapTurnoPanel);
+    datosPanel = backendPatients.length > 0 || backendTurnos.length > 0;
+  } else {
     console.warn(
-      "No se pudo cargar la data del backend, se usa la vista de ejemplo:",
-      error,
+      "No se pudieron cargar los listados del panel:",
+      pacientesRes.error || turnosRes.error,
     );
   }
 
-  state.resumenPatients = backendPatients;
-  state.resumenAppointments = backendPatients.length
-    ? buildAppointmentsFromPatients(backendPatients).slice(0, 6)
-    : [];
-
-  if (backendPatients.length) {
-    state.viewPatients = backendPatients;
-    state.viewAppointments = buildAppointmentsFromPatients(backendPatients);
-    state.demoMode = false;
-  } else {
-    state.viewPatients = DEMO_PATIENTS;
-    state.viewAppointments = DEMO_APPOINTMENTS;
-    state.demoMode = true;
+  // Respaldo: si la API del panel no responde, se mantiene el comportamiento
+  // anterior usando el reporte de resumen (o los datos de ejemplo).
+  if (!datosPanel && resumenRes.ok && Array.isArray(resumenRes.data)) {
+    backendPatients = extractBackendPatients(resumenRes.data);
+    backendTurnos = buildAppointmentsFromPatients(backendPatients);
+    state.panel.alcance = "global";
   }
 
+  state.resumenPatients = backendPatients;
+  state.resumenAppointments = backendTurnos.slice(0, 6);
+  state.viewPatients = backendPatients;
+  state.viewAppointments = backendTurnos;
+  state.demoMode = !backendPatients.length && !backendTurnos.length;
+
+  if (state.demoMode) {
+    state.viewPatients = DEMO_PATIENTS;
+    state.viewAppointments = DEMO_APPOINTMENTS;
+    state.resumenAppointments = DEMO_APPOINTMENTS.slice(0, 6);
+  }
+
+  state.queue = buildQueue(state.viewAppointments);
+  state.pagina = { pacientes: 0, turnos: 0 };
+  renderPanelScope();
   updateDemoPills();
   renderTimeline();
   renderQueue();
   renderPatients();
   renderTurnosView();
   renderPacientesView();
+  updateResumenStats();
 }
 
 function updateDemoPills() {
@@ -1180,6 +1302,7 @@ function renderTimeline(filter = "all") {
       filter === "all" || slug(appointment.specialty) === slug(filter),
   );
 
+  root.classList.toggle("is-empty", !items.length);
   if (!items.length) {
     root.innerHTML =
       '<div class="empty-state">No hay turnos para esta especialidad.</div>';
@@ -1206,10 +1329,37 @@ function renderTimeline(filter = "all") {
     .join("");
 }
 
+function buildQueue(appointments) {
+  return appointments
+    .filter((appointment) => appointment.status === "pending")
+    .slice(0, 5)
+    .map((appointment, index) => ({
+      initials: initialsOf(appointment.patient),
+      name: appointment.patient,
+      detail: `${appointment.id} · ${appointment.specialty}`,
+      time: `${(index + 1) * 7} min`,
+    }));
+}
+
 function renderQueue() {
   const root = $("#queueList");
   if (!root) return;
 
+  const totals = $$("#view-Resumen .queue-summary strong");
+  const enEspera = state.viewAppointments.filter(
+    (appointment) => appointment.status === "pending",
+  ).length;
+  const enConsulta = state.viewAppointments.filter(
+    (appointment) => appointment.status === "confirmed",
+  ).length;
+  const atendidos = state.viewAppointments.filter(
+    (appointment) => appointment.status === "done",
+  ).length;
+  [enEspera, enConsulta, atendidos].forEach((value, index) => {
+    if (totals[index]) totals[index].textContent = String(value).padStart(2, "0");
+  });
+
+  root.classList.toggle("is-empty", !state.queue.length);
   if (!state.queue.length) {
     root.innerHTML =
       '<div class="empty-state">No hay pacientes en espera en este momento.</div>';
@@ -1241,15 +1391,21 @@ function renderPatients(query = "") {
       .toLowerCase()
       .includes(query.toLowerCase()),
   );
+  const items = filtered.slice(0, RECENT_PATIENTS_LIMIT);
 
-  if (!filtered.length) {
+  setText(
+    "patientsRecentCount",
+    `${formatNumber(items.length)} de ${formatNumber(filtered.length)} pacientes recientes`,
+  );
+
+  if (!items.length) {
     root.innerHTML =
       '<tr><td colspan="6"><div class="empty-state">No encontramos pacientes con esa búsqueda.</div></td></tr>';
     refreshIcons();
     return;
   }
 
-  root.innerHTML = filtered
+  root.innerHTML = items
     .map(
       (patient, index) => `
         <tr>
@@ -1325,8 +1481,10 @@ function renderTurnoTimeline() {
   const root = $("#turnoTimeline");
   if (!root) return;
 
-  const items = filterAppointments(false);
+  // La agenda muestra una vista rápida; el listado completo está más abajo.
+  const items = filterAppointments(false).slice(0, 8);
 
+  root.classList.toggle("is-empty", !items.length);
   if (!items.length) {
     root.innerHTML =
       '<div class="empty-state">No hay turnos que coincidan con los filtros.</div>';
@@ -1353,15 +1511,37 @@ function renderTurnoTimeline() {
     .join("");
 }
 
+function renderMoreButton(containerId, clave, mostrados, total) {
+  const root = document.getElementById(containerId);
+  if (!root) return;
+
+  root.innerHTML =
+    mostrados < total
+      ? `<button type="button" class="text-btn" data-more="${clave}">
+           Mostrar ${Math.min(PAGE_SIZE, total - mostrados)} más
+           <i data-lucide="chevron-down"></i>
+         </button>`
+      : "";
+  refreshIcons();
+}
+
 function renderTurnosTable() {
   const root = $("#turnosTable");
   if (!root) return;
 
-  const items = filterAppointments(true);
+  const filtrados = filterAppointments(true);
+  const inicio = state.pagina.turnos * PAGE_SIZE;
+  const items = filtrados.slice(inicio, inicio + PAGE_SIZE);
 
   setText(
     "turnosCount",
-    `${items.length} de ${state.viewAppointments.length} turnos`,
+    `${formatNumber(filtrados.length)} de ${formatNumber(state.viewAppointments.length)} turnos`,
+  );
+  renderMoreButton(
+    "turnosMore",
+    "turnos",
+    inicio + items.length,
+    filtrados.length,
   );
 
   if (!items.length) {
@@ -1446,17 +1626,26 @@ function renderPacientesTable() {
   const search = state.pacienteFilters.search.trim().toLowerCase();
   const status = state.pacienteFilters.status;
 
-  const items = state.viewPatients.filter((patient) => {
+  const filtrados = state.viewPatients.filter((patient) => {
     const haystack =
-      `${patient.name} ${patient.id} ${patient.specialty} ${patient.phone}`.toLowerCase();
+      `${patient.name} ${patient.id} ${patient.specialty} ${patient.phone} ${patient.doctor} ${patient.hospital || ""}`.toLowerCase();
     const matchesSearch = !search || haystack.includes(search);
     const matchesStatus = status === "all" || patient.status === status;
     return matchesSearch && matchesStatus;
   });
 
+  const inicio = state.pagina.pacientes * PAGE_SIZE;
+  const items = filtrados.slice(inicio, inicio + PAGE_SIZE);
+
   setText(
     "pacientesCount",
-    `${items.length} de ${state.viewPatients.length} pacientes`,
+    `${formatNumber(filtrados.length)} de ${formatNumber(state.viewPatients.length)} pacientes`,
+  );
+  renderMoreButton(
+    "pacientesMore",
+    "pacientes",
+    inicio + items.length,
+    filtrados.length,
   );
 
   if (!items.length) {
@@ -1719,6 +1908,236 @@ async function loadContexto() {
   }
 
   renderSettings();
+}
+
+/* ============================================================
+   Catálogos de altas (hospital → departamento → unidad)
+   ============================================================ */
+async function loadCatalogos(force = false) {
+  if (state.catalogos && !force) return state.catalogos;
+  // Si ya hay una carga en curso, esperamos a que termine. Así los formularios
+  // nunca se pintan con catálogos vacíos cuando se abren justo al entrar.
+  if (state.catalogosLoading && state.catalogosPromise) {
+    return state.catalogosPromise;
+  }
+
+  state.catalogosLoading = true;
+  state.catalogosPromise = (async () => {
+    try {
+      const response = await api.catalogosAltas();
+      if (response.ok && response.data) {
+        state.catalogos = response.data;
+      } else {
+        console.warn("No se pudieron cargar los catálogos de altas:", response.error);
+        state.catalogos = {
+          hospitales: [],
+          departamentos: [],
+          unidades: [],
+          medicos: [],
+          perfil: {},
+        };
+      }
+    } finally {
+      state.catalogosLoading = false;
+    }
+    return state.catalogos;
+  })();
+
+  try {
+    return await state.catalogosPromise;
+  } finally {
+    state.catalogosPromise = null;
+  }
+}
+
+function fillSelect(select, items, placeholder, valueKey = "codigo", labelKey = "nombre", selected = "") {
+  if (!select) return;
+  const valores = items.map((item) => String(item[valueKey] ?? ""));
+  select.innerHTML = [
+    `<option value="">${escapeHtml(placeholder)}</option>`,
+    ...items.map(
+      (item) =>
+        `<option value="${escapeHtml(String(item[valueKey]))}">${escapeHtml(String(item[labelKey]))}</option>`,
+    ),
+  ].join("");
+  const valor = String(selected || "");
+  select.value = valores.includes(valor) ? valor : "";
+  select.disabled = false;
+}
+
+function unidadesParaSelect() {
+  return (state.catalogos?.unidades || []).map((unit) => ({
+    ...unit,
+    nombre: `${unit.nombre}${unit.codigo ? ` · ${unit.codigo}` : ""}`,
+  }));
+}
+
+function populateTurnoForm() {
+  const perfil = state.catalogos?.perfil || {};
+  const medicos = state.catalogos?.medicos || [];
+  const pacientes = state.panel.pacientes.map((row) => ({
+    codigo: row.id,
+    nombre: `${row.nombre} · ${row.id}${row.unidad ? ` · ${row.unidad}` : ""}`,
+  }));
+  const medicoSelect = $("#turnoMedico");
+  const pacienteSelect = $("#turnoPaciente");
+  const medicoActual = medicoSelect?.value || "";
+  const medicoSeleccionado = isAdmin()
+    ? medicoActual
+    : perfil.codMed || "";
+
+  fillSelect(
+    pacienteSelect,
+    pacientes,
+    pacientes.length ? "Selecciona un paciente" : "No hay pacientes disponibles",
+    "codigo",
+    "nombre",
+    pacienteSelect?.value || "",
+  );
+  fillSelect(
+    medicoSelect,
+    medicos.map((medico) => ({
+      ...medico,
+      nombre: `${medico.nombre} · ${medico.especialidad}${medico.unidad ? ` · ${medico.unidad}` : ""}`,
+    })),
+    medicos.length ? "Selecciona un profesional" : "No hay profesionales disponibles",
+    "codMed",
+    "nombre",
+    medicoSeleccionado,
+  );
+  if (medicoSeleccionado) {
+    medicoSelect.value = medicoSeleccionado;
+  }
+  sincronizarUnidadTurno();
+
+  const submit = $("#appointmentSubmit");
+  const help = $("#turnoFormHelp");
+  const medicoFijado = !isAdmin() && Boolean(perfil.codMed);
+  let mensaje =
+    "Selecciona un paciente y un profesional. La unidad se toma de la ficha del profesional.";
+  let bloqueado = false;
+
+  if (!isAdmin() && !perfil.codMed) {
+    mensaje =
+      "Tu cuenta no tiene una ficha médica vinculada. Pide a un administrador que te asocie un profesional para crear turnos.";
+    bloqueado = true;
+  } else if (!pacientes.length) {
+    mensaje = "Todavía no hay pacientes visibles para este perfil.";
+    bloqueado = true;
+  } else if (!medicos.length) {
+    mensaje = "Todavía no hay profesionales disponibles para este perfil.";
+    bloqueado = true;
+  } else if (medicoFijado) {
+    mensaje =
+      "Tu turno queda asignado a tu ficha profesional; la unidad se toma de ella.";
+  }
+  if (help) help.textContent = mensaje;
+  if (submit) submit.disabled = bloqueado;
+}
+
+function sincronizarUnidadTurno() {
+  const unidad = $("#turnoUnidad");
+  if (!unidad) return;
+  const medico = (state.catalogos?.medicos || []).find(
+    (item) => item.codMed === $("#turnoMedico")?.value,
+  );
+  if (!medico) {
+    unidad.innerHTML = '<option value="">Selecciona un profesional</option>';
+    unidad.value = "";
+    return;
+  }
+  unidad.innerHTML =
+    `<option value="${escapeHtml(String(medico.codUni))}">` +
+    `${escapeHtml(medico.unidad || medico.codUni)}</option>`;
+  unidad.value = medico.codUni;
+}
+
+function populatePacienteForm() {
+  const perfil = state.catalogos?.perfil || {};
+  const unidades = unidadesParaSelect();
+  const unidadSelect = $("#pacienteUnidad");
+  const actual = unidadSelect?.value || perfil.codUni || "";
+
+  fillSelect(
+    unidadSelect,
+    unidades,
+    unidades.length ? "Selecciona la unidad" : "No hay unidades disponibles",
+    "codigo",
+    "nombre",
+    actual,
+  );
+
+  const submit = $("#patientSubmit");
+  const help = $("#patientFormHelp");
+  if (help) {
+    help.textContent = !unidades.length
+      ? "No hay unidades disponibles para este perfil."
+      : isAdmin()
+        ? "El documento se genera automáticamente si se deja vacío. El hospital y la especialidad se deducen de la unidad."
+        : `El alta se registra en tu unidad (${unidades[0]?.nombre || perfil.codUni || "—"}). El documento se genera automáticamente si se deja vacío.`;
+  }
+  if (submit) submit.disabled = !unidades.length || !isAdmin();
+}
+
+function populateMedicoForm() {
+  const catalogos = state.catalogos || {};
+  const hospitales = catalogos.hospitales || [];
+  const departamentos = catalogos.departamentos || [];
+  const unidades = catalogos.unidades || [];
+  const hospitalSelect = $("#medicoHospital");
+  const departamentoSelect = $("#medicoDepartamento");
+  const unidadSelect = $("#medicoUnidad");
+
+  const hospital = hospitalSelect?.value || hospitales[0]?.codigo || "";
+  fillSelect(
+    hospitalSelect,
+    hospitales,
+    hospitales.length ? "Selecciona el hospital" : "No hay hospitales disponibles",
+    "codigo",
+    "nombre",
+    hospital,
+  );
+
+  const departamentosHospital = departamentos.filter(
+    (item) => !hospital || item.codHos === hospital,
+  );
+  const departamento =
+    departamentoSelect?.value &&
+    departamentosHospital.some((item) => item.codigo === departamentoSelect.value)
+      ? departamentoSelect.value
+      : departamentosHospital[0]?.codigo || "";
+  fillSelect(
+    departamentoSelect,
+    departamentosHospital,
+    departamentosHospital.length
+      ? "Selecciona el departamento"
+      : "Selecciona primero un hospital",
+    "codigo",
+    "nombre",
+    departamento,
+  );
+
+  const unidadesDepartamento = unidades.filter(
+    (item) => !departamento || item.codDep === departamento,
+  );
+  const unidad =
+    unidadSelect?.value &&
+    unidadesDepartamento.some((item) => item.codigo === unidadSelect.value)
+      ? unidadSelect.value
+      : unidadesDepartamento[0]?.codigo || "";
+  fillSelect(
+    unidadSelect,
+    unidadesDepartamento,
+    unidadesDepartamento.length
+      ? "Selecciona la unidad"
+      : "Selecciona primero un departamento",
+    "codigo",
+    "nombre",
+    unidad,
+  );
+
+  const submit = $("#medicoSubmit");
+  if (submit) submit.disabled = !unidadesDepartamento.length;
 }
 
 function sortByUserHospital(items, hospitalCodeOf) {
@@ -2555,12 +2974,15 @@ async function loadAyudaStatus() {
 /* ============================================================
    Modales
    ============================================================ */
-function openModal() {
+async function openModal() {
   const backdrop = $("#modalBackdrop");
   if (!backdrop) return;
   backdrop.classList.add("open");
   backdrop.setAttribute("aria-hidden", "false");
-  $('input[name="patient"]')?.focus();
+  await loadCatalogos(true);
+  populateTurnoForm();
+  refreshIcons();
+  $("#turnoPaciente")?.focus();
 }
 
 function closeModal() {
@@ -2570,16 +2992,41 @@ function closeModal() {
   backdrop.setAttribute("aria-hidden", "true");
 }
 
-function openPatientModal() {
+async function openPatientModal() {
   const backdrop = $("#patientModalBackdrop");
   if (!backdrop) return;
   backdrop.classList.add("open");
   backdrop.setAttribute("aria-hidden", "false");
-  $('input[name="patientName"]')?.focus();
+  await loadCatalogos(true);
+  populatePacienteForm();
+  refreshIcons();
+  $("#patientForm input[name='nombre']")?.focus();
 }
 
 function closePatientModal() {
   const backdrop = $("#patientModalBackdrop");
+  if (!backdrop) return;
+  backdrop.classList.remove("open");
+  backdrop.setAttribute("aria-hidden", "true");
+}
+
+async function openMedicoModal() {
+  if (!isAdmin()) {
+    toast("Solo un administrador puede registrar médicos.");
+    return;
+  }
+  const backdrop = $("#medicoModalBackdrop");
+  if (!backdrop) return;
+  backdrop.classList.add("open");
+  backdrop.setAttribute("aria-hidden", "false");
+  await loadCatalogos(true);
+  populateMedicoForm();
+  refreshIcons();
+  $("#medicoForm input[name='nombre']")?.focus();
+}
+
+function closeMedicoModal() {
+  const backdrop = $("#medicoModalBackdrop");
   if (!backdrop) return;
   backdrop.classList.remove("open");
   backdrop.setAttribute("aria-hidden", "true");
@@ -2743,19 +3190,39 @@ function bindEvents() {
   $("#modalBackdrop")?.addEventListener("click", (event) => {
     if (event.target.id === "modalBackdrop") closeModal();
   });
+  $("#turnoMedico")?.addEventListener("change", sincronizarUnidadTurno);
 
-  $("#appointmentForm")?.addEventListener("submit", (event) => {
+  $("#appointmentForm")?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
-    const patient = form.querySelector('input[name="patient"]')?.value.trim();
+    const submit = $("#appointmentSubmit");
+    const payload = {
+      pacienteId: form.elements.pacienteId.value,
+      codMed: form.elements.codMed.value,
+      codUni: form.elements.codUni.value,
+      estado: form.elements.estado.value,
+      nota: form.elements.nota.value.trim(),
+    };
+    if (!payload.pacienteId || !payload.codMed) {
+      toast("Selecciona un paciente y un profesional para continuar.");
+      return;
+    }
+
+    if (submit) submit.disabled = true;
+    const response = await api.crearTurno(payload);
+    if (submit) submit.disabled = false;
+
+    if (!response.ok) {
+      toast(response.error || "No se pudo crear el turno.");
+      return;
+    }
+
     closeModal();
     form.reset();
     renderFecha();
-    toast(
-      patient
-        ? `Turno de ${patient} creado correctamente`
-        : "Turno creado correctamente",
-    );
+    await loadDashboardData();
+    refreshIcons();
+    toast(`Turno ${response.data?.id || ""} creado correctamente`);
   });
 
   $("#newPacienteBtn")?.addEventListener("click", openPatientModal);
@@ -2765,25 +3232,86 @@ function bindEvents() {
     if (event.target.id === "patientModalBackdrop") closePatientModal();
   });
 
-  $("#patientForm")?.addEventListener("submit", (event) => {
+  $("#patientForm")?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
-    const patient = form
-      .querySelector('input[name="patientName"]')
-      ?.value.trim();
+    const submit = $("#patientSubmit");
+    const payload = {
+      nombre: form.elements.nombre.value.trim(),
+      documento: form.elements.documento.value.trim(),
+      fechaNacimiento: form.elements.fechaNacimiento.value,
+      direccion: form.elements.direccion.value.trim(),
+      estado: form.elements.estado.value,
+      codUni: form.elements.codUni.value,
+    };
+
+    if (submit) submit.disabled = true;
+    const response = await api.crearPaciente(payload);
+    if (submit) submit.disabled = false;
+
+    if (!response.ok) {
+      toast(response.error || "No se pudo registrar el paciente.");
+      return;
+    }
+
     closePatientModal();
     form.reset();
-    toast(
-      patient
-        ? `${patient} se registró correctamente`
-        : "Paciente registrado correctamente",
-    );
+    await loadDashboardData();
+    refreshIcons();
+    toast(`${response.data?.nombre || "Paciente"} registrado correctamente`);
+  });
+
+  $("#newMedicoBtn")?.addEventListener("click", openMedicoModal);
+  $("#closeMedicoModal")?.addEventListener("click", closeMedicoModal);
+  $("#cancelMedicoModal")?.addEventListener("click", closeMedicoModal);
+  $("#medicoModalBackdrop")?.addEventListener("click", (event) => {
+    if (event.target.id === "medicoModalBackdrop") closeMedicoModal();
+  });
+  $("#medicoHospital")?.addEventListener("change", populateMedicoForm);
+  $("#medicoDepartamento")?.addEventListener("change", populateMedicoForm);
+
+  $("#medicoForm")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!isAdmin()) {
+      toast("Solo un administrador puede registrar médicos.");
+      return;
+    }
+
+    const form = event.currentTarget;
+    const submit = $("#medicoSubmit");
+    const payload = {
+      codMed: form.elements.codMed.value.trim(),
+      nombre: form.elements.nombre.value.trim(),
+      especialidad: form.elements.especialidad.value.trim(),
+      licencia: form.elements.licencia.value.trim(),
+      telefono: form.elements.telefono.value.trim(),
+      experiencia: form.elements.experiencia.value,
+      datosContacto: form.elements.datosContacto.value.trim(),
+      direccion: form.elements.direccion.value.trim(),
+      codUni: form.elements.codUni.value,
+    };
+
+    if (submit) submit.disabled = true;
+    const response = await api.crearMedico(payload);
+    if (submit) submit.disabled = false;
+
+    if (!response.ok) {
+      toast(response.error || "No se pudo registrar el médico.");
+      return;
+    }
+
+    closeMedicoModal();
+    form.reset();
+    await Promise.all([loadCatalogos(true), loadProfesionales(true)]);
+    refreshIcons();
+    toast(`Médico ${response.data?.codMed || ""} registrado correctamente`);
   });
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closeModal();
       closePatientModal();
+      closeMedicoModal();
       closeProfileModal();
       closeAccountMenu();
     }
@@ -2820,29 +3348,47 @@ function bindEvents() {
 
   $("#turnoSearch")?.addEventListener("input", (event) => {
     state.turnoFilters.search = event.target.value;
+    state.pagina.turnos = 0;
     renderTurnoTimeline();
     renderTurnosTable();
   });
 
   $("#turnoSpecialtyFilter")?.addEventListener("change", (event) => {
     state.turnoFilters.specialty = event.target.value;
+    state.pagina.turnos = 0;
     renderTurnoTimeline();
     renderTurnosTable();
   });
 
   $("#turnoStatusFilter")?.addEventListener("change", (event) => {
     state.turnoFilters.status = event.target.value;
+    state.pagina.turnos = 0;
     renderTurnosTable();
   });
 
   $("#pacientesSearch")?.addEventListener("input", (event) => {
     state.pacienteFilters.search = event.target.value;
+    state.pagina.pacientes = 0;
     renderPacientesTable();
   });
 
   $("#pacientesEstadoFilter")?.addEventListener("change", (event) => {
     state.pacienteFilters.status = event.target.value;
+    state.pagina.pacientes = 0;
     renderPacientesTable();
+  });
+
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-more]");
+    if (!button) return;
+    const clave = button.dataset.more;
+    if (clave === "turnos") {
+      state.pagina.turnos += 1;
+      renderTurnosTable();
+    } else if (clave === "pacientes") {
+      state.pagina.pacientes += 1;
+      renderPacientesTable();
+    }
   });
 
   $("#turnosTable")?.addEventListener("click", (event) => {
@@ -2987,6 +3533,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!sessionReady) return;
 
   await loadContexto();
+  await loadCatalogos();
   renderSettings();
 
   const requested = decodeURIComponent(window.location.hash.slice(1));
