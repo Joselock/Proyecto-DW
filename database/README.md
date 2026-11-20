@@ -17,6 +17,8 @@ relación entre **médico** y **usuario**. Los datos del perfil viven en
 | `Reportes/` | Funciones de los nueve reportes. |
 | `Trigger/` | Funciones y disparadores de informe automático y límite de médicos. |
 | `Datos de Prueba/` | Datos de ejemplo. `04_datos_prueba_masivos.sql` carga más de 3.200 pacientes, turnos y consultas, y crea cuentas demo de ADMIN y MEDICO. |
+| `05_seguimiento_turnos.sql` | Migración reejecutable: fecha/hora/nota reales en `Turno`, tabla `Notificacion` y motor de estados por reloj. |
+| `docs/seguimiento-turnos.md` | Documentación del flujo completo, endpoints y análisis de UI implementada/pendiente. |
 
 ## Modelo
 
@@ -366,6 +368,28 @@ spring.jpa.hibernate.ddl-auto=update
 ```
 
 por `validate`, y administrar los cambios con los scripts de esta carpeta.
+
+## Seguimiento de turnos
+
+La migración `05_seguimiento_turnos.sql` añade `Turno.fecha`, `Turno.hora` y
+`Turno.nota_clinica`, reparte los turnos de prueba entre los 7 días anteriores y
+los 7 siguientes, y crea `public.actualizar_turnos_en_vivo()`. Esa función mueve
+los turnos `pendiente`/`confirmado` a `en_progreso` al llegar la hora y a
+`finalizado` al terminar la consulta; el fin es el siguiente turno del mismo
+médico y día (30 min por defecto, mínimo 1 min). Cada transición genera una
+notificación visible según el rol. El scheduler del backend la ejecuta cada
+30 segundos y los endpoints del panel la invocan antes de responder.
+
+```bash
+PGPASSWORD=admin123 psql -h localhost -U postgres -d sistema \
+  -v ON_ERROR_STOP=1 -f database/05_seguimiento_turnos.sql
+PGPASSWORD=admin123 psql -h localhost -U postgres -d sistema \
+  -v ON_ERROR_STOP=1 -f database/CRUD/Insertar/Turno.sql
+```
+
+El detalle de estados, endpoints, cambio de día, notificaciones, edición desde
+el menú de tres puntos y el análisis de la interfaz implementada frente a la que
+sigue pendiente está en [`docs/seguimiento-turnos.md`](../docs/seguimiento-turnos.md).
 
 ## Verificación realizada
 

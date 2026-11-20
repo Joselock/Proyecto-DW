@@ -978,6 +978,10 @@ body {
     flex-shrink: 0
 }
 
+.search-field.no-icon input {
+    padding-left: 3px
+}
+
 .search-field input {
     border: 0;
     outline: 0;
@@ -3173,4 +3177,444 @@ body.privacy-mode .doctor-meta-row.private:hover span {
 body.privacy-mode #settingsPhone::selection,
 body.privacy-mode #settingsAddress::selection {
     filter: none
+}
+
+/* ==========================================================
+   Seguimiento de turnos: notificaciones, estados y menú de fila
+   ========================================================== */
+
+.top-actions {
+    position: relative
+}
+
+.notification span[hidden] {
+    display: none
+}
+
+.notification #notificationBadge {
+    width: auto;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    display: grid;
+    place-items: center;
+    right: 1px;
+    top: 1px;
+    background: var(--coral);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    border: 2px solid #fff
+}
+
+.notification-panel {
+    position: absolute;
+    top: 48px;
+    right: 44px;
+    width: 344px;
+    max-height: 460px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 18px 45px rgba(29, 55, 72, .18);
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden
+}
+
+.notification-panel[hidden] {
+    display: none
+}
+
+.notification-panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line)
+}
+
+.notification-panel-head strong {
+    display: block;
+    font-size: 13px;
+    color: var(--ink)
+}
+
+.notification-panel-head span {
+    display: block;
+    margin-top: 3px;
+    font-size: 11px;
+    color: #8a9ba8
+}
+
+.notification-list {
+    overflow-y: auto;
+    flex: 1
+}
+
+.notification-item {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f3f5
+}
+
+.notification-item.no-leida {
+    background: #f2fbfa
+}
+
+.notification-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex: none;
+    background: #cdd7dd
+}
+
+.notification-item.no-leida .notification-dot {
+    background: var(--teal)
+}
+
+.notification-item.fin .notification-dot {
+    background: var(--green)
+}
+
+.notification-copy {
+    min-width: 0
+}
+
+.notification-copy strong {
+    display: block;
+    font-size: 12px;
+    color: var(--ink)
+}
+
+.notification-copy p {
+    margin: 3px 0;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #5f7280
+}
+
+.notification-copy time {
+    font-size: 10px;
+    color: #98a6b0
+}
+
+.notification-check {
+    margin-left: auto;
+    width: 26px;
+    height: 26px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--teal-dark);
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease
+}
+
+.notification-check svg {
+    width: 14px;
+    height: 14px
+}
+
+.notification-check:hover:not(:disabled),
+.notification-check:focus-visible:not(:disabled) {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: #fff;
+    outline: none
+}
+
+.notification-check:disabled {
+    opacity: .45;
+    cursor: default
+}
+
+.notification-foot {
+    padding: 10px 16px;
+    border-top: 1px solid var(--line);
+    text-align: center
+}
+
+.notification-foot .outline-btn:disabled {
+    opacity: .45;
+    cursor: default
+}
+
+.notification-empty {
+    padding: 26px 18px;
+    text-align: center;
+    font-size: 12px;
+    color: #8a9ba8
+}
+
+.status-chip.in_progress {
+    background: #e4f0ff;
+    color: #2264a8
+}
+
+.status-chip.no_atendido {
+    background: #ffe9e6;
+    color: #b4493b
+}
+
+.text-btn.small {
+    font-size: 10px;
+    padding: 2px 5px;
+    border: 1px solid var(--line);
+    border-radius: 6px
+}
+
+.pacientes-date {
+    margin-right: 6px;
+    font-size: 11px
+}
+
+.row-action-menu {
+    position: fixed;
+    z-index: 120;
+    min-width: 190px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(29, 55, 72, .2);
+    padding: 6px;
+    display: flex;
+    flex-direction: column
+}
+
+.row-action-menu[hidden] {
+    display: none
+}
+
+.row-action-title {
+    padding: 6px 9px 8px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    color: #8a9ba8;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 4px
+}
+
+.row-action-menu button {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    border: 0;
+    background: transparent;
+    border-radius: 7px;
+    padding: 8px 9px;
+    font: 600 12px 'DM Sans', sans-serif;
+    color: #4a5e6c;
+    text-align: left;
+    cursor: pointer
+}
+
+.row-action-menu button:hover {
+    background: #f1f7f7;
+    color: var(--teal-dark)
+}
+
+.row-action-menu button.danger {
+    color: #b4493b
+}
+
+.row-action-menu button.danger:hover {
+    background: #fff0ee
+}
+
+.row-action-menu button svg {
+    width: 15px
+}
+
+.checkbox-row {
+    display: flex !important;
+    flex-direction: row;
+    align-items: center;
+    gap: 9px;
+    font-size: 12px;
+    cursor: pointer
+}
+
+.checkbox-row input {
+    width: 16px !important;
+    height: 16px !important
+}
+
+@media (max-width: 700px) {
+    .notification-panel {
+        right: 0;
+        width: calc(100vw - 24px)
+    }
+
+    .pacientes-date {
+        width: 100%;
+        margin-bottom: 6px
+    }
+}
+
+.nota-clinica {
+    display: block;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 10px;
+    color: #8a9ba8
+}
+
+/* ============================================================
+   Temas visuales: claro, oscuro, azul noche y arena cálida
+   El acento elegido en Configuración se aplica encima de estos.
+   ============================================================ */
+body[data-theme="dark"] {
+    --ink: #e7eff5;
+    --ink-soft: #adc0cd;
+    --muted: #849aa9;
+    --line: #263d4e;
+    --surface: #152634;
+    --bg: #0d1a25;
+    --green: #54c997;
+    --shadow: 0 10px 28px rgba(0, 0, 0, .28);
+    color-scheme: dark
+}
+
+body[data-theme="navy"] {
+    --ink: #eaf1fb;
+    --ink-soft: #b4c7de;
+    --muted: #8aa3bd;
+    --line: #233957;
+    --surface: #16263d;
+    --bg: #0d1829;
+    --green: #5bc7a5;
+    --shadow: 0 10px 28px rgba(3, 12, 29, .35);
+    color-scheme: dark
+}
+
+body[data-theme="sand"] {
+    --ink: #3b3328;
+    --ink-soft: #665b4c;
+    --muted: #6f6456;
+    --line: #e2d8c8;
+    --surface: #fffcf6;
+    --bg: #f4eee3;
+    --shadow: 0 8px 24px rgba(88, 68, 40, .08);
+    color-scheme: light
+}
+
+/* Barras laterales de los temas oscuros */
+body:is([data-theme="dark"], [data-theme="navy"]) .sidebar {
+    background: #0a1621
+}
+
+body[data-theme="navy"] .sidebar {
+    background: #0a1526
+}
+
+body:is([data-theme="dark"], [data-theme="navy"]) .nav-item:hover {
+    background: #162d3f
+}
+
+body:is([data-theme="dark"], [data-theme="navy"]) .nav-item.active {
+    background: #1c3a4e
+}
+
+body:is([data-theme="dark"], [data-theme="navy"]) .help-card {
+    background: #112839;
+    border-color: #1d3b4e
+}
+
+body:is([data-theme="dark"], [data-theme="navy"]) .user-profile {
+    border-color: #1d3b4e
+}
+
+/* Barra lateral cálida */
+body[data-theme="sand"] .sidebar {
+    background: #4b4032;
+    color: #f7f0e4
+}
+
+body[data-theme="sand"] .nav-item {
+    color: #e2d6c4
+}
+
+body[data-theme="sand"] .nav-item:hover {
+    background: #5c4f3d
+}
+
+body[data-theme="sand"] .nav-item.active {
+    background: #695a46
+}
+
+body[data-theme="sand"] .help-card {
+    background: #5c4f3d;
+    border-color: #6d5e49
+}
+
+body[data-theme="sand"] .user-profile {
+    border-color: #6d5e49
+}
+
+/* Superficies: sobrescribe los colores claros del tema original */
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) :is(
+    .topbar, .panel, .stat-card, .account-dropdown, .modal, .notification-panel,
+    .notification-item,
+    .table-wrap, .table-wrap table, .table-wrap th, .table-wrap td,
+    .search-field, .select-wrap select,
+    input:not([type="checkbox"]):not([type="radio"]), textarea,
+    .doctor-card, .guide-card, .hospital-banner, .help-hero, .help-status-card,
+    .report-toolbar, .list-panel, .placeholder-panel, .settings-panel,
+    .session-card, .info-card, .queue-summary, .profile-modal,
+    .faq-item, .setting-field, .setting-row
+) {
+    background: var(--surface) !important;
+    color: var(--ink) !important;
+    border-color: var(--line) !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) :is(
+    .breadcrumb, .panel-heading p, .stat-foot, .subhead, .table-hint,
+    .settings-note, .settings-status, .page-footer, .contact-copy span,
+    .faq-item p, .guide-card p, .nav-label, .setting-copy span,
+    .form-help, .profile-note, .panel-note, .nota-clinica, .table-footer
+) {
+    color: var(--muted) !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .stat-label {
+    color: var(--ink-soft) !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) :is(
+    tbody tr:nth-child(even), .timeline .time-row:nth-child(even),
+    .activity-list > *:nth-child(even)
+) {
+    background: rgba(127, 160, 180, .06) !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .outline-btn {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--line)
+}
+
+body:is([data-theme="dark"], [data-theme="navy"]) .notification-item.no-leida {
+    background: rgba(127, 160, 180, .08)
+}
+
+body:is([data-theme="dark"], [data-theme="navy"]) .notification-check {
+    color: var(--teal)
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .search-field input,
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .select-wrap select {
+    background: transparent;
+    color: var(--ink)
 }

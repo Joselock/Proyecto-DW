@@ -19,9 +19,14 @@ import org.springframework.stereotype.Service;
  *   - MEDICO: ve solo los turnos asignados a su codMed y los pacientes que
  *     atendió en esos turnos o que están ingresados en su unidad.
  *
- * El perfil del médico se resuelve desde la relación 1:1
- * Medico.username -> user.username. Si la cuenta no tiene médico vinculado,
- * el usuario no ve filas (no hay forma de saber a qué unidad pertenece).
+ * El parámetro fecha permite recorrer la agenda hacia atrás y hacia adelante.
+ * Cuando se recibe, los turnos se filtran por ese día y el listado de
+ * pacientes se reduce a quienes tienen un turno ese mismo día. Sin fecha se
+ * mantiene el comportamiento original (todo el histórico).
+ *
+ * Antes de cada consulta se ejecuta el motor de estados de PostgreSQL, de modo
+ * que un turno cuya hora ya llegó aparece como "en_progreso" (o "finalizado")
+ * en cuanto se abre el panel, aunque el scheduler todavía no haya corrido.
  */
 @Service
 public class PanelService {
@@ -35,7 +40,21 @@ public class PanelService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public Map<String, Object> pacientes(String username, String role, String q, Integer limit, Integer offset) {
+    /**
+     * Aplica las transiciones pendiente/confirmado -> en_progreso -> finalizado
+     * según la hora del servidor. Fallar aquí no debe impedir ver el panel.
+     */
+    private void sincronizarTurnos() {
+        try {
+            jdbcTemplate.queryForObject("SELECT public.actualizar_turnos_en_vivo()", Integer.class);
+        } catch (RuntimeException exception) {
+            // El panel sigue funcionando con el último estado calculado.
+        }
+    }
+
+    public Map<String, Object> pacientes(String username, String role, String q, String fecha,
+            Integer limit, Integer offset) {
+        sincronizarTurnos();
         Perfil perfil = resolverPerfil(username, role);
 
         StringBuilder sql = new StringBuilder("""
@@ -55,7 +74,7 @@ public class PanelService {
                            FROM public."Consulta" cp
                            JOIN public."Turno" tp ON tp."numTur" = cp."numTur"
                            WHERE cp."numHisCli" = p."numHisCli"
-                             AND lower(tp."estTur") LIKE '%pendiente%'
+                             AND lower(tp."estTur") IN ('pendiente', 'confirmado', 'en_progreso')
                        ) AS pendiente,
                        COUNT(*) OVER () AS total
                 FROM public."Registro" r
@@ -64,39 +83,65 @@ public class PanelService {
                 JOIN public."Departamento" d ON d."codDep" = u."codDep"
                 JOIN public."Hospital" h ON h."codHos" = d."codHos"
                 LEFT JOIN LATERAL (
-                    SELECT m."nomMed" AS medico, i."fecha" AS fecha
+                    SELECT m."nomMed" AS medico, t."fecha" AS fecha
                     FROM public."Consulta" c
                     JOIN public."Turno" t ON t."numTur" = c."numTur"
                     LEFT JOIN public."Medico" m ON m."codMed" = t."codMed"
-                    LEFT JOIN public."Informe" i ON i."numTur" = t."numTur"
                     WHERE c."numHisCli" = p."numHisCli"
-                    ORDER BY t."numTur" DESC
+                    ORDER BY t."fecha" DESC, t."hora" DESC, t."numTur" DESC
                     LIMIT 1
                 ) ult ON true
                 """);
 
+        List<String> condiciones = new ArrayList<>();
         List<Object> args = new ArrayList<>();
-        boolean tieneWhere = false;
 
         if (!perfil.admin()) {
-            sql.append("""
-                    WHERE (r."codUni" = ?
-                           OR EXISTS (
-                               SELECT 1
-                               FROM public."Consulta" cm
-                               JOIN public."Turno" tm ON tm."numTur" = cm."numTur"
-                               WHERE cm."numHisCli" = p."numHisCli"
-                                 AND tm."codMed" = ?
-                           ))
+            condiciones.add("""
+                    (r."codUni" = ?
+                       OR EXISTS (
+                           SELECT 1
+                           FROM public."Consulta" cm
+                           JOIN public."Turno" tm ON tm."numTur" = cm."numTur"
+                           WHERE cm."numHisCli" = p."numHisCli"
+                             AND tm."codMed" = ?
+                       ))
                     """);
             args.add(perfil.codUni());
             args.add(perfil.codMed());
-            tieneWhere = true;
+        }
+
+        String dia = fechaValida(fecha);
+        if (dia != null) {
+            if (perfil.admin()) {
+                condiciones.add("""
+                        EXISTS (
+                            SELECT 1
+                            FROM public."Consulta" cd
+                            JOIN public."Turno" td ON td."numTur" = cd."numTur"
+                            WHERE cd."numHisCli" = p."numHisCli"
+                              AND td."fecha" = ?::date
+                        )
+                        """);
+                args.add(dia);
+            } else {
+                condiciones.add("""
+                        EXISTS (
+                            SELECT 1
+                            FROM public."Consulta" cd
+                            JOIN public."Turno" td ON td."numTur" = cd."numTur"
+                            WHERE cd."numHisCli" = p."numHisCli"
+                              AND td."fecha" = ?::date
+                              AND td."codMed" = ?
+                        )
+                        """);
+                args.add(dia);
+                args.add(perfil.codMed());
+            }
         }
 
         if (q != null && !q.isBlank()) {
-            sql.append(tieneWhere ? " AND " : " WHERE ");
-            sql.append("""
+            condiciones.add("""
                     (lower(p."nomPac") LIKE ? OR lower(p."numHisCli") LIKE ?
                      OR lower(u."nomUni") LIKE ? OR lower(d."nomDep") LIKE ?
                      OR lower(h."nomHos") LIKE ?)
@@ -107,6 +152,9 @@ public class PanelService {
             }
         }
 
+        if (!condiciones.isEmpty()) {
+            sql.append(" WHERE ").append(String.join(" AND ", condiciones));
+        }
         sql.append(" ORDER BY p.\"numHisCli\" DESC LIMIT ? OFFSET ? ");
         args.add(normalizarLimit(limit));
         args.add(Math.max(0, offset == null ? 0 : offset));
@@ -135,17 +183,43 @@ public class PanelService {
             rows.add(row);
         }
 
-        return respuesta(perfil, rows, total(filas));
+        Map<String, Object> data = respuesta(perfil, rows, total(filas));
+        data.put("fecha", dia);
+        return data;
     }
 
-    public Map<String, Object> turnos(String username, String role, String q, Integer limit, Integer offset) {
+    public Map<String, Object> turnos(String username, String role, String q, String fecha,
+            Integer limit, Integer offset) {
+        sincronizarTurnos();
         Perfil perfil = resolverPerfil(username, role);
 
+        // La ventana de cada consulta termina cuando empieza el siguiente turno
+        // del mismo médico y día; si es el último, se estiman 30 minutos. El
+        // mínimo es 1 minuto para que el turno nunca termine antes de empezar.
         StringBuilder sql = new StringBuilder("""
-                SELECT t."numTur" AS id,
-                       t."estTur" AS estado,
-                       t."cantAtenTur" AS cant_aten,
-                       m."codMed" AS cod_med,
+                WITH agenda AS (
+                    SELECT t.*,
+                           GREATEST(
+                               COALESCE(
+                                   LEAD(t."fecha" + t."hora") OVER (
+                                       PARTITION BY t."codMed", t."fecha"
+                                       ORDER BY t."hora", t."numTur"
+                                   ),
+                                   t."fecha" + t."hora" + interval '30 minutes'
+                               ),
+                               t."fecha" + t."hora" + interval '1 minute'
+                           ) AS fin_calc
+                    FROM public."Turno" t
+                )
+                SELECT a."numTur" AS id,
+                       a."codMed" AS cod_med,
+                       a."estTur" AS estado,
+                       a."cantAtenTur" AS cant_aten,
+                       a."nota_clinica" AS nota_clinica,
+                       to_char(a."fecha", 'YYYY-MM-DD') AS fecha,
+                       to_char(a."hora", 'HH24:MI') AS hora,
+                       to_char(a.fin_calc, 'HH24:MI') AS fin,
+                       floor(EXTRACT(EPOCH FROM (a.fin_calc - (a."fecha" + a."hora"))) / 60)::int AS duracion,
                        m."nomMed" AS profesional,
                        m."espMed" AS especialidad,
                        u."codUni" AS cod_uni,
@@ -154,45 +228,45 @@ public class PanelService {
                        h."nomHos" AS hospital,
                        COALESCE(p."numHisCli", '') AS paciente_id,
                        COALESCE(p."nomPac", 'Sin paciente') AS paciente,
-                       to_char(COALESCE(i."fecha", CURRENT_DATE), 'YYYY-MM-DD') AS fecha,
-                       to_char(make_time(8 + ((t."numTur" % 20) / 2),
-                                         (t."numTur" % 2) * 30, 0), 'HH24:MI') AS hora,
-                       (SELECT count(*) FROM public."Consulta" cc WHERE cc."numTur" = t."numTur") AS consultas,
+                       (SELECT count(*) FROM public."Consulta" cc WHERE cc."numTur" = a."numTur") AS consultas,
                        (SELECT count(*) FROM public."Consulta" ca
-                         WHERE ca."numTur" = t."numTur" AND ca.atendido) AS atendidos,
+                         WHERE ca."numTur" = a."numTur" AND ca.atendido) AS atendidos,
                        COUNT(*) OVER () AS total
-                FROM public."Turno" t
-                JOIN public."Medico" m ON m."codMed" = t."codMed"
-                JOIN public."Unidad" u ON u."codUni" = t."codUni"
+                FROM agenda a
+                JOIN public."Medico" m ON m."codMed" = a."codMed"
+                JOIN public."Unidad" u ON u."codUni" = a."codUni"
                 JOIN public."Departamento" d ON d."codDep" = u."codDep"
                 JOIN public."Hospital" h ON h."codHos" = d."codHos"
-                LEFT JOIN public."Informe" i ON i."numTur" = t."numTur"
                 LEFT JOIN LATERAL (
                     SELECT c."numHisCli"
                     FROM public."Consulta" c
-                    WHERE c."numTur" = t."numTur"
+                    WHERE c."numTur" = a."numTur"
                     ORDER BY c."numHisCli"
                     LIMIT 1
                 ) primero ON true
                 LEFT JOIN public."Paciente" p ON p."numHisCli" = primero."numHisCli"
                 """);
 
+        List<String> condiciones = new ArrayList<>();
         List<Object> args = new ArrayList<>();
-        boolean tieneWhere = false;
 
         if (!perfil.admin()) {
-            sql.append(" WHERE t.\"codMed\" = ? ");
+            condiciones.add(" a.\"codMed\" = ? ");
             args.add(perfil.codMed());
-            tieneWhere = true;
+        }
+
+        String dia = fechaValida(fecha);
+        if (dia != null) {
+            condiciones.add(" a.\"fecha\" = ?::date ");
+            args.add(dia);
         }
 
         if (q != null && !q.isBlank()) {
-            sql.append(tieneWhere ? " AND " : " WHERE ");
-            sql.append("""
+            condiciones.add("""
                     (lower(p."nomPac") LIKE ? OR lower(p."numHisCli") LIKE ?
                      OR lower(m."nomMed") LIKE ? OR lower(m."espMed") LIKE ?
                      OR lower(u."nomUni") LIKE ? OR lower(h."nomHos") LIKE ?
-                     OR lower(CAST(t."numTur" AS text)) LIKE ?)
+                     OR lower(CAST(a."numTur" AS text)) LIKE ?)
                     """);
             String like = "%" + q.trim().toLowerCase(Locale.ROOT) + "%";
             for (int i = 0; i < 7; i++) {
@@ -200,7 +274,10 @@ public class PanelService {
             }
         }
 
-        sql.append(" ORDER BY t.\"numTur\" DESC LIMIT ? OFFSET ? ");
+        if (!condiciones.isEmpty()) {
+            sql.append(" WHERE ").append(String.join(" AND ", condiciones));
+        }
+        sql.append(" ORDER BY a.\"fecha\" DESC, a.\"hora\" DESC, a.\"numTur\" DESC LIMIT ? OFFSET ? ");
         args.add(normalizarLimit(limit));
         args.add(Math.max(0, offset == null ? 0 : offset));
 
@@ -211,6 +288,7 @@ public class PanelService {
             int numero = numero(fila.get("id"));
             row.put("id", "T-" + numero);
             row.put("numero", numero);
+            row.put("codMed", texto(fila.get("cod_med")));
             row.put("paciente", texto(fila.get("paciente")));
             row.put("pacienteId", texto(fila.get("paciente_id")));
             row.put("profesional", texto(fila.get("profesional")));
@@ -218,17 +296,23 @@ public class PanelService {
             row.put("estatus", estadoTurno(texto(fila.get("estado"))));
             row.put("estadoOriginal", texto(fila.get("estado")));
             row.put("hora", texto(fila.get("hora")));
+            row.put("fin", texto(fila.get("fin")));
+            row.put("duracion", numero(fila.get("duracion")));
+            row.put("notaClinica", texto(fila.get("nota_clinica")));
             row.put("fecha", fila.get("fecha"));
             row.put("consultorio", "Consultorio " + ((numero % 4) + 1));
             row.put("unidad", texto(fila.get("unidad")));
             row.put("departamento", texto(fila.get("departamento")));
             row.put("hospital", texto(fila.get("hospital")));
             row.put("atendidos", numero(fila.get("atendidos")));
+            row.put("consultas", numero(fila.get("consultas")));
             row.put("cantidadAtendida", numero(fila.get("cant_aten")));
             rows.add(row);
         }
 
-        return respuesta(perfil, rows, total(filas));
+        Map<String, Object> data = respuesta(perfil, rows, total(filas));
+        data.put("fecha", dia);
+        return data;
     }
 
     /** Resuelve el médico vinculado a la sesión y si el usuario es administrador. */
@@ -282,10 +366,21 @@ public class PanelService {
     }
 
     private static String estadoTurno(String estado) {
-        String value = estado.toLowerCase(Locale.ROOT);
+        String value = estado.toLowerCase(Locale.ROOT).replace('_', ' ').trim();
+        if (value.contains("no atendido")) return "no_atendido";
+        if (value.contains("progreso") || value.contains("curso")) return "in_progress";
         if (value.contains("finaliz") || value.contains("atendid") || value.contains("done")) return "done";
         if (value.contains("confirm")) return "confirmed";
         return "pending";
+    }
+
+    private static String fechaValida(String fecha) {
+        if (fecha == null || !fecha.matches("\\d{4}-\\d{2}-\\d{2}")) return null;
+        try {
+            return LocalDate.parse(fecha).toString();
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     private static int normalizarLimit(Integer limit) {

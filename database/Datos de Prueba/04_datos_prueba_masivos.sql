@@ -3,7 +3,9 @@
 -- ============================================================================
 -- Carga 3.200 pacientes, 3.200 turnos y 3.200 consultas (más de 9.600 filas
 -- nuevas) usando los hospitales, departamentos, unidades y médicos que ya
--- existen. También crea dos cuentas de prueba para verificar la visibilidad
+-- existen. Los turnos se reparten entre los 7 días anteriores y los 7
+-- siguientes para probar el cambio de día en las agendas. También crea dos
+-- cuentas de prueba para verificar la visibilidad
 -- por rol:
 --
 --   ADMIN  -> admin.demo   / hospital123   (ve los 3.800 pacientes)
@@ -64,7 +66,15 @@ generados AS (
              'Salas','Castro','Romero','Navarro','Paredes','Leal','Aguirre',
              'Duarte','Ferrer','Herrera','Núñez','Méndez','Silva','Cabrera',
              'Vargas','Molina','Benítez','Soto','Palacios','Contreras'
-           ])[1 + ((n.i * 7) % 40)] AS nombre,
+           ])[1 + (((n.i - 1001) / 40) % 40)] || ' ' ||
+           (ARRAY[
+             'García','Martínez','López','Hernández','González','Pérez',
+             'Rodríguez','Sánchez','Ramírez','Torres','Flores','Rivera',
+             'Gómez','Díaz','Reyes','Morales','Cruz','Ortiz','Rojas','Vega',
+             'Salas','Castro','Romero','Navarro','Paredes','Leal','Aguirre',
+             'Duarte','Ferrer','Herrera','Núñez','Méndez','Silva','Cabrera',
+             'Vargas','Molina','Benítez','Soto','Palacios','Contreras'
+           ])[1 + (((n.i - 1001) / 1600) % 40)] AS nombre,
            (ARRAY[
              'Calle Principal','Avenida Central','Callejón San José',
              'Paseo de la Reforma','Avenida Libertador','Calle Las Flores',
@@ -118,13 +128,25 @@ generados AS (
                ELSE 'pendiente'
            END AS estado_turno,
            n.i % 9 AS cantidad_atendida,
-           'P' || lpad((1001 + ((n.i - 1001) * 7) % 3200)::text, 4, '0') AS paciente_id
+           'P' || lpad((1001 + ((n.i - 1001) * 7) % 3200)::text, 4, '0') AS paciente_id,
+           (CURRENT_DATE - make_interval(days => ((n.i - 1001) % 15) - 7))::date AS fecha,
+           -- El día usa %15, así que la hora debe derivar del índice de
+           -- repetición dentro de ese día (/15). Se usa %19 (coprimo con los
+           -- 16 médicos) para que un mismo médico no repita hora en el día.
+           make_time(
+               8 + ((((n.i - 1001) / 15) % 19) / 2),
+               ((((n.i - 1001) / 15) % 19) % 2) * 30,
+               0
+           ) AS hora,
+           'Turno generado automáticamente' AS nota_clinica
     FROM nums n
     JOIN medicos_idx m ON m.idx = (n.i - 1001) % (SELECT count(*) FROM public."Medico")
 ),
 ins_turno AS (
-    INSERT INTO public."Turno" ("numTur", "cantAtenTur", "estTur", "codUni", "codMed")
-    SELECT g.i, g.cantidad_atendida, g.estado_turno, g."codUni", g."codMed"
+    INSERT INTO public."Turno"
+        ("numTur", "cantAtenTur", "estTur", "codUni", "codMed", "fecha", "hora", "nota_clinica")
+    SELECT g.i, g.cantidad_atendida, g.estado_turno, g."codUni", g."codMed",
+           g.fecha, g.hora, g.nota_clinica
     FROM generados g
     ON CONFLICT ("numTur") DO NOTHING
     RETURNING "numTur"

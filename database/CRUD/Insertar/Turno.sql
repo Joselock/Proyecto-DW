@@ -1,9 +1,40 @@
-﻿CREATE OR REPLACE FUNCTION public.insertarTurno(
+﻿-- Inserta un turno. Se conserva la firma original de 5 parámetros y se añade
+-- una sobrecarga con fecha, hora y nota clínica, que es la que usa el dashboard.
+CREATE OR REPLACE FUNCTION public.insertarTurno(
     p_numTur INTEGER,
     p_cantAtendidos INTEGER,
     p_estadoTur VARCHAR,
     p_codUni VARCHAR,
     p_codMed VARCHAR
+)
+RETURNS TABLE(
+    existe BOOLEAN,
+    mensaje VARCHAR,
+    numTur INTEGER,
+    cantAtendidos INTEGER,
+    estadoTur VARCHAR,
+    codUni VARCHAR,
+    codMed VARCHAR
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT * FROM public.insertarTurno(
+        p_numTur, p_cantAtendidos, p_estadoTur, p_codUni, p_codMed,
+        CURRENT_DATE, CURRENT_TIME::time, NULL
+    );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.insertarTurno(
+    p_numTur INTEGER,
+    p_cantAtendidos INTEGER,
+    p_estadoTur VARCHAR,
+    p_codUni VARCHAR,
+    p_codMed VARCHAR,
+    p_fecha DATE,
+    p_hora TIME,
+    p_notaClinica VARCHAR
 )
 RETURNS TABLE(
     existe BOOLEAN,
@@ -28,20 +59,32 @@ BEGIN
         RETURN;
     END IF;
 
-    IF p_estadoTur IS NULL OR p_estadoTur = '' THEN
+    IF p_estadoTur IS NULL OR btrim(p_estadoTur) = '' THEN
         RETURN QUERY SELECT FALSE, 'El estado del turno no puede estar vacío'::VARCHAR,
                             NULL::INTEGER, NULL::INTEGER, NULL::VARCHAR, NULL::VARCHAR, NULL::VARCHAR;
         RETURN;
     END IF;
 
-    IF p_codUni IS NULL OR p_codUni = '' THEN
+    IF p_codUni IS NULL OR btrim(p_codUni) = '' THEN
         RETURN QUERY SELECT FALSE, 'El código de unidad no puede estar vacío'::VARCHAR,
                             NULL::INTEGER, NULL::INTEGER, NULL::VARCHAR, NULL::VARCHAR, NULL::VARCHAR;
         RETURN;
     END IF;
 
-    IF p_codMed IS NULL OR p_codMed = '' THEN
+    IF p_codMed IS NULL OR btrim(p_codMed) = '' THEN
         RETURN QUERY SELECT FALSE, 'El código del médico no puede estar vacío'::VARCHAR,
+                            NULL::INTEGER, NULL::INTEGER, NULL::VARCHAR, NULL::VARCHAR, NULL::VARCHAR;
+        RETURN;
+    END IF;
+
+    IF p_fecha IS NULL THEN
+        RETURN QUERY SELECT FALSE, 'La fecha del turno no puede estar vacía'::VARCHAR,
+                            NULL::INTEGER, NULL::INTEGER, NULL::VARCHAR, NULL::VARCHAR, NULL::VARCHAR;
+        RETURN;
+    END IF;
+
+    IF p_hora IS NULL THEN
+        RETURN QUERY SELECT FALSE, 'La hora del turno no puede estar vacía'::VARCHAR,
                             NULL::INTEGER, NULL::INTEGER, NULL::VARCHAR, NULL::VARCHAR, NULL::VARCHAR;
         RETURN;
     END IF;
@@ -64,8 +107,11 @@ BEGIN
         RETURN;
     END IF;
 
-    INSERT INTO public."Turno" ("numTur", "cantAtenTur", "estTur", "codUni", "codMed")
-    VALUES (p_numTur, p_cantAtendidos, p_estadoTur, p_codUni, p_codMed);
+    INSERT INTO public."Turno"
+        ("numTur", "cantAtenTur", "estTur", "codUni", "codMed", "fecha", "hora", "nota_clinica")
+    VALUES
+        (p_numTur, p_cantAtendidos, p_estadoTur, p_codUni, p_codMed,
+         p_fecha, p_hora, NULLIF(btrim(COALESCE(p_notaClinica, '')), ''));
 
     RETURN QUERY SELECT TRUE, 'Turno insertado correctamente'::VARCHAR,
                         p_numTur, p_cantAtendidos, p_estadoTur, p_codUni, p_codMed;

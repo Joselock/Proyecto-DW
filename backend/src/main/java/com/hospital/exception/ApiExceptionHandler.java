@@ -16,6 +16,11 @@ public class ApiExceptionHandler {
         return ResponseEntity.badRequest().body(error(exception.getMessage()));
     }
 
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<Map<String, Object>> accesoDenegado(SecurityException exception) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error(exception.getMessage()));
+    }
+
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<Map<String, Object>> databaseUnavailable(DataAccessException exception) {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)

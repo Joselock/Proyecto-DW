@@ -1,8 +1,11 @@
 package com.hospital.service;
 
 import java.sql.Date;
+import java.sql.Time;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -197,13 +200,23 @@ public class AltasService {
 
         validarPaciente(pacienteId, perfil);
 
+        LocalDate fechaTurno = fecha(body.get("fecha"));
+        if (fechaTurno == null) fechaTurno = LocalDate.now();
+        Time horaTurno = hora(body.get("hora"));
+        if (horaTurno == null) {
+            horaTurno = Time.valueOf(LocalTime.now().withNano(0)
+                    .format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+        }
+        String notaClinica = texto(body.get("notaClinica"));
+        if (notaClinica.isEmpty()) notaClinica = texto(body.get("nota"));
+
         int numero = siguienteTurno();
         Map<String, Object> turno = llamarFuncion(
-                "SELECT * FROM public.insertarTurno(?, ?, ?, ?, ?)",
-                numero, 0, estado, codUni, codMed);
+                "SELECT * FROM public.insertarTurno(?, ?, ?, ?, ?, ?, ?, ?)",
+                numero, 0, estado, codUni, codMed,
+                Date.valueOf(fechaTurno), horaTurno, notaClinica);
 
-        String causa = texto(body.get("nota"));
-        if (causa.isEmpty()) causa = "OtrasCausas";
+        String causa = notaClinica.isEmpty() ? "OtrasCausas" : notaClinica;
         llamarFuncion(
                 "SELECT * FROM public.insertarConsulta(?, ?, ?, ?)",
                 numero, pacienteId, false, causa);
@@ -216,8 +229,109 @@ public class AltasService {
         respuesta.put("profesional", texto(medico.get("nomMed")));
         respuesta.put("codUni", codUni);
         respuesta.put("estado", estado);
+        respuesta.put("fecha", fechaTurno.toString());
+        respuesta.put("hora", horaTurno.toLocalTime().toString().substring(0, 5));
+        respuesta.put("notaClinica", notaClinica);
         respuesta.put("mensaje", texto(turno.get("mensaje")));
         return respuesta;
+    }
+
+    /**
+     * Edita un turno desde el menú de tres puntos: permite cambiar día, hora,
+     * nota clínica y estado. Marcar "no_atendido" revierte la consulta a no
+     * atendida; marcar "finalizado" la deja como exitosa salvo indicación
+     * contraria en el campo "atendido".
+     */
+    @Transactional
+    public Map<String, Object> editarTurno(String username, String role, int numero,
+            Map<String, String> body) {
+        Perfil perfil = perfil(username, role);
+
+        List<Map<String, Object>> filas = jdbc.queryForList("""
+                SELECT t."codMed" AS cod_med, t."codUni" AS cod_uni,
+                       t."estTur" AS estado,
+                       COALESCE(to_char(t."fecha", 'YYYY-MM-DD'), '') AS fecha,
+                       COALESCE(to_char(t."hora", 'HH24:MI'), '') AS hora,
+                       COALESCE(t."nota_clinica", '') AS nota
+                FROM public."Turno" t
+                WHERE t."numTur" = ?
+                """, numero);
+        if (filas.isEmpty()) {
+            throw new IllegalArgumentException("El turno que intentas editar no existe.");
+        }
+
+        Map<String, Object> actual = filas.get(0);
+        String codMedActual = texto(actual.get("cod_med"));
+        if (!perfil.admin() && (perfil.codMed() == null || !perfil.codMed().equals(codMedActual))) {
+            throw new SecurityException("Solo puedes editar tus propios turnos.");
+        }
+
+        LocalDate fechaTurno = body.containsKey("fecha")
+                ? fecha(body.get("fecha"))
+                : fecha(texto(actual.get("fecha")));
+        if (fechaTurno == null) {
+            throw new IllegalArgumentException("Indica una fecha válida para el turno (AAAA-MM-DD).");
+        }
+
+        Time horaTurno = body.containsKey("hora")
+                ? hora(body.get("hora"))
+                : hora(texto(actual.get("hora")));
+        if (horaTurno == null) {
+            throw new IllegalArgumentException("Indica una hora válida para el turno (HH:MM).");
+        }
+
+        String notaClinica = body.containsKey("notaClinica")
+                ? texto(body.get("notaClinica"))
+                : texto(actual.get("nota"));
+
+        String estado = texto(body.get("estatus"));
+        if (estado.isEmpty()) estado = texto(body.get("estadoOriginal"));
+        if (estado.isEmpty()) estado = texto(actual.get("estado"));
+        String estadoDb = estadoBase(estado);
+
+        jdbc.update("""
+                UPDATE public."Turno"
+                SET "fecha" = ?, "hora" = ?, "nota_clinica" = ?, "estTur" = ?
+                WHERE "numTur" = ?
+                """, Date.valueOf(fechaTurno), horaTurno,
+                notaClinica.isEmpty() ? null : notaClinica, estadoDb, numero);
+
+        if ("no_atendido".equals(estadoDb)) {
+            jdbc.update("""
+                    UPDATE public."Consulta"
+                    SET atendido = false, causa = ?
+                    WHERE "numTur" = ?
+                    """, notaClinica.isEmpty() ? "No atendido" : notaClinica, numero);
+        } else if (body.containsKey("atendido")) {
+            boolean atendido = Boolean.parseBoolean(texto(body.get("atendido")));
+            jdbc.update("""
+                    UPDATE public."Consulta" SET atendido = ? WHERE "numTur" = ?
+                    """, atendido, numero);
+        } else if ("finalizado".equals(estadoDb)) {
+            jdbc.update("""
+                    UPDATE public."Consulta" SET atendido = true WHERE "numTur" = ?
+                    """, numero);
+        }
+
+        Map<String, Object> respuesta = new LinkedHashMap<>();
+        respuesta.put("id", "T-" + numero);
+        respuesta.put("numero", numero);
+        respuesta.put("fecha", fechaTurno.toString());
+        respuesta.put("hora", horaTurno.toLocalTime().toString().substring(0, 5));
+        respuesta.put("notaClinica", notaClinica);
+        respuesta.put("estatus", estadoDb);
+        respuesta.put("mensaje", "Turno actualizado correctamente");
+        return respuesta;
+    }
+
+    /** Convierte los estados de la interfaz a los valores guardados en la BD. */
+    private static String estadoBase(String valor) {
+        String estado = valor.toLowerCase(Locale.ROOT).replace('_', ' ').trim();
+        if (estado.contains("no atendido")) return "no_atendido";
+        if (estado.contains("progreso") || estado.contains("curso")) return "en_progreso";
+        if (estado.contains("finaliz") || estado.contains("atendid") || estado.equals("done")) return "finalizado";
+        if (estado.contains("confirm")) return "confirmado";
+        return "pendiente";
     }
 
     /* ------------------------------------------------------------------ */
@@ -400,6 +514,17 @@ public class AltasService {
             return LocalDate.parse(valor.trim().substring(0, 10));
         } catch (RuntimeException e) {
             return null;
+        }
+    }
+
+    private static Time hora(String valor) {
+        if (valor == null || valor.isBlank()) return null;
+        String textoHora = valor.trim();
+        if (textoHora.matches("\\d{1,2}:\\d{2}")) textoHora += ":00";
+        try {
+            return Time.valueOf(textoHora);
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException("Indica una hora válida en formato HH:MM.");
         }
     }
 

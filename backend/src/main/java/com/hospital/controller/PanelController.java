@@ -32,21 +32,23 @@ public class PanelController {
     @GetMapping("/pacientes")
     public ResponseEntity<?> pacientes(
             @RequestParam(required = false) String q,
+            @RequestParam(required = false) String fecha,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             HttpServletRequest request) {
         if (username(request) == null) return noAutorizado();
-        return respuesta(panelService.pacientes(username(request), role(request), q, limit, offset));
+        return respuesta(panelService.pacientes(username(request), role(request), q, fecha, limit, offset));
     }
 
     @GetMapping("/turnos")
     public ResponseEntity<?> turnos(
             @RequestParam(required = false) String q,
+            @RequestParam(required = false) String fecha,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             HttpServletRequest request) {
         if (username(request) == null) return noAutorizado();
-        return respuesta(panelService.turnos(username(request), role(request), q, limit, offset));
+        return respuesta(panelService.turnos(username(request), role(request), q, fecha, limit, offset));
     }
 
     private ResponseEntity<?> noAutorizado() {

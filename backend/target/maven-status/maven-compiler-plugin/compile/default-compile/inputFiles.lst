@@ -12,6 +12,8 @@
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/model/Entidades/Hospital.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/controller/AltasController.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/controller/ReportesController.java
+/home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/SeguimientoScheduler.java
+/home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/controller/NotificacionController.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/REPORTES/UnidadService.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/model/Entidades/Consulta.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/REPORTES/PacienteService.java
@@ -21,6 +23,7 @@
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/HospitalApplication.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/model/Entidades/Medico.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/config/SecurityConfig.java
+/home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/NotificacionService.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/service/JPA/AuthService.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/repository/JPA/UserRepository.java
 /home/ignacio/Documentos/Code/Proyecto-DW/backend/src/main/java/com/hospital/model/Entidades/Informe.java

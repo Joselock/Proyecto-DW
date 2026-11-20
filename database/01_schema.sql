@@ -326,6 +326,9 @@ CREATE TABLE public."Turno" (
     "estTur"       varchar(50) NOT NULL,
     "codUni"       varchar(10) NOT NULL,
     "codMed"       varchar(10) NOT NULL,
+    "fecha"        date        NOT NULL DEFAULT CURRENT_DATE,
+    "hora"         time        NOT NULL DEFAULT CURRENT_TIME,
+    "nota_clinica" varchar(500),
 
     CONSTRAINT "Turno_pkey" PRIMARY KEY ("numTur"),
     CONSTRAINT "Turno_codUni_fkey" FOREIGN KEY ("codUni")
@@ -343,9 +346,16 @@ CREATE TABLE public."Turno" (
 
 CREATE INDEX idx_turno_coduni ON public."Turno" ("codUni");
 CREATE INDEX idx_turno_codmed ON public."Turno" ("codMed");
+CREATE INDEX idx_turno_fecha_hora ON public."Turno" ("fecha", "hora");
 
 COMMENT ON TABLE public."Turno" IS
-    'Turno de atención de una unidad, asignado a un médico.';
+    'Turno de atención de una unidad, asignado a un médico, con fecha y hora reales.';
+COMMENT ON COLUMN public."Turno"."fecha" IS
+    'Día de atención. Es la clave del cambio de día en las agendas.';
+COMMENT ON COLUMN public."Turno"."hora" IS
+    'Hora de inicio. El fin se estima con el siguiente turno del mismo médico y día (30 min por defecto).';
+COMMENT ON COLUMN public."Turno"."nota_clinica" IS
+    'Nota clínica capturada al registrar o editar el turno.';
 
 -- ----------------------------------------------------------------------------
 -- 5.2 Consulta

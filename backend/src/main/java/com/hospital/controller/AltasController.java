@@ -5,7 +5,9 @@ import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -52,6 +54,20 @@ public class AltasController {
         if (username == null) return noAutorizado();
         try {
             return ok(altasService.crearTurno(username, role(request), body));
+        } catch (Exception e) {
+            return error(e);
+        }
+    }
+
+    /** Edita fecha, hora, nota clínica y estado de un turno (menú de tres puntos). */
+    @PutMapping("/turnos/{numero}")
+    public ResponseEntity<?> editarTurno(@PathVariable int numero,
+                                         @RequestBody Map<String, String> body,
+                                         HttpServletRequest request) {
+        String username = username(request);
+        if (username == null) return noAutorizado();
+        try {
+            return ok(altasService.editarTurno(username, role(request), numero, body));
         } catch (Exception e) {
             return error(e);
         }

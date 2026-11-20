@@ -169,17 +169,30 @@ export const api = {
     return apiFetch("/logout", { method: "POST" });
   },
 
-  /** Pacientes visibles según el rol de la sesión (ADMIN = todos, MEDICO = los suyos) */
-  pacientesPanel(q = "", limit = 5000, offset = 0) {
-    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  /**
+   * Pacientes visibles según el rol y el día. options acepta
+   * { fecha, limit, offset }; se mantiene la firma antigua (q, limit, offset).
+   */
+  pacientesPanel(q = "", options = {}, offset = 0) {
+    const opts = typeof options === "number" ? { limit: options, offset } : options || {};
+    const params = new URLSearchParams({
+      limit: String(opts.limit ?? 5000),
+      offset: String(opts.offset ?? 0),
+    });
     if (q) params.set("q", q);
+    if (opts.fecha) params.set("fecha", opts.fecha);
     return apiFetch(`/panel/pacientes?${params}`);
   },
 
-  /** Turnos visibles según el rol de la sesión (ADMIN = todos, MEDICO = los suyos) */
-  turnosPanel(q = "", limit = 5000, offset = 0) {
-    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  /** Turnos del día y del alcance de la sesión (ADMIN = todos, MEDICO = los suyos). */
+  turnosPanel(q = "", options = {}, offset = 0) {
+    const opts = typeof options === "number" ? { limit: options, offset } : options || {};
+    const params = new URLSearchParams({
+      limit: String(opts.limit ?? 5000),
+      offset: String(opts.offset ?? 0),
+    });
     if (q) params.set("q", q);
+    if (opts.fecha) params.set("fecha", opts.fecha);
     return apiFetch(`/panel/turnos?${params}`);
   },
 
@@ -198,9 +211,27 @@ export const api = {
     return apiFetch("/altas/turnos", { method: "POST", body: data });
   },
 
+  /** Edición de fecha, hora, nota clínica y estado de un turno. */
+  editarTurno(numero, data) {
+    return apiFetch(`/altas/turnos/${encodeURIComponent(numero)}`, {
+      method: "PUT",
+      body: data,
+    });
+  },
+
   /** Alta real de médico. El backend solo la permite para ADMIN. */
   crearMedico(data) {
     return apiFetch("/altas/medicos", { method: "POST", body: data });
+  },
+
+  /** Avisos de inicio y finalización de turnos visibles según el rol. */
+  notificaciones(limite = 30) {
+    return apiFetch(`/notificaciones?limite=${limite}`);
+  },
+
+  /** Marca como leídas las notificaciones indicadas (o todas si no hay ids). */
+  marcarNotificacionesLeidas(ids = []) {
+    return apiFetch("/notificaciones/leer", { method: "POST", body: { ids } });
   },
 
   /** Contexto hospitalario del usuario (hospital, jerarquía y alcance) */

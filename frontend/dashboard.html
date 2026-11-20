@@ -22,14 +22,17 @@
         this.src = './assets/lucide/lucide.min.js';
       "
     ></script>
-    <link rel="stylesheet" href="./css/dashboard.css" />
+    <link rel="stylesheet" href="./css/dashboard.css?v=8" />
   </head>
   <body>
     <div class="app-shell">
       <aside class="sidebar" id="sidebar">
         <div class="brand">
           <div class="brand-mark"><i data-lucide="activity"></i></div>
-          <div><strong>clara</strong><span>Gestión hospitalaria</span></div>
+          <div>
+            <strong id="brandHospital">Sistema Hospitalario</strong
+            ><span>Gestión hospitalaria</span>
+          </div>
         </div>
 
         <div class="nav-label">Espacio de trabajo</div>
@@ -134,15 +137,40 @@
             <i data-lucide="menu"></i>
           </button>
           <div class="breadcrumb">
-            <span>Clínica Santa Clara</span><i data-lucide="chevron-right"></i
-            ><strong>Resumen</strong>
+            <span id="breadcrumbHospital">Sistema Hospitalario</span
+            ><i data-lucide="chevron-right"></i><strong>Resumen</strong>
           </div>
           <div class="top-actions">
-            <button class="icon-btn" title="Buscar">
-              <i data-lucide="search"></i></button
-            ><button class="icon-btn notification" title="Notificaciones">
-              <i data-lucide="bell"></i><span></span>
+            <button
+              class="icon-btn notification"
+              id="notificationBtn"
+              title="Notificaciones"
+              aria-expanded="false"
+            >
+              <i data-lucide="bell"></i
+              ><span id="notificationBadge" hidden></span>
             </button>
+            <div class="notification-panel" id="notificationPanel" hidden>
+              <div class="notification-panel-head">
+                <div>
+                  <strong>Notificaciones</strong>
+                  <span id="notificationSubtitle">Avisos de turnos en vivo</span>
+                </div>
+                <button
+                  class="icon-btn small"
+                  id="closeNotifications"
+                  title="Cerrar"
+                >
+                  <i data-lucide="x"></i>
+                </button>
+              </div>
+              <div class="notification-list" id="notificationList"></div>
+              <div class="notification-foot">
+                <button class="outline-btn small" id="markNotificationsRead">
+                  Marcar todo como leído
+                </button>
+              </div>
+            </div>
             <div class="avatar top-avatar" id="topAvatar">JI</div>
           </div>
         </header>
@@ -171,25 +199,29 @@
                 <div class="stat-head">
                   <span class="stat-icon teal"
                     ><i data-lucide="calendar-check-2"></i></span
-                  ><span class="trend positive"
-                    ><i data-lucide="trending-up"></i> 8.4%</span
+                  ><span class="trend positive" id="resumenTurnosTrend"
+                    >Agenda del día</span
                   >
                 </div>
-                <div class="stat-value">0</div>
-                <div class="stat-label">Turnos de hoy</div>
-                <div class="stat-foot">vs. 0 la semana pasada</div>
+                <div class="stat-value" id="resumenTurnosValue">0</div>
+                <div class="stat-label" id="resumenTurnosLabel">Turnos del día</div>
+                <div class="stat-foot" id="resumenTurnosFoot">
+                  Total programado en la agenda
+                </div>
               </article>
               <article class="stat-card">
                 <div class="stat-head">
                   <span class="stat-icon coral"
                     ><i data-lucide="user-round-check"></i></span
-                  ><span class="trend positive"
-                    ><i data-lucide="trending-up"></i> 12.2%</span
+                  ><span class="trend positive" id="resumenAtendidosTrend"
+                    >Consultas exitosas</span
                   >
                 </div>
-                <div class="stat-value">0</div>
+                <div class="stat-value" id="resumenAtendidosValue">0</div>
                 <div class="stat-label">Pacientes atendidos</div>
-                <div class="stat-foot">0% de la agenda completada</div>
+                <div class="stat-foot" id="resumenAtendidosFoot">
+                  0% de la agenda completada
+                </div>
               </article>
               <article class="stat-card">
                 <div class="stat-head">
@@ -197,19 +229,27 @@
                     ><i data-lucide="clock-3"></i></span
                   ><span class="trend neutral">En tiempo real</span>
                 </div>
-                <div class="stat-value">0 <small>min</small></div>
-                <div class="stat-label">Espera promedio</div>
-                <div class="stat-foot">0 min menos que ayer</div>
+                <div class="stat-value" id="resumenEsperaValue">0 <small>min</small></div>
+                <div class="stat-label">Tiempo de consulta</div>
+                <div class="stat-foot" id="resumenEsperaFoot">
+                  Hasta el siguiente turno del médico
+                </div>
               </article>
               <article class="stat-card">
                 <div class="stat-head">
                   <span class="stat-icon blue"
                     ><i data-lucide="user-plus"></i></span
-                  ><span class="trend neutral">Este mes</span>
+                  ><span class="trend neutral" id="resumenPacientesTrend"
+                    >Directorio</span
+                  >
                 </div>
-                <div class="stat-value">0</div>
-                <div class="stat-label">Pacientes registrados</div>
-                <div class="stat-foot">+0 pacientes nuevos</div>
+                <div class="stat-value" id="resumenPacientesValue">0</div>
+                <div class="stat-label" id="resumenPacientesLabel">
+                  Pacientes registrados
+                </div>
+                <div class="stat-foot" id="resumenPacientesFoot">
+                  Según el alcance de tu perfil
+                </div>
               </article>
             </section>
 
@@ -217,8 +257,8 @@
               <article class="panel appointments-panel">
                 <div class="panel-heading">
                   <div>
-                    <h2>Agenda de hoy</h2>
-                    <p>Turnos programados para tu equipo</p>
+                    <h2>Agenda <span id="agendaTitleDay">del día</span></h2>
+                    <p id="agendaSubtitle">Turnos programados para tu equipo</p>
                   </div>
                   <button class="text-btn" id="viewCalendar">
                     Ver calendario <i data-lucide="arrow-up-right"></i>
@@ -232,7 +272,7 @@
                       title="Día anterior"
                     >
                       <i data-lucide="chevron-left"></i></button
-                    ><span id="agendaDate">Lun, 14 oct</span
+                    ><span id="agendaDate">Hoy</span
                     ><button
                       class="icon-btn small"
                       id="nextDay"
@@ -240,6 +280,7 @@
                     >
                       <i data-lucide="chevron-right"></i>
                     </button>
+                    <button class="text-btn small" id="agendaToday" title="Volver a hoy">Hoy</button>
                   </div>
                   <div class="select-wrap">
                     <i data-lucide="filter"></i
@@ -288,9 +329,8 @@
                   <p>Últimos registros y actividad</p>
                 </div>
                 <div class="panel-actions">
-                  <div class="search-field">
-                    <i data-lucide="search"></i
-                    ><input
+                  <div class="search-field no-icon">
+                    <input
                       id="patientSearch"
                       type="search"
                       placeholder="Buscar paciente..."
@@ -358,31 +398,35 @@
                 <div class="stat-head">
                   <span class="stat-icon teal"
                     ><i data-lucide="calendar-check-2"></i></span
-                  ><span class="trend neutral">Hoy</span>
+                  ><span class="trend neutral" id="turnosHoyTrend">Hoy</span>
                 </div>
                 <div class="stat-value" id="turnosHoyValue">0</div>
-                <div class="stat-label">Turnos de hoy</div>
-                <div class="stat-foot">Total programado en la agenda</div>
+                <div class="stat-label" id="turnosHoyLabel">Turnos del día</div>
+                <div class="stat-foot" id="turnosHoyFoot">
+                  Total programado en la agenda
+                </div>
               </article>
               <article class="stat-card">
                 <div class="stat-head">
                   <span class="stat-icon blue"
                     ><i data-lucide="circle-check-big"></i></span
-                  ><span class="trend positive">Confirmados</span>
+                  ><span class="trend positive">Ahora</span>
                 </div>
                 <div class="stat-value" id="turnosConfirmadosValue">0</div>
-                <div class="stat-label">Confirmados</div>
-                <div class="stat-foot">Pacientes con asistencia confirmada</div>
+                <div class="stat-label">En consulta</div>
+                <div class="stat-foot" id="turnosEnCursoFoot">
+                  Turnos iniciados según la hora del sistema
+                </div>
               </article>
               <article class="stat-card">
                 <div class="stat-head">
                   <span class="stat-icon amber"
                     ><i data-lucide="clock-3"></i></span
-                  ><span class="trend neutral">Por confirmar</span>
+                  ><span class="trend neutral">Por atender</span>
                 </div>
                 <div class="stat-value" id="turnosPendientesValue">0</div>
-                <div class="stat-label">Pendientes</div>
-                <div class="stat-foot">Requieren confirmación del paciente</div>
+                <div class="stat-label">Pendientes y confirmados</div>
+                <div class="stat-foot">Esperando su hora de inicio</div>
               </article>
               <article class="stat-card">
                 <div class="stat-head">
@@ -391,8 +435,10 @@
                   ><span class="trend positive">Completados</span>
                 </div>
                 <div class="stat-value" id="turnosAtendidosValue">0</div>
-                <div class="stat-label">Atendidos</div>
-                <div class="stat-foot">Consultas finalizadas el día de hoy</div>
+                <div class="stat-label">Finalizados</div>
+                <div class="stat-foot" id="turnosFinalizadosFoot">
+                  Consultas finalizadas · se pueden marcar como no atendidas
+                </div>
               </article>
             </section>
 
@@ -400,8 +446,8 @@
               <article class="panel appointments-panel">
                 <div class="panel-heading">
                   <div>
-                    <h2>Agenda del día</h2>
-                    <p>Turnos programados para hoy</p>
+                    <h2>Agenda <span id="turnosAgendaTitleDay">del día</span></h2>
+                    <p id="turnosAgendaSubtitle">Turnos programados para hoy</p>
                   </div>
                   <div class="date-switcher">
                     <button
@@ -418,6 +464,7 @@
                     >
                       <i data-lucide="chevron-right"></i>
                     </button>
+                    <button class="text-btn small" id="turnosToday" title="Volver a hoy">Hoy</button>
                   </div>
                 </div>
                 <div class="agenda-toolbar">
@@ -475,9 +522,11 @@
                       aria-label="Filtrar turnos por estado"
                     >
                       <option value="all">Todos los estados</option>
+                      <option value="in_progress">En consulta</option>
                       <option value="confirmed">Confirmados</option>
                       <option value="pending">Pendientes</option>
-                      <option value="done">Atendidos</option>
+                      <option value="done">Finalizados</option>
+                      <option value="no_atendido">No atendidos</option>
                     </select>
                   </div>
                 </div>
@@ -533,6 +582,16 @@
                 </p>
               </div>
               <div class="view-actions">
+                <div class="date-switcher pacientes-date" title="Filtrar por día de turno">
+                  <button class="icon-btn small" id="pacientesPrevDay" title="Día anterior">
+                    <i data-lucide="chevron-left"></i>
+                  </button>
+                  <span id="pacientesFechaLabel">Todos los días</span>
+                  <button class="icon-btn small" id="pacientesNextDay" title="Día siguiente">
+                    <i data-lucide="chevron-right"></i>
+                  </button>
+                  <button class="text-btn small" id="pacientesTodos" title="Ver el directorio completo">Todos</button>
+                </div>
                 <button class="outline-btn" id="exportPacientes">
                   <i data-lucide="download"></i><span>Exportar</span>
                 </button>
@@ -806,7 +865,7 @@
                 <h1>
                   Reportes
                   <span class="scope-pill" id="reportesScopePill" hidden
-                    >Vista global</span
+                    >Sistema Hospitalario</span
                   >
                 </h1>
                 <p class="subhead">
@@ -1001,6 +1060,15 @@
                       <select id="prefDensity">
                         <option value="comfortable">Cómoda</option>
                         <option value="compact">Compacta</option>
+                      </select>
+                    </label>
+                    <label class="setting-field">
+                      <span>Tema visual</span>
+                      <select id="prefTheme">
+                        <option value="light">Claro</option>
+                        <option value="dark">Oscuro</option>
+                        <option value="navy">Azul noche</option>
+                        <option value="sand">Arena cálida</option>
                       </select>
                     </label>
                     <label class="setting-field">
@@ -1300,7 +1368,7 @@
                       ¿Qué médicos aparecen en Profesionales?
                       <i data-lucide="chevron-down"></i>
                     </summary>
-                    <p>
+                    <p id="helpProfesionalesText">
                       El sistema resuelve el hospital vinculado a tu cuenta de
                       usuario y muestra únicamente los médicos asignados a ese
                       hospital. Si la cuenta no tiene un médico vinculado, se
@@ -1381,13 +1449,13 @@
                   </div>
                 </div>
                 <div class="contact-list">
-                  <a class="contact-item" href="mailto:soporte@clara.health">
+                  <a class="contact-item" href="mailto:soporte@sistema.local">
                     <span class="contact-icon teal"
                       ><i data-lucide="mail"></i
                     ></span>
                     <span class="contact-copy">
                       <strong>Soporte por correo</strong>
-                      <span>soporte@clara.health</span>
+                      <span>soporte@sistema.local</span>
                     </span>
                     <i data-lucide="arrow-up-right"></i>
                   </a>
@@ -1459,7 +1527,9 @@
           </section>
 
           <footer class="page-footer">
-            <span>Clara Health OS · Todos los datos están protegidos</span
+            <span
+              ><span id="footerHospital">Sistema Hospitalario</span> · Todos los
+              datos están protegidos</span
             ><span>Última actualización: hace 2 min</span>
           </footer>
         </div>
@@ -1487,6 +1557,14 @@
             Selecciona un paciente y un profesional. La unidad se toma de la
             ficha del profesional.
           </p>
+          <div class="form-row">
+            <label
+              >Fecha de atención<input required type="date" name="fecha" id="turnoFecha"
+            /></label>
+            <label
+              >Hora de inicio<input required type="time" name="hora" id="turnoHora"
+            /></label>
+          </div>
           <label
             >Paciente<select required name="pacienteId" id="turnoPaciente">
               <option value="">Cargando pacientes…</option>
@@ -1510,11 +1588,11 @@
             </select></label
           >
           <label
-            >Motivo de la consulta <span class="optional">Opcional</span
+            >Nota clínica / motivo <span class="optional">Opcional</span
             ><textarea
-              name="nota"
+              name="notaClinica"
               rows="3"
-              placeholder="Motivo o información adicional"
+              placeholder="Motivo, síntomas o información clínica adicional"
             ></textarea>
           </label>
           <div class="form-actions">
@@ -1798,10 +1876,77 @@
       </div>
     </div>
 
+    <div class="row-action-menu" id="turnoActionMenu" hidden>
+      <div class="row-action-title" id="turnoActionTitle">Turno</div>
+      <button type="button" data-accion="editar">
+        <i data-lucide="pencil"></i><span>Editar turno</span>
+      </button>
+      <button type="button" data-accion="in_progress">
+        <i data-lucide="play-circle"></i><span>Marcar en consulta</span>
+      </button>
+      <button type="button" data-accion="done">
+        <i data-lucide="check-circle-2"></i><span>Marcar finalizado</span>
+      </button>
+      <button type="button" class="danger" data-accion="no_atendido">
+        <i data-lucide="circle-x"></i><span>Marcar no atendido</span>
+      </button>
+    </div>
+
+    <div class="modal-backdrop" id="turnoEditBackdrop" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="turnoEditTitle">
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">Seguimiento de turnos</p>
+            <h2 id="turnoEditTitle">Editar turno</h2>
+          </div>
+          <button class="icon-btn" id="closeTurnoEdit" title="Cerrar">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <form id="turnoEditForm">
+          <p class="form-help" id="turnoEditHelp">
+            Ajusta la fecha, la hora reales y la nota clínica. Si la consulta no
+            se concretó, selecciona “No atendido”.
+          </p>
+          <div class="form-row">
+            <label>Fecha<input required type="date" name="fecha" id="turnoEditFecha" /></label>
+            <label>Hora<input required type="time" name="hora" id="turnoEditHora" /></label>
+          </div>
+          <label
+            >Estado<select name="estatus" id="turnoEditEstado">
+              <option value="pending">Pendiente</option>
+              <option value="confirmed">Confirmado</option>
+              <option value="in_progress">En consulta (en progreso)</option>
+              <option value="done">Finalizado</option>
+              <option value="no_atendido">No atendido</option>
+            </select>
+          </label>
+          <label
+            >Nota clínica<textarea
+              name="notaClinica"
+              id="turnoEditNota"
+              rows="4"
+              placeholder="Evolución, diagnóstico o motivo de la consulta"
+            ></textarea>
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" name="atendido" id="turnoEditAtendido" />
+            <span>La consulta fue exitosa</span>
+          </label>
+          <div class="form-actions">
+            <button type="button" class="outline-btn" id="cancelTurnoEdit">Cancelar</button>
+            <button class="primary-btn" type="submit" id="turnoEditSubmit">
+              <i data-lucide="save"></i>Guardar cambios
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <div class="toast" id="toast">
       <i data-lucide="check-circle-2"></i
       ><span>Turno creado correctamente</span>
     </div>
-    <script type="module" src="./js/dashboard.js?v=3"></script>
+    <script type="module" src="./js/dashboard.js?v=9"></script>
   </body>
 </html>

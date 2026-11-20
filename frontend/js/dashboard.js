@@ -45,6 +45,14 @@ const state = {
     cargado: false,
   },
   pagina: { pacientes: 0, turnos: 0 },
+  // Día seleccionado en las agendas. Es una cadena AAAA-MM-DD para que el
+  // backend filtre por la columna real Turno.fecha.
+  fecha: hoyISO(),
+  pacientesSoloDelDia: false,
+  notificaciones: [],
+  noLeidas: 0,
+  ultimaNotificacionId: 0,
+  turnoEditando: null,
 };
 
 const PAGE_SIZE = 20;
@@ -114,8 +122,10 @@ const SPECIALTY_COLORS = [
 ];
 
 const SETTINGS_KEY = "clara.dashboard.settings";
+const SYSTEM_HOSPITAL = "Sistema Hospitalario";
 
 const DEFAULT_SETTINGS = {
+  theme: "light",
   density: "comfortable",
   accent: "teal",
   dateFormat: "long",
@@ -799,7 +809,9 @@ const statusLabel = (status) =>
   ({
     confirmed: "Confirmado",
     pending: "Pendiente",
-    done: "Atendido",
+    in_progress: "En consulta",
+    done: "Finalizado",
+    no_atendido: "No atendido",
     active: "Activo",
     inactive: "Inactivo",
   })[status] || "Pendiente";
@@ -811,6 +823,67 @@ function setText(id, value) {
   if (element) element.textContent = value;
 }
 
+/**
+ * Escribe una cantidad animándola desde 0 hasta el valor final. Se usa en
+ * todas las tarjetas numéricas del dashboard y respeta la preferencia de
+ * animaciones reducidas. Si el valor no cambia, no vuelve a animar.
+ */
+function setStat(destino, valor, options = {}) {
+  const element =
+    typeof destino === "string" ? document.getElementById(destino) : destino;
+  if (!element) return;
+
+  const target = Number(valor || 0);
+  const suffix = options.suffix || "";
+  const pad = Number(options.pad || 0);
+  const small = Boolean(options.small);
+
+  const write = (numero) => {
+    const base = pad
+      ? String(numero).padStart(pad, "0")
+      : formatNumber(numero);
+    if (small) {
+      const unidad = suffix.trim();
+      element.innerHTML = `${base}${unidad ? ` <small>${unidad}</small>` : ""}`;
+    } else {
+      element.textContent = `${base}${suffix}`;
+    }
+  };
+
+  const cambio = element.dataset.statValue !== String(target);
+  element.dataset.statValue = String(target);
+
+  if (
+    !cambio ||
+    !Number.isFinite(target) ||
+    state.settings?.animations === "off" ||
+    document.body.classList.contains("reduce-motion")
+  ) {
+    if (element._statFrame) cancelAnimationFrame(element._statFrame);
+    element._statFrame = null;
+    write(target);
+    return;
+  }
+
+  if (element._statFrame) cancelAnimationFrame(element._statFrame);
+  const duracion = 750;
+  const inicio = performance.now();
+  write(0);
+
+  const paso = () => {
+    const progreso = Math.min(Math.max((performance.now() - inicio) / duracion, 0), 1);
+    const suave = 1 - Math.pow(1 - progreso, 3);
+    write(Math.round(target * suave));
+    if (progreso < 1) {
+      element._statFrame = requestAnimationFrame(paso);
+    } else {
+      element._statFrame = null;
+      write(target);
+    }
+  };
+  element._statFrame = requestAnimationFrame(paso);
+}
+
 function toast(message) {
   const element = $("#toast");
   if (!element) return;
@@ -820,11 +893,55 @@ function toast(message) {
   element._timer = setTimeout(() => element.classList.remove("show"), 3000);
 }
 
+/** Aviso emergente de notificación, respetando la preferencia del usuario. */
+function notify(message) {
+  if (state.settings?.notifications === false) return;
+  toast(message);
+}
+
 /* ============================================================
    Sesión y roles
    ============================================================ */
 function isAdmin() {
   return state.role === "ADMIN";
+}
+
+/** Hospital de la sesión: el del médico, o "Sistema Hospitalario" para ADMIN. */
+function hospitalLabel() {
+  if (isAdmin()) return SYSTEM_HOSPITAL;
+  return (
+    state.contexto?.hospital?.nombre ||
+    state.user?.hospital ||
+    SYSTEM_HOSPITAL
+  );
+}
+
+/** Mantiene sincronizado el nombre del hospital en toda la interfaz. */
+function renderHospitalLabels() {
+  const label = hospitalLabel();
+
+  ["brandHospital", "breadcrumbHospital", "footerHospital", "settingsHospital"]
+    .forEach((id) => setText(id, label));
+
+  const subhead = $("#welcomeSubhead");
+  if (subhead) {
+    subhead.textContent = isAdmin()
+      ? `Aquí tienes lo que está pasando hoy en ${label}.`
+      : `Aquí tienes el resumen de tu actividad en ${label} y tus pacientes de hoy.`;
+  }
+
+  const ayuda = $("#helpProfesionalesText");
+  if (ayuda) {
+    ayuda.textContent = isAdmin()
+      ? `El sistema muestra la red completa con el alcance de ${label}.`
+      : `El sistema resuelve el hospital vinculado a tu cuenta (${label}) y muestra únicamente los médicos asignados a ese hospital.`;
+  }
+
+  if (!state.profesionales?.hospital) {
+    setText("profesionalesHospitalName", label);
+  }
+
+  document.title = `${state.section || "Resumen"} · ${label}`;
 }
 
 function applyRoleVisibility() {
@@ -852,13 +969,7 @@ function updateUserChrome() {
     title.innerHTML = `${greeting()}, ${escapeHtml(firstName)} <span class="wave">✦</span>`;
   }
 
-  const subhead = $("#welcomeSubhead");
-  if (subhead) {
-    subhead.textContent = isAdmin()
-      ? "Aquí tienes lo que está pasando hoy en tu hospital."
-      : "Aquí tienes el resumen de tu actividad y tus pacientes de hoy.";
-  }
-
+  renderHospitalLabels();
   renderSettings();
 }
 
@@ -947,7 +1058,7 @@ function navigate(section, updateHash = true) {
   const breadcrumb = $(".breadcrumb strong");
   if (breadcrumb) breadcrumb.textContent = requested;
 
-  document.title = `${requested} · Clara Health OS`;
+  document.title = `${requested} · ${hospitalLabel()}`;
 
   if (window.innerWidth <= 700) {
     $("#sidebar")?.classList.remove("open");
@@ -999,6 +1110,19 @@ function capitalizar(texto) {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
+function hoyISO() {
+  const fecha = new Date();
+  return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}-${String(fecha.getDate()).padStart(2, "0")}`;
+}
+
+function fechaSeleccionada() {
+  return new Date(`${state.fecha}T12:00:00`);
+}
+
+function esHoy() {
+  return state.fecha === hoyISO();
+}
+
 function obtenerFecha(fecha = new Date()) {
   return capitalizar(
     new Intl.DateTimeFormat("es-ES", {
@@ -1021,25 +1145,74 @@ function obtenerFechaCorta(fecha = new Date()) {
 }
 
 function renderFecha() {
-  const hoy = new Date();
+  const seleccionada = fechaSeleccionada();
+  const fechaCorta = obtenerFechaCorta(seleccionada);
+  const actual = esHoy();
 
   const fechaLarga = document.getElementById("fechahoy");
   if (fechaLarga) {
     fechaLarga.textContent =
       state.settings?.dateFormat === "short"
-        ? obtenerFechaCorta(hoy)
-        : obtenerFecha(hoy);
-    fechaLarga.setAttribute("datetime", hoy.toISOString().slice(0, 10));
+        ? fechaCorta
+        : obtenerFecha(seleccionada);
+    fechaLarga.setAttribute("datetime", state.fecha);
   }
 
-  const fechaCorta = obtenerFechaCorta(hoy);
+  const etiqueta = actual ? `Hoy · ${fechaCorta}` : fechaCorta;
   ["agendaDate", "turnosAgendaDate"].forEach((id) => {
-    const element = document.getElementById(id);
-    if (element) element.textContent = fechaCorta;
+    setText(id, etiqueta);
   });
 
-  const dateInput = $('input[name="date"]');
-  if (dateInput) dateInput.value = hoy.toISOString().slice(0, 10);
+  setText("agendaTitleDay", actual ? "del día" : `del ${fechaCorta}`);
+  setText("turnosAgendaTitleDay", actual ? "del día" : `del ${fechaCorta}`);
+  setText(
+    "agendaSubtitle",
+    `Turnos programados para ${actual ? "hoy" : fechaCorta}`,
+  );
+  setText(
+    "turnosAgendaSubtitle",
+    `Turnos programados para ${actual ? "hoy" : fechaCorta}`,
+  );
+  setText("turnosHoyTrend", actual ? "Hoy" : fechaCorta);
+  setText("turnosHoyLabel", actual ? "Turnos de hoy" : "Turnos del día");
+  setText(
+    "resumenTurnosTrend",
+    actual ? "Agenda del día" : `Agenda del ${fechaCorta}`,
+  );
+  setText(
+    "pacientesFechaLabel",
+    state.pacientesSoloDelDia ? `Turnos del ${fechaCorta}` : "Todos los días",
+  );
+
+  const dateInput = document.getElementById("turnoFecha");
+  if (dateInput) dateInput.value = state.fecha;
+}
+
+/** Mueve el día seleccionado y recarga todas las agendas y tablas. */
+async function cambiarDia(delta, ambito = "agenda") {
+  const fecha = fechaSeleccionada();
+  fecha.setDate(fecha.getDate() + delta);
+  state.fecha = hoyISOFrom(fecha);
+  if (ambito === "pacientes") state.pacientesSoloDelDia = true;
+
+  renderFecha();
+  await loadDashboardData();
+  notify(
+    `Mostrando ${obtenerFechaCorta(fecha)}` +
+      (ambito === "pacientes" ? " · pacientes con turno ese día" : ""),
+  );
+}
+
+function hoyISOFrom(fecha) {
+  return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}-${String(fecha.getDate()).padStart(2, "0")}`;
+}
+
+async function volverHoy(ambito = "agenda") {
+  state.fecha = hoyISO();
+  if (ambito === "pacientes") state.pacientesSoloDelDia = false;
+  renderFecha();
+  await loadDashboardData();
+  toast(ambito === "pacientes" ? "Directorio completo restaurado" : "Volviendo a hoy");
 }
 
 /* ============================================================
@@ -1155,6 +1328,11 @@ function mapTurnoPanel(row) {
     status: row.estatus || "pending",
     room: row.consultorio || "Consultorio 1",
     fecha: row.fecha,
+    fin: row.fin || "—",
+    duracion: row.duracion || 30,
+    notaClinica: row.notaClinica || "",
+    codMed: row.codMed || "",
+    estadoOriginal: row.estadoOriginal || "",
     hospital: row.hospital,
     unidad: row.unidad,
   };
@@ -1163,49 +1341,67 @@ function mapTurnoPanel(row) {
 function renderPanelScope() {
   const global = state.panel.alcance !== "medico";
   const medico = state.panel.medico || "";
+  const hospital = hospitalLabel();
 
   setText(
     "pacientesScopePill",
-    global
-      ? "Todos los hospitales"
-      : `Solo mis pacientes${medico ? ` · ${medico}` : ""}`,
+    global ? hospital : `Solo mis pacientes${medico ? ` · ${medico}` : ""}`,
   );
-  setText(
-    "turnosScopePill",
-    global ? "Todos los hospitales" : "Solo mis turnos",
-  );
+  setText("turnosScopePill", global ? hospital : "Solo mis turnos");
+  const dia = esHoy() ? "de hoy" : `del ${obtenerFechaCorta(fechaSeleccionada())}`;
   setText(
     "pacientesSubhead",
-    global
-      ? "Directorio completo de pacientes de todos los hospitales de la red."
-      : "Pacientes que atiendes o que están ingresados en tu unidad.",
+    state.pacientesSoloDelDia
+      ? `Pacientes con turno ${dia}. Usa “Todos” para ver el directorio completo.`
+      : global
+        ? `Directorio completo de pacientes de ${hospital}.`
+        : "Pacientes que atiendes o que están ingresados en tu unidad.",
   );
   setText(
     "turnosSubhead",
-    global
-      ? "Agenda completa de todos los hospitales de la red."
-      : "Turnos asignados exclusivamente a tu ficha profesional.",
+    `Agenda ${dia} · ${
+      global
+        ? hospital
+        : "turnos asignados exclusivamente a tu ficha profesional"
+    }.`,
   );
 }
 
 function updateResumenStats() {
-  // Usa el mismo alcance que las secciones Pacientes y Turnos: un ADMIN ve
-  // toda la red y un MEDICO solo sus propios datos.
-  const totalTurnos =
-    state.panel.totalTurnos || state.viewAppointments.length;
+  // Usa el mismo alcance y el mismo día que las secciones Pacientes y Turnos.
+  const turnos = state.viewAppointments;
+  const totalTurnos = state.panel.totalTurnos || turnos.length;
   const totalPacientes = state.panel.totalPacientes || state.viewPatients.length;
-  const atendidos = state.viewAppointments.filter(
-    (turno) => turno.status === "done",
-  ).length;
+  const atendidos = turnos.filter((turno) => turno.status === "done").length;
+  const enCurso = turnos.filter((turno) => turno.status === "in_progress").length;
+  const noAtendidos = turnos.filter((turno) => turno.status === "no_atendido").length;
+  const porcentaje = totalTurnos ? Math.round((atendidos / totalTurnos) * 100) : 0;
+  const duraciones = turnos
+    .map((turno) => Number(turno.duracion) || 0)
+    .filter((minutos) => minutos > 0);
+  const promedio = duraciones.length
+    ? Math.round(duraciones.reduce((suma, valor) => suma + valor, 0) / duraciones.length)
+    : 30;
 
-  const cards = $$("#view-Resumen .stat-card");
-  const values = [totalTurnos, atendidos, null, totalPacientes];
-
-  cards.forEach((card, index) => {
-    if (values[index] === null) return;
-    const value = card.querySelector(".stat-value");
-    if (value) value.textContent = formatNumber(values[index]);
-  });
+  setStat("resumenTurnosValue", totalTurnos);
+  setStat("resumenAtendidosValue", atendidos);
+  setStat("resumenEsperaValue", promedio, { suffix: " min", small: true });
+  setStat("resumenPacientesValue", totalPacientes);
+  setText(
+    "resumenTurnosFoot",
+    `${formatNumber(enCurso)} en consulta · ${formatNumber(noAtendidos)} no atendidos`,
+  );
+  setText("resumenAtendidosFoot", `${porcentaje}% de la agenda completada`);
+  setText(
+    "resumenPacientesFoot",
+    state.pacientesSoloDelDia
+      ? "Pacientes con turno el día seleccionado"
+      : "Según el alcance de tu perfil",
+  );
+  setText(
+    "resumenPacientesLabel",
+    state.pacientesSoloDelDia ? "Pacientes del día" : "Pacientes registrados",
+  );
 }
 
 async function loadDashboardData() {
@@ -1214,8 +1410,8 @@ async function loadDashboardData() {
   let datosPanel = false;
 
   const [pacientesRes, turnosRes, resumenRes] = await Promise.all([
-    api.pacientesPanel(),
-    api.turnosPanel(),
+    api.pacientesPanel("", { fecha: state.pacientesSoloDelDia ? state.fecha : null }),
+    api.turnosPanel("", { fecha: state.fecha }),
     api.resumenHospitales(),
   ]);
 
@@ -1259,8 +1455,13 @@ async function loadDashboardData() {
     state.panel.alcance = "global";
   }
 
+  const porHora = (a, b) =>
+    String(a.fecha || "").localeCompare(String(b.fecha || "")) ||
+    String(a.time || "").localeCompare(String(b.time || "")) ||
+    String(a.id || "").localeCompare(String(b.id || ""));
+
   state.resumenPatients = backendPatients;
-  state.resumenAppointments = backendTurnos.slice(0, 6);
+  state.resumenAppointments = muestraAgenda([...backendTurnos].sort(porHora));
   state.viewPatients = backendPatients;
   state.viewAppointments = backendTurnos;
   state.demoMode = !backendPatients.length && !backendTurnos.length;
@@ -1273,6 +1474,7 @@ async function loadDashboardData() {
 
   state.queue = buildQueue(state.viewAppointments);
   state.pagina = { pacientes: 0, turnos: 0 };
+  renderFecha();
   renderPanelScope();
   updateDemoPills();
   renderTimeline();
@@ -1281,6 +1483,7 @@ async function loadDashboardData() {
   renderTurnosView();
   renderPacientesView();
   updateResumenStats();
+  loadNotificaciones();
 }
 
 function updateDemoPills() {
@@ -1290,6 +1493,46 @@ function updateDemoPills() {
   });
 }
 
+/**
+ * Una agenda con 12 turnos por hora no debe mostrar solo los 8 primeros: se
+ * vería como un único paciente repetido siempre a la misma hora. Esta muestra
+ * toma un turno de cada franja y solo vuelve a una franja si sobran huecos.
+ */
+function muestraRepartidaPorHora(citas, limite = 8) {
+  const lista = Array.isArray(citas) ? citas : [];
+  if (lista.length <= limite) return lista;
+
+  const grupos = new Map();
+  for (const cita of lista) {
+    const clave = `${cita.fecha || ""}|${String(cita.time || "").slice(0, 5)}`;
+    if (!grupos.has(clave)) grupos.set(clave, []);
+    grupos.get(clave).push(cita);
+  }
+
+  const resultado = [];
+  for (let posicion = 0; resultado.length < limite; posicion++) {
+    let agregado = false;
+    for (const grupo of grupos.values()) {
+      if (posicion >= grupo.length) continue;
+      resultado.push(grupo[posicion]);
+      agregado = true;
+      if (resultado.length >= limite) break;
+    }
+    if (!agregado) break;
+  }
+  return resultado;
+}
+
+/** Primero lo que está en consulta, y el resto repartido a lo largo del día. */
+function muestraAgenda(citas, limite = 8) {
+  const urgentes = citas.filter((cita) => cita.status === "in_progress");
+  const resto = citas.filter((cita) => cita.status !== "in_progress");
+  return [
+    ...urgentes.slice(0, limite),
+    ...muestraRepartidaPorHora(resto, limite - Math.min(urgentes.length, limite)),
+  ];
+}
+
 /* ============================================================
    Resumen
    ============================================================ */
@@ -1297,15 +1540,21 @@ function renderTimeline(filter = "all") {
   const root = $("#timeline");
   if (!root) return;
 
-  const items = state.resumenAppointments.filter(
-    (appointment) =>
-      filter === "all" || slug(appointment.specialty) === slug(filter),
-  );
+  const items = state.resumenAppointments
+    .filter(
+      (appointment) =>
+        filter === "all" || slug(appointment.specialty) === slug(filter),
+    )
+    .sort(
+      (a, b) =>
+        String(a.time).localeCompare(String(b.time)) ||
+        String(a.id).localeCompare(String(b.id)),
+    );
 
   root.classList.toggle("is-empty", !items.length);
   if (!items.length) {
     root.innerHTML =
-      '<div class="empty-state">No hay turnos para esta especialidad.</div>';
+      '<div class="empty-state">No hay turnos para esta especialidad en el día seleccionado.</div>';
     return;
   }
 
@@ -1314,10 +1563,10 @@ function renderTimeline(filter = "all") {
       (appointment) => `
         <div class="time-row">
           <div class="time-label">${escapeHtml(appointment.time)}</div>
-          <div class="appointment-item ${appointment.status === "done" ? "past" : ""}">
+          <div class="appointment-item ${appointment.status === "done" ? "past" : ""}" data-turno-id="${escapeHtml(appointment.id)}" data-numero="${appointment.numero}" title="Clic para editar este turno">
             <div class="appointment-main">
               <strong>${escapeHtml(appointment.patient)}</strong>
-              <span>${escapeHtml(appointment.specialty)} · ${escapeHtml(appointment.patientId)}</span>
+              <span>${escapeHtml(appointment.specialty)} · ${escapeHtml(appointment.patientId)} · hasta ${escapeHtml(appointment.fin)}</span>
             </div>
             <div class="appointment-meta">
               <span class="doctor-mini">${escapeHtml(appointment.doctor)}</span>
@@ -1329,15 +1578,27 @@ function renderTimeline(filter = "all") {
     .join("");
 }
 
+/** Cola real: primero quien ya está en consulta, luego por hora de inicio. */
 function buildQueue(appointments) {
+  const prioridad = { in_progress: 0, confirmed: 1, pending: 2 };
   return appointments
-    .filter((appointment) => appointment.status === "pending")
+    .filter((appointment) => appointment.status in prioridad)
+    .sort(
+      (a, b) =>
+        prioridad[a.status] - prioridad[b.status] ||
+        String(a.time).localeCompare(String(b.time)) ||
+        String(a.id).localeCompare(String(b.id)),
+    )
     .slice(0, 5)
-    .map((appointment, index) => ({
+    .map((appointment) => ({
       initials: initialsOf(appointment.patient),
       name: appointment.patient,
-      detail: `${appointment.id} · ${appointment.specialty}`,
-      time: `${(index + 1) * 7} min`,
+      detail: `${appointment.id} · ${appointment.specialty} · ${appointment.room}`,
+      time:
+        appointment.status === "in_progress"
+          ? "En consulta"
+          : `${appointment.time} · ${appointment.duracion} min`,
+      status: appointment.status,
     }));
 }
 
@@ -1346,17 +1607,17 @@ function renderQueue() {
   if (!root) return;
 
   const totals = $$("#view-Resumen .queue-summary strong");
-  const enEspera = state.viewAppointments.filter(
-    (appointment) => appointment.status === "pending",
+  const enEspera = state.viewAppointments.filter((appointment) =>
+    ["pending", "confirmed"].includes(appointment.status),
   ).length;
   const enConsulta = state.viewAppointments.filter(
-    (appointment) => appointment.status === "confirmed",
+    (appointment) => appointment.status === "in_progress",
   ).length;
   const atendidos = state.viewAppointments.filter(
     (appointment) => appointment.status === "done",
   ).length;
   [enEspera, enConsulta, atendidos].forEach((value, index) => {
-    if (totals[index]) totals[index].textContent = String(value).padStart(2, "0");
+    if (totals[index]) setStat(totals[index], value, { pad: 2 });
   });
 
   root.classList.toggle("is-empty", !state.queue.length);
@@ -1446,7 +1707,7 @@ function filterAppointments(includeStatus = false) {
 
   return state.viewAppointments.filter((appointment) => {
     const haystack =
-      `${appointment.patient} ${appointment.patientId} ${appointment.doctor} ${appointment.specialty}`.toLowerCase();
+      `${appointment.id} ${appointment.patient} ${appointment.patientId} ${appointment.doctor} ${appointment.specialty} ${appointment.notaClinica}`.toLowerCase();
     const matchesSearch = !search || haystack.includes(search);
     const matchesSpecialty =
       specialty === "all" || appointment.specialty === specialty;
@@ -1481,13 +1742,22 @@ function renderTurnoTimeline() {
   const root = $("#turnoTimeline");
   if (!root) return;
 
-  // La agenda muestra una vista rápida; el listado completo está más abajo.
-  const items = filterAppointments(false).slice(0, 8);
+  // Vista rápida: primero los turnos en curso y después una muestra repartida
+  // por horas, para que no se vean solo los primeros turnos de una franja.
+  // El listado completo está más abajo.
+  const items = muestraAgenda(
+    filterAppointments(false).sort(
+      (a, b) =>
+        Number(b.status === "in_progress") - Number(a.status === "in_progress") ||
+        String(a.time).localeCompare(String(b.time)) ||
+        String(a.id).localeCompare(String(b.id)),
+    ),
+  );
 
   root.classList.toggle("is-empty", !items.length);
   if (!items.length) {
     root.innerHTML =
-      '<div class="empty-state">No hay turnos que coincidan con los filtros.</div>';
+      '<div class="empty-state">No hay turnos que coincidan con los filtros en el día seleccionado.</div>';
     return;
   }
 
@@ -1496,10 +1766,10 @@ function renderTurnoTimeline() {
       (appointment) => `
         <div class="time-row">
           <div class="time-label">${escapeHtml(appointment.time)}</div>
-          <div class="appointment-item ${appointment.status === "done" ? "past" : ""}">
+          <div class="appointment-item ${appointment.status === "done" ? "past" : ""}" data-turno-id="${escapeHtml(appointment.id)}" data-numero="${appointment.numero}" title="Clic para editar este turno">
             <div class="appointment-main">
               <strong>${escapeHtml(appointment.patient)}</strong>
-              <span>${escapeHtml(appointment.specialty)} · ${escapeHtml(appointment.room)}</span>
+              <span>${escapeHtml(appointment.specialty)} · ${escapeHtml(appointment.room)} · fin estimado ${escapeHtml(appointment.fin)}</span>
             </div>
             <div class="appointment-meta">
               <span class="doctor-mini">${escapeHtml(appointment.doctor)}</span>
@@ -1562,13 +1832,14 @@ function renderTurnosTable() {
               <div>
                 <strong>${escapeHtml(appointment.patient)}</strong>
                 <span>${escapeHtml(appointment.patientId)}</span>
+                ${appointment.notaClinica ? `<span class="nota-clinica">${escapeHtml(appointment.notaClinica)}</span>` : ""}
               </div>
             </div>
           </td>
           <td>
             <div class="cell-stack">
-              <strong>Hoy</strong>
-              <span>${escapeHtml(appointment.time)} · ${escapeHtml(appointment.room)}</span>
+              <strong>${escapeHtml(appointment.fecha || state.fecha)}</strong>
+              <span>${escapeHtml(appointment.time)} – ${escapeHtml(appointment.fin)} · ${escapeHtml(appointment.room)}</span>
             </div>
           </td>
           <td>${escapeHtml(appointment.specialty)}</td>
@@ -1576,7 +1847,7 @@ function renderTurnosTable() {
           <td><span class="status-chip ${appointment.status}">${statusLabel(appointment.status)}</span></td>
           <td>
             <div class="table-actions">
-              <button class="icon-btn" data-turno-id="${escapeHtml(appointment.id)}" title="Ver detalle del turno">
+              <button class="icon-btn" data-turno-id="${escapeHtml(appointment.id)}" data-numero="${appointment.numero}" title="Acciones del turno ${escapeHtml(appointment.id)}">
                 <i data-lucide="more-horizontal"></i>
               </button>
             </div>
@@ -1591,24 +1862,25 @@ function renderTurnosTable() {
 function renderTurnosView() {
   const appointments = state.viewAppointments;
 
-  setText("turnosHoyValue", formatNumber(appointments.length));
-  setText(
+  setStat("turnosHoyValue", appointments.length);
+  setStat(
     "turnosConfirmadosValue",
-    formatNumber(
-      appointments.filter((item) => item.status === "confirmed").length,
-    ),
+    appointments.filter((item) => item.status === "in_progress").length,
   );
-  setText(
+  setStat(
     "turnosPendientesValue",
-    formatNumber(
-      appointments.filter((item) => item.status === "pending").length,
-    ),
+    appointments.filter((item) =>
+      ["pending", "confirmed"].includes(item.status),
+    ).length,
   );
+  const finalizados = appointments.filter((item) => item.status === "done").length;
+  const noAtendidos = appointments.filter((item) => item.status === "no_atendido").length;
+  setStat("turnosAtendidosValue", finalizados);
   setText(
-    "turnosAtendidosValue",
-    formatNumber(appointments.filter((item) => item.status === "done").length),
+    "turnosFinalizadosFoot",
+    `${formatNumber(noAtendidos)} marcados como no atendidos`,
   );
-  setText("turnosBadge", formatNumber(appointments.length));
+  setStat("turnosBadge", appointments.length);
 
   populateTurnoSpecialties();
   renderTurnoTimeline();
@@ -1727,18 +1999,18 @@ function renderPacienteActivity() {
 function renderPacientesView() {
   const patients = state.viewPatients;
 
-  setText("pacientesTotalValue", formatNumber(patients.length));
-  setText(
+  setStat("pacientesTotalValue", patients.length);
+  setStat(
     "pacientesActivosValue",
-    formatNumber(patients.filter((item) => item.status === "active").length),
+    patients.filter((item) => item.status === "active").length,
   );
-  setText(
+  setStat(
     "pacientesNuevosValue",
-    formatNumber(patients.filter((item) => item.isNew).length),
+    patients.filter((item) => item.isNew).length,
   );
-  setText(
+  setStat(
     "pacientesTurnoValue",
-    formatNumber(patients.filter((item) => item.status === "pending").length),
+    patients.filter((item) => item.status === "pending").length,
   );
 
   renderPacientesTable();
@@ -1907,6 +2179,7 @@ async function loadContexto() {
     loadReportes({ scopedOnly: true });
   }
 
+  renderHospitalLabels();
   renderSettings();
 }
 
@@ -2489,10 +2762,10 @@ function renderReporteStats() {
     totalUnidades = contexto.unidades?.length || 0;
   }
 
-  setText("reportesHospitalesValue", formatNumber(totalHospitals));
-  setText("reportesMedicosValue", formatNumber(totalMedicos));
-  setText("reportesPacientesValue", formatNumber(totalPacientes));
-  setText("reportesUnidadesValue", formatNumber(totalUnidades));
+  setStat("reportesHospitalesValue", totalHospitals);
+  setStat("reportesMedicosValue", totalMedicos);
+  setStat("reportesPacientesValue", totalPacientes);
+  setStat("reportesUnidadesValue", totalUnidades);
 }
 
 function renderReportes() {
@@ -2700,9 +2973,9 @@ function renderProfesionales() {
     ...new Set(doctors.map((doctor) => doctor.especialidad).filter(Boolean)),
   ].sort((a, b) => a.localeCompare(b, "es"));
 
-  setText("profesionalesTotalValue", formatNumber(doctors.length));
-  setText("profesionalesEspecialidadesValue", formatNumber(specialties.length));
-  setText("profesionalesUnidadesValue", formatNumber(units.size));
+  setStat("profesionalesTotalValue", doctors.length);
+  setStat("profesionalesEspecialidadesValue", specialties.length);
+  setStat("profesionalesUnidadesValue", units.size);
 
   const averageExperience = doctors.length
     ? Math.round(
@@ -2713,21 +2986,20 @@ function renderProfesionales() {
       )
     : 0;
 
-  const experience = $("#profesionalesExperienciaValue");
-  if (experience) {
-    experience.innerHTML = `${formatNumber(averageExperience)} <small>años</small>`;
-  }
+  setStat("profesionalesExperienciaValue", averageExperience, {
+    suffix: " años",
+    small: true,
+  });
+
+  const etiquetaHospital = hospital?.nombre || hospitalLabel();
 
   const pill = $("#profesionalesScopePill");
   if (pill) {
     pill.hidden = false;
-    pill.textContent = alcance === "hospital" ? "Mi hospital" : "Vista global";
+    pill.textContent = alcance === "hospital" ? "Mi hospital" : etiquetaHospital;
   }
 
-  setText(
-    "profesionalesHospitalName",
-    hospital?.nombre || "Red hospitalaria completa",
-  );
+  setText("profesionalesHospitalName", etiquetaHospital);
 
   setText(
     "profesionalesHospitalMeta",
@@ -2743,7 +3015,7 @@ function renderProfesionales() {
   const chip = $("#profesionalesScopeChip");
   if (chip) {
     chip.textContent =
-      alcance === "hospital" ? "Hospital de la sesión" : "Vista global";
+      alcance === "hospital" ? "Hospital de la sesión" : etiquetaHospital;
     chip.className = `status-chip ${
       alcance === "hospital" ? "confirmed" : "pending"
     }`;
@@ -2787,6 +3059,7 @@ function loadSettings() {
 function applySettings() {
   const settings = state.settings || DEFAULT_SETTINGS;
 
+  document.body.dataset.theme = settings.theme || "light";
   document.body.classList.toggle(
     "compact-mode",
     settings.density === "compact",
@@ -2823,6 +3096,7 @@ function readSettingsControls() {
   };
 
   state.settings = {
+    theme: value("prefTheme", settings.theme || "light"),
     density: value("prefDensity", settings.density),
     accent: value("prefAccent", settings.accent),
     dateFormat: value("prefDateFormat", settings.dateFormat),
@@ -2853,10 +3127,7 @@ function renderSettings() {
   setText("settingsSpecialty", user.especialidad || "Sin especificar");
   setText("settingsPhone", user.telefono || "Sin registrar");
   setText("settingsAddress", user.direccion || "Sin registrar");
-  setText(
-    "settingsHospital",
-    state.contexto?.hospital?.nombre || "Red hospitalaria global",
-  );
+  setText("settingsHospital", hospitalLabel());
 
   setText("settingsSessionRole", isAdmin() ? "Administrador" : "Médico");
   setText("settingsSessionUser", user.username || "—");
@@ -2878,6 +3149,7 @@ function renderSettings() {
     if (element) element.checked = Boolean(value);
   };
 
+  setSelect("prefTheme", settings.theme || "light");
   setSelect("prefDensity", settings.density);
   setSelect("prefAccent", settings.accent);
   setSelect("prefDateFormat", settings.dateFormat);
@@ -2969,6 +3241,288 @@ async function loadAyudaStatus() {
   } else {
     element.textContent = "Backend no disponible · modo local";
   }
+}
+
+/* ============================================================
+   Notificaciones y seguimiento en vivo
+   ============================================================ */
+function renderNotificaciones() {
+  const lista = $("#notificationList");
+  const badge = $("#notificationBadge");
+  if (!lista) return;
+
+  // El panel solo muestra avisos sin leer: al marcar uno desaparece esa fila
+  // y al marcar todos se limpia por completo.
+  const pendientes = state.notificaciones.filter(
+    (notificacion) => !notificacion.leida,
+  );
+
+  if (badge) {
+    badge.hidden = state.noLeidas === 0;
+    badge.textContent = state.noLeidas > 99 ? "99+" : String(state.noLeidas);
+  }
+  setText(
+    "notificationSubtitle",
+    state.noLeidas
+      ? `${state.noLeidas} sin leer · ${state.notificaciones.length} recientes`
+      : "No tienes notificaciones sin leer",
+  );
+
+  const marcarTodo = $("#markNotificationsRead");
+  if (marcarTodo) {
+    marcarTodo.disabled = pendientes.length === 0;
+    marcarTodo.textContent =
+      pendientes.length > 1
+        ? `Marcar ${pendientes.length} como leídos`
+        : "Marcar todo como leído";
+  }
+
+  if (!pendientes.length) {
+    lista.innerHTML = `<div class="notification-empty">${
+      state.notificaciones.length
+        ? "No tienes notificaciones sin leer."
+        : "Todavía no hay avisos de turnos."
+    }</div>`;
+    refreshIcons();
+    return;
+  }
+
+  lista.innerHTML = pendientes
+    .map((notificacion) => {
+      const titulo =
+        notificacion.tipo === "inicio"
+          ? "▶ Turno iniciado"
+          : "✓ Consulta finalizada";
+      const fecha = String(notificacion.fecha || "").slice(0, 16).replace("T", " ");
+      return `
+        <div class="notification-item no-leida ${notificacion.tipo}">
+          <span class="notification-dot"></span>
+          <div class="notification-copy">
+            <strong>${titulo} · T-${notificacion.numero}</strong>
+            <p>${escapeHtml(notificacion.mensaje)}</p>
+            <time>${escapeHtml(fecha)}${notificacion.paciente ? ` · ${escapeHtml(notificacion.paciente)}` : ""}</time>
+          </div>
+          <button
+            class="notification-check"
+            type="button"
+            data-notification-id="${notificacion.id}"
+            title="Marcar como leído"
+            aria-label="Marcar notificación ${notificacion.id} como leída"
+          >
+            <i data-lucide="check"></i>
+          </button>
+        </div>`;
+    })
+    .join("");
+  refreshIcons();
+}
+
+async function loadNotificaciones({ avisar = true } = {}) {
+  const response = await api.notificaciones(30);
+  if (!response.ok) {
+    console.warn("No se pudieron cargar las notificaciones:", response.error);
+    return;
+  }
+
+  const rows = Array.isArray(response.data?.rows) ? response.data.rows : [];
+  const ultimo = Number(response.data?.ultimoId || 0);
+  if (avisar && state.ultimaNotificacionId > 0) {
+    rows
+      .filter(
+        (notificacion) =>
+          notificacion.id > state.ultimaNotificacionId && !notificacion.leida,
+      )
+      .slice(0, 3)
+      .forEach((notificacion) =>
+        notify(
+          `${notificacion.tipo === "inicio" ? "Turno iniciado" : "Consulta finalizada"} · T-${notificacion.numero}`,
+        ),
+      );
+  }
+
+  state.notificaciones = rows;
+  state.noLeidas = Number(response.data?.noLeidas || 0);
+  state.ultimaNotificacionId = Math.max(state.ultimaNotificacionId, ultimo);
+  renderNotificaciones();
+}
+
+function toggleNotificationPanel(forceOpen) {
+  const panel = $("#notificationPanel");
+  const button = $("#notificationBtn");
+  if (!panel) return;
+  const open = typeof forceOpen === "boolean" ? forceOpen : panel.hidden;
+  panel.hidden = !open;
+  button?.setAttribute("aria-expanded", String(open));
+  if (open) loadNotificaciones({ avisar: false });
+}
+
+/** Marca un solo aviso y lo retira de la campana sin tocar los demás. */
+async function marcarNotificacionLeida(id) {
+  const response = await api.marcarNotificacionesLeidas([id]);
+  if (!response.ok) {
+    toast(response.error || "No se pudo marcar la notificación");
+    return;
+  }
+
+  const notificacion = state.notificaciones.find(
+    (item) => String(item.id) === String(id),
+  );
+  if (notificacion && !notificacion.leida) {
+    notificacion.leida = true;
+    state.noLeidas = Math.max(0, state.noLeidas - 1);
+    renderNotificaciones();
+  }
+  toast("Notificación marcada como leída");
+}
+
+async function marcarNotificacionesLeidas() {
+  const response = await api.marcarNotificacionesLeidas();
+  if (!response.ok) {
+    toast(response.error || "No se pudieron marcar las notificaciones");
+    return;
+  }
+
+  state.notificaciones.forEach((notificacion) => {
+    notificacion.leida = true;
+  });
+  state.noLeidas = 0;
+  renderNotificaciones();
+  toast("Notificaciones marcadas como leídas");
+}
+
+/** Refresca solo los turnos del día: estados, cola, agenda y avisos. */
+async function refreshLiveData() {
+  if (!state.panel.cargado) return;
+  const response = await api.turnosPanel("", { fecha: state.fecha });
+  if (!response.ok) return;
+
+  const filas = Array.isArray(response.data?.rows) ? response.data.rows : [];
+  const turnos = filas.map(mapTurnoPanel);
+  state.viewAppointments = turnos;
+  state.panel.turnos = filas;
+  state.panel.totalTurnos = response.data?.total ?? turnos.length;
+  state.resumenAppointments = muestraAgenda(
+    [...turnos].sort(
+      (a, b) =>
+        String(a.time).localeCompare(String(b.time)) ||
+        String(a.id).localeCompare(String(b.id)),
+    ),
+  );
+  state.queue = buildQueue(turnos);
+
+  renderTimeline();
+  renderQueue();
+  renderTurnosView();
+  updateResumenStats();
+  await loadNotificaciones();
+}
+
+function iniciarSeguimientoEnVivo() {
+  setInterval(() => {
+    if (!document.hidden) refreshLiveData();
+  }, 30000);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refreshLiveData();
+  });
+}
+
+/* ============================================================
+   Menú de tres puntos y edición de turnos
+   ============================================================ */
+function encontrarTurno(numero) {
+  return state.viewAppointments.find((turno) => turno.numero === Number(numero));
+}
+
+function cerrarMenuTurno() {
+  const menu = $("#turnoActionMenu");
+  if (menu) menu.hidden = true;
+  state.turnoMenuNumero = null;
+}
+
+function abrirMenuTurno(button) {
+  const menu = $("#turnoActionMenu");
+  if (!menu) return;
+  const numero = Number(
+    button.dataset.numero || String(button.dataset.turnoId || "").replace("T-", ""),
+  );
+  if (!numero) return;
+
+  const turno = encontrarTurno(numero);
+  state.turnoMenuNumero = numero;
+  setText(
+    "turnoActionTitle",
+    turno ? `${turno.id} · ${turno.patient} · ${turno.time}` : `Turno T-${numero}`,
+  );
+
+  const rect = button.getBoundingClientRect();
+  menu.hidden = false;
+  const ancho = menu.offsetWidth || 190;
+  menu.style.left = `${Math.max(8, rect.right - ancho)}px`;
+  menu.style.top = `${Math.max(8, Math.min(window.innerHeight - 220, rect.bottom + 6))}px`;
+}
+
+function openTurnoEditModal(numero) {
+  const backdrop = $("#turnoEditBackdrop");
+  const form = $("#turnoEditForm");
+  if (!backdrop || !form) return;
+  const turno = encontrarTurno(numero);
+  if (!turno) {
+    toast("No se encontró el turno seleccionado.");
+    return;
+  }
+
+  state.turnoEditando = Number(numero);
+  form.elements.fecha.value = turno.fecha || state.fecha;
+  form.elements.hora.value = turno.time === "—" ? "09:00" : turno.time;
+  form.elements.estatus.value = turno.status;
+  form.elements.notaClinica.value = turno.notaClinica || "";
+  form.elements.atendido.checked = turno.status === "done";
+  setText(
+    "turnoEditHelp",
+    `${turno.id} · ${turno.patient} · ${turno.doctor} · fin estimado ${turno.fin}`,
+  );
+
+  backdrop.classList.add("open");
+  backdrop.setAttribute("aria-hidden", "false");
+  refreshIcons();
+  form.elements.fecha.focus();
+}
+
+function closeTurnoEditModal() {
+  const backdrop = $("#turnoEditBackdrop");
+  if (!backdrop) return;
+  backdrop.classList.remove("open");
+  backdrop.setAttribute("aria-hidden", "true");
+  state.turnoEditando = null;
+}
+
+async function guardarTurnoEditado(payload) {
+  const numero = state.turnoEditando;
+  if (!numero) return;
+  const response = await api.editarTurno(numero, payload);
+  if (!response.ok) {
+    toast(response.error || "No se pudo actualizar el turno");
+    return;
+  }
+  closeTurnoEditModal();
+  await loadDashboardData();
+  notify(`Turno T-${numero} actualizado correctamente`);
+}
+
+async function cambiarEstadoTurno(numero, estatus) {
+  const payload = { estatus };
+  if (estatus === "no_atendido") payload.atendido = "false";
+  const response = await api.editarTurno(numero, payload);
+  if (!response.ok) {
+    toast(response.error || "No se pudo actualizar el turno");
+    return;
+  }
+  await loadDashboardData();
+  notify(
+    estatus === "no_atendido"
+      ? `Turno T-${numero} marcado como no atendido`
+      : `Turno T-${numero} actualizado`,
+  );
 }
 
 /* ============================================================
@@ -3197,12 +3751,19 @@ function bindEvents() {
     const form = event.currentTarget;
     const submit = $("#appointmentSubmit");
     const payload = {
+      fecha: form.elements.fecha.value,
+      hora: form.elements.hora.value,
       pacienteId: form.elements.pacienteId.value,
       codMed: form.elements.codMed.value,
       codUni: form.elements.codUni.value,
       estado: form.elements.estado.value,
-      nota: form.elements.nota.value.trim(),
+      nota: form.elements.notaClinica.value.trim(),
+      notaClinica: form.elements.notaClinica.value.trim(),
     };
+    if (!payload.fecha || !payload.hora) {
+      toast("Indica la fecha y la hora reales del turno.");
+      return;
+    }
     if (!payload.pacienteId || !payload.codMed) {
       toast("Selecciona un paciente y un profesional para continuar.");
       return;
@@ -3327,24 +3888,27 @@ function bindEvents() {
     toast("Directorio de pacientes preparado para descargar");
   });
 
-  $("#manageQueue")?.addEventListener("click", () => {
-    toast("Cola actualizada en tiempo real");
+  $("#manageQueue")?.addEventListener("click", async () => {
+    await refreshLiveData();
+    toast("Cola actualizada con los estados actuales");
   });
 
   $("#viewCalendar")?.addEventListener("click", () => navigate("Turnos"));
   $("#viewPatients")?.addEventListener("click", () => navigate("Pacientes"));
 
-  ["#prevDay", "#nextDay", "#turnosPrevDay", "#turnosNextDay"].forEach(
-    (selector) => {
-      $(selector)?.addEventListener("click", () => {
-        toast(
-          selector.includes("prev")
-            ? "Mostrando el día anterior"
-            : "Mostrando el día siguiente",
-        );
-      });
-    },
-  );
+  ["#prevDay", "#turnosPrevDay", "#pacientesPrevDay"].forEach((selector) => {
+    $(selector)?.addEventListener("click", () =>
+      cambiarDia(-1, selector.includes("pacientes") ? "pacientes" : "agenda"),
+    );
+  });
+  ["#nextDay", "#turnosNextDay", "#pacientesNextDay"].forEach((selector) => {
+    $(selector)?.addEventListener("click", () =>
+      cambiarDia(1, selector.includes("pacientes") ? "pacientes" : "agenda"),
+    );
+  });
+  $("#agendaToday")?.addEventListener("click", () => volverHoy("agenda"));
+  $("#turnosToday")?.addEventListener("click", () => volverHoy("agenda"));
+  $("#pacientesTodos")?.addEventListener("click", () => volverHoy("pacientes"));
 
   $("#turnoSearch")?.addEventListener("input", (event) => {
     state.turnoFilters.search = event.target.value;
@@ -3394,7 +3958,69 @@ function bindEvents() {
   $("#turnosTable")?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-turno-id]");
     if (!button) return;
-    toast(`Abriendo detalle del turno ${button.dataset.turnoId}`);
+    event.stopPropagation();
+    abrirMenuTurno(button);
+  });
+
+  ["#timeline", "#turnoTimeline"].forEach((selector) => {
+    $(selector)?.addEventListener("click", (event) => {
+      const item = event.target.closest("[data-numero]");
+      if (item) openTurnoEditModal(Number(item.dataset.numero));
+    });
+  });
+
+  $("#turnoActionMenu")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-accion]");
+    if (!button || !state.turnoMenuNumero) return;
+    const numero = state.turnoMenuNumero;
+    const accion = button.dataset.accion;
+    cerrarMenuTurno();
+    if (accion === "editar") openTurnoEditModal(numero);
+    else cambiarEstadoTurno(numero, accion);
+  });
+
+  $("#closeTurnoEdit")?.addEventListener("click", closeTurnoEditModal);
+  $("#cancelTurnoEdit")?.addEventListener("click", closeTurnoEditModal);
+  $("#turnoEditBackdrop")?.addEventListener("click", (event) => {
+    if (event.target.id === "turnoEditBackdrop") closeTurnoEditModal();
+  });
+  $("#turnoEditForm")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const submit = $("#turnoEditSubmit");
+    if (submit) submit.disabled = true;
+    await guardarTurnoEditado({
+      fecha: form.elements.fecha.value,
+      hora: form.elements.hora.value,
+      estatus: form.elements.estatus.value,
+      notaClinica: form.elements.notaClinica.value.trim(),
+      atendido: String(form.elements.atendido.checked),
+    });
+    if (submit) submit.disabled = false;
+  });
+
+  $("#notificationBtn")?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    toggleNotificationPanel();
+  });
+  $("#closeNotifications")?.addEventListener("click", () =>
+    toggleNotificationPanel(false),
+  );
+  $("#markNotificationsRead")?.addEventListener("click", marcarNotificacionesLeidas);
+  $("#notificationList")?.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-notification-id]");
+    if (!button || button.disabled) return;
+    button.disabled = true;
+    await marcarNotificacionLeida(button.dataset.notificationId);
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest(".row-action-menu") && !event.target.closest("[data-turno-id]")) {
+      cerrarMenuTurno();
+    }
+    if (!event.target.closest("#notificationPanel") && !event.target.closest("#notificationBtn")) {
+      toggleNotificationPanel(false);
+    }
   });
 
   $("#pacientesTable")?.addEventListener("click", (event) => {
@@ -3475,6 +4101,7 @@ function bindEvents() {
 
   /* -------------------------------- Configuración ---------------------------- */
   [
+    "#prefTheme",
     "#prefDensity",
     "#prefAccent",
     "#prefDateFormat",
@@ -3543,6 +4170,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       : "Resumen";
 
   navigate(initial, false);
+  renderFecha();
   await loadDashboardData();
+  await loadNotificaciones({ avisar: false });
+  iniciarSeguimientoEnVivo();
   refreshIcons();
 });
