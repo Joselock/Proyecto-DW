@@ -64,6 +64,7 @@ public class PanelService {
                        to_char(r."fecha_admision", 'YYYY-MM-DD') AS admision,
                        COALESCE(p."dirPac", '') AS direccion,
                        r."estPac" AS estado,
+                       r."codUni" AS cod_uni,
                        u."nomUni" AS unidad,
                        d."nomDep" AS departamento,
                        h."nomHos" AS hospital,
@@ -175,6 +176,7 @@ public class PanelService {
             row.put("estatus", estadoPaciente(fila));
             row.put("edad", nacimiento == null ? null : Period.between(nacimiento, LocalDate.now()).getYears());
             row.put("esNuevo", admision != null && !admision.isBefore(LocalDate.now().minusDays(30)));
+            row.put("codUni", texto(fila.get("cod_uni")));
             row.put("unidad", texto(fila.get("unidad")));
             row.put("departamento", texto(fila.get("departamento")));
             row.put("hospital", texto(fila.get("hospital")));

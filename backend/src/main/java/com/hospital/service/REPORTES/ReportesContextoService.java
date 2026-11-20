@@ -109,6 +109,7 @@ public class ReportesContextoService extends com.hospital.service.JdbcServiceSup
                        m."telMed" AS telefono,
                        m."exp" AS experiencia,
                        m."datCon" AS datosContacto,
+                       COALESCE(m."dirMed", '') AS direccion,
                        m.username AS username,
                        us.email AS email,
                        u."codUni" AS codUni,
@@ -146,6 +147,7 @@ public class ReportesContextoService extends com.hospital.service.JdbcServiceSup
                     medico.put("telefono", rs.getString("telefono"));
                     medico.put("experiencia", rs.getInt("experiencia"));
                     medico.put("datosContacto", rs.getString("datosContacto"));
+                    medico.put("direccion", rs.getString("direccion"));
                     medico.put("username", rs.getString("username"));
                     medico.put("email", rs.getString("email"));
                     medico.put("codUni", rs.getString("codUni"));

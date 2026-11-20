@@ -599,6 +599,29 @@ body {
     align-self: start
 }
 
+/* En Resumen, la cola toma la altura de la agenda sin cambiar el tamaño de la agenda. */
+#view-Resumen .content-grid {
+    align-items: stretch
+}
+
+#view-Resumen .appointments-panel {
+    align-self: start
+}
+
+#view-Resumen .queue-panel {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    height: 0;
+    min-height: 100%
+}
+
+#view-Resumen .queue-panel .queue-list {
+    flex: 1 1 0;
+    min-height: 0;
+    max-height: none
+}
+
 .panel {
     background: #fff;
     border: 1px solid var(--line);
@@ -857,7 +880,10 @@ body {
 .queue-list {
     display: grid;
     gap: 1px;
-    margin-bottom: 13px
+    margin-bottom: 13px;
+    max-height: 320px;
+    overflow: auto;
+    padding-right: 3px
 }
 
 .queue-item {
@@ -1947,6 +1973,7 @@ Profesionales, reportes, configuración y ayuda
 }
 
 .doctor-card {
+    position: relative;
     border: 1px solid var(--line);
     border-radius: 10px;
     padding: 16px;
@@ -1966,7 +1993,16 @@ Profesionales, reportes, configuración y ayuda
 .doctor-card-head {
     display: flex;
     align-items: flex-start;
-    gap: 11px
+    gap: 11px;
+    padding-right: 34px
+}
+
+.doctor-card-menu-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px
 }
 
 .doctor-avatar {
@@ -3509,6 +3545,11 @@ body[data-theme="sand"] {
     color-scheme: light
 }
 
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) {
+    background: var(--bg);
+    color: var(--ink)
+}
+
 /* Barras laterales de los temas oscuros */
 body:is([data-theme="dark"], [data-theme="navy"]) .sidebar {
     background: #0a1621
@@ -3562,17 +3603,17 @@ body[data-theme="sand"] .user-profile {
     border-color: #6d5e49
 }
 
-/* Superficies: sobrescribe los colores claros del tema original */
+/* Superficies principales */
 body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) :is(
     .topbar, .panel, .stat-card, .account-dropdown, .modal, .notification-panel,
-    .notification-item,
-    .table-wrap, .table-wrap table, .table-wrap th, .table-wrap td,
-    .search-field, .select-wrap select,
-    input:not([type="checkbox"]):not([type="radio"]), textarea,
-    .doctor-card, .guide-card, .hospital-banner, .help-hero, .help-status-card,
-    .report-toolbar, .list-panel, .placeholder-panel, .settings-panel,
-    .session-card, .info-card, .queue-summary, .profile-modal,
-    .faq-item, .setting-field, .setting-row
+    .notification-item, .table-wrap, table, thead, tbody, th, td,
+    .search-field, .select-wrap select, .date-switcher, .agenda-toolbar,
+    .queue-summary, .queue-summary div, .timeline, .list-panel, .placeholder-panel,
+    .settings-panel, .session-card, .info-card, .profile-modal, .doctor-card,
+    .guide-card, .hospital-banner, .help-hero, .help-status-card, .report-toolbar,
+    .faq-item, .setting-field, .setting-row, .contact-item, .help-topic,
+    .filter-group, .segmented, .pagination, .empty-state, .activity-item,
+    .queue-item, .time-row, .appointment-item, .row-menu, .menu-popover
 ) {
     background: var(--surface) !important;
     color: var(--ink) !important;
@@ -3580,41 +3621,301 @@ body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) :is(
 }
 
 body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) :is(
+    .main-content, .page-content, .view, .content-grid, .welcome-row,
+    .stats-grid, .queue-list, .activity-list, .contact-list, .help-list,
+    .table-actions, .panel-actions
+) {
+    background: transparent !important;
+    color: inherit
+}
+
+/* Campos y controles */
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) :is(
+    input:not([type="checkbox"]):not([type="radio"]), textarea, select
+) {
+    background: var(--surface) !important;
+    color: var(--ink) !important;
+    border-color: var(--line) !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) :is(
+    input::placeholder, textarea::placeholder
+) {
+    color: var(--muted) !important;
+    opacity: 1
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) select option {
+    background: var(--surface);
+    color: var(--ink)
+}
+
+/* Texto secundario */
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) :is(
     .breadcrumb, .panel-heading p, .stat-foot, .subhead, .table-hint,
     .settings-note, .settings-status, .page-footer, .contact-copy span,
-    .faq-item p, .guide-card p, .nav-label, .setting-copy span,
-    .form-help, .profile-note, .panel-note, .nota-clinica, .table-footer
+    .faq-item p, .guide-card p, .nav-label, .setting-copy span, .form-help,
+    .profile-note, .panel-note, .nota-clinica, .table-footer, .time-label,
+    .doctor-mini, .patient-info span, .queue-num, .appointment-main span,
+    .table-patient span, td, th, .notification-copy p, .notification-copy time,
+    .activity-copy span, .help-card span, .user-copy span
 ) {
     color: var(--muted) !important
 }
 
-body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .stat-label {
-    color: var(--ink-soft) !important
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) :is(
+    .stat-label, .table-patient strong, .patient-info strong, .appointment-main strong,
+    .activity-copy strong, .notification-copy strong, .contact-copy strong
+) {
+    color: var(--ink) !important
+}
+
+/* Filas, listas y estados suaves */
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) :is(
+    tbody tr:nth-child(even), .activity-item:nth-child(even), .queue-item:nth-child(even)
+) {
+    background: rgba(127, 160, 180, .05) !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .appointment-item {
+    background: rgba(127, 160, 180, .08) !important;
+    border-left-color: var(--teal) !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .appointment-item.past {
+    background: rgba(127, 160, 180, .04) !important;
+    border-left-color: var(--muted) !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .queue-item,
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .activity-item,
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .contact-item,
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .account-dropdown-head,
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) td,
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) th {
+    border-color: var(--line) !important
+}
+
+/* Botones secundarios y chips neutros */
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) :is(
+    .outline-btn, .icon-btn, .segmented button, .text-btn.small, .date-switcher button
+) {
+    background: transparent !important;
+    color: var(--ink) !important;
+    border-color: var(--line) !important
+}
+
+/* Iconos de estadísticas: evitar fondos claros fijos */
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .stat-icon {
+    background: rgba(127, 160, 180, .14) !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .stat-icon.teal {
+    color: #7fe3d8 !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .stat-icon.coral {
+    color: #ffb3a8 !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .stat-icon.amber {
+    color: #f0c36a !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .stat-icon.blue {
+    color: #a9ceff !important
+}
+
+body[data-theme="sand"] .stat-icon {
+    background: rgba(88, 68, 40, .08) !important
 }
 
 body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) :is(
-    tbody tr:nth-child(even), .timeline .time-row:nth-child(even),
-    .activity-list > *:nth-child(even)
+    .outline-btn:hover, .icon-btn:hover, .segmented button:hover, .text-btn.small:hover,
+    .account-menu-item:hover, .account-menu-item:focus-visible, .row-menu button:hover
 ) {
-    background: rgba(127, 160, 180, .06) !important
+    background: rgba(127, 160, 180, .12) !important;
+    color: var(--ink) !important
 }
 
-body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .outline-btn {
-    background: transparent;
-    color: var(--ink);
-    border-color: var(--line)
+/* Estados e insignias: evitar bloques blancos brillantes */
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .status-chip.pending,
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .wait-time {
+    background: rgba(217, 154, 53, .18) !important;
+    color: #f0c36a !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .status-chip.confirmed {
+    background: rgba(30, 169, 154, .18) !important;
+    color: #7fe3d8 !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .status-chip.done {
+    background: rgba(148, 163, 184, .18) !important;
+    color: var(--ink-soft) !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .status-chip.in_progress,
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .consulting {
+    background: rgba(76, 132, 196, .22) !important;
+    color: #a9ceff !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .status-chip.no_atendido {
+    background: rgba(238, 128, 111, .18) !important;
+    color: #ffb3a8 !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .live-pill span {
+    box-shadow: 0 0 0 3px rgba(84, 201, 151, .18) !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .activity-dot {
+    box-shadow: 0 0 0 4px rgba(127, 160, 180, .12) !important
+}
+
+/* Tema arena: mantener contraste cálido sin blancos puros */
+body[data-theme="sand"] :is(
+    .status-chip.pending, .wait-time
+) {
+    background: #f3e3bf !important;
+    color: #8a6518 !important
+}
+
+body[data-theme="sand"] .status-chip.confirmed {
+    background: #dcefeb !important;
+    color: #1b6f66 !important
+}
+
+body[data-theme="sand"] .status-chip.done {
+    background: #e8ecef !important;
+    color: #5f6d78 !important
+}
+
+body[data-theme="sand"] :is(
+    .status-chip.in_progress, .consulting
+) {
+    background: #deebf8 !important;
+    color: #2f5f96 !important
+}
+
+body[data-theme="sand"] .status-chip.no_atendido {
+    background: #f6ddd8 !important;
+    color: #9a463b !important
+}
+
+body[data-theme="sand"] .notification-item.no-leida {
+    background: #eef6f4 !important
 }
 
 body:is([data-theme="dark"], [data-theme="navy"]) .notification-item.no-leida {
-    background: rgba(127, 160, 180, .08)
+    background: rgba(127, 160, 180, .08) !important
 }
 
 body:is([data-theme="dark"], [data-theme="navy"]) .notification-check {
     color: var(--teal)
 }
 
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .timeline::-webkit-scrollbar-thumb {
+    background: var(--line)
+}
+
 body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .search-field input,
 body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .select-wrap select {
     background: transparent;
     color: var(--ink)
+}
+
+/* Ajustes adicionales: barras, perfiles, medidores e iconos de configuración */
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) :is(
+    .specialty-bar, .report-meter
+) {
+    background: rgba(127, 160, 180, .18) !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) :is(
+    .specialty-empty, .empty-state, .profile-summary, .form-help, .report-badge
+) {
+    background: rgba(127, 160, 180, .08) !important;
+    color: var(--muted) !important;
+    border-color: var(--line) !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .report-badge.scoped {
+    color: var(--teal) !important;
+    background: rgba(30, 169, 154, .16) !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .settings-profile,
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .settings-detail-grid div {
+    background: rgba(127, 160, 180, .08) !important;
+    border-color: var(--line) !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .settings-profile-copy>span,
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .settings-detail-grid span {
+    color: var(--muted) !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .setting-icon {
+    background: rgba(127, 160, 180, .14) !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .setting-icon.teal {
+    color: #7fe3d8 !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .setting-icon.blue {
+    color: #a9ceff !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .setting-icon.amber {
+    color: #f0c36a !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .setting-icon.coral {
+    color: #ffb3a8 !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .modal input[readonly] {
+    background: rgba(127, 160, 180, .08) !important;
+    color: var(--muted) !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .status-chip.active {
+    background: rgba(30, 169, 154, .18) !important;
+    color: #7fe3d8 !important
+}
+
+body:is([data-theme="dark"], [data-theme="navy"], [data-theme="sand"]) .status-chip.inactive {
+    background: rgba(148, 163, 184, .18) !important;
+    color: var(--ink-soft) !important
+}
+
+body[data-theme="sand"] :is(
+    .specialty-bar, .report-meter
+) {
+    background: rgba(88, 68, 40, .12) !important
+}
+
+body[data-theme="sand"] :is(
+    .specialty-empty, .empty-state, .profile-summary, .form-help, .report-badge,
+    .settings-profile, .settings-detail-grid div
+) {
+    background: rgba(88, 68, 40, .05) !important;
+    color: var(--muted) !important
+}
+
+body[data-theme="sand"] .setting-icon {
+    background: rgba(88, 68, 40, .08) !important
+}
+
+body[data-theme="sand"] .status-chip.active {
+    background: #dcefeb !important;
+    color: #1b6f66 !important
+}
+
+body[data-theme="sand"] .status-chip.inactive {
+    background: #e8ecef !important;
+    color: #5f6d78 !important
 }

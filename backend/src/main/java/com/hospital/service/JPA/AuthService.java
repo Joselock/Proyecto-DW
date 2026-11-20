@@ -8,6 +8,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -288,6 +293,136 @@ public class AuthService {
                     "El campo " + campo + " no puede superar " + maxLength + " caracteres.");
         }
         return normalized;
+    }
+
+    @Transactional
+    public Map<String, Object> solicitarRecuperacion(String email, String baseUrl) {
+        String normalizedEmail = normalizeEmail(email);
+        if (normalizedEmail == null) {
+            throw new IllegalArgumentException("Ingresa un correo electrónico válido.");
+        }
+
+        // Limpiar tokens expirados o ya usados para no acumular basura.
+        jdbcTemplate.update("""
+                DELETE FROM public."reset_tokens"
+                WHERE "usado" = true
+                   OR "fecha_expiracion" < now()
+                """);
+
+        boolean existe = userRepository.findByEmail(normalizedEmail).isPresent();
+        Map<String, Object> resultado = new LinkedHashMap<>();
+        // Respuesta genérica para no revelar si el correo existe.
+        resultado.put("message",
+                "Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.");
+
+        if (!existe) {
+            return resultado;
+        }
+
+        // Invalidar tokens previos del mismo correo.
+        jdbcTemplate.update("""
+                UPDATE public."reset_tokens"
+                SET "usado" = true
+                WHERE "email" = ? AND "usado" = false
+                """, normalizedEmail);
+
+        String tokenPlano = generarTokenPlano();
+        String tokenHash = hashToken(tokenPlano);
+
+        jdbcTemplate.update("""
+                INSERT INTO public."reset_tokens" ("email", "token", "fecha_expiracion")
+                VALUES (?, ?, now() + interval '30 minutes')
+                """, normalizedEmail, tokenHash);
+
+        String enlace = (baseUrl == null ? "" : baseUrl.replaceAll("/$", ""))
+                + "/index.html?reset_token=" + tokenPlano
+                + "&email=" + urlEncode(normalizedEmail);
+
+        resultado.put("resetUrl", enlace);
+        resultado.put("expiresInMinutes", 30);
+        return resultado;
+    }
+
+    @Transactional
+    public void restablecerContrasena(String email, String tokenPlano, String nuevaPassword) {
+        String normalizedEmail = normalizeEmail(email);
+        if (normalizedEmail == null) {
+            throw new IllegalArgumentException("El enlace de recuperación no es válido.");
+        }
+        if (tokenPlano == null || tokenPlano.isBlank()) {
+            throw new IllegalArgumentException("El enlace de recuperación no es válido.");
+        }
+        if (nuevaPassword == null || nuevaPassword.length() < 6) {
+            throw new IllegalArgumentException(
+                    "La nueva contraseña debe tener al menos 6 caracteres.");
+        }
+
+        String tokenHash = hashToken(tokenPlano.trim());
+        List<Long> tokens = jdbcTemplate.queryForList("""
+                SELECT "id"
+                FROM public."reset_tokens"
+                WHERE "email" = ?
+                  AND "token" = ?
+                  AND "usado" = false
+                  AND "fecha_expiracion" > now()
+                ORDER BY "fecha_creacion" DESC
+                LIMIT 1
+                """, Long.class, normalizedEmail, tokenHash);
+
+        if (tokens.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "El enlace de recuperación no es válido o ha expirado.");
+        }
+
+        User user = userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "El enlace de recuperación no es válido o ha expirado."));
+
+        user.setPassword(passwordEncoder.encode(nuevaPassword));
+        userRepository.save(user);
+
+        jdbcTemplate.update("""
+                UPDATE public."reset_tokens"
+                SET "usado" = true
+                WHERE "id" = ?
+                """, tokens.get(0));
+
+        // Invalidar cualquier otro token activo del mismo correo.
+        jdbcTemplate.update("""
+                UPDATE public."reset_tokens"
+                SET "usado" = true
+                WHERE "email" = ? AND "usado" = false
+                """, normalizedEmail);
+    }
+
+    private String normalizeEmail(String email) {
+        if (email == null || email.isBlank()) return null;
+        String normalized = email.trim().toLowerCase(Locale.ROOT);
+        return normalized.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$") ? normalized : null;
+    }
+
+    private String generarTokenPlano() {
+        byte[] bytes = new byte[32];
+        new SecureRandom().nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    private String hashToken(String tokenPlano) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(tokenPlano.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(hash.length * 2);
+            for (byte b : hash) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("No se pudo procesar el token de recuperación.", e);
+        }
+    }
+
+    private String urlEncode(String value) {
+        return java.net.URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
     private String blankToNull(String value) {

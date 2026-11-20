@@ -141,12 +141,12 @@ export const api = {
     return apiFetch("/registro/opciones");
   },
 
-  /** POST /api/forgot-password */
+  /** Solicita enlace de recuperación (devuelve resetUrl para entornos sin correo). */
   forgotPassword(email) {
     return apiFetch("/forgot-password", { method: "POST", body: { email } });
   },
 
-  /** POST /api/reset-password */
+  /** Restablece la contraseña con el token recibido. */
   resetPassword(email, token, password) {
     return apiFetch("/reset-password", {
       method: "POST",
@@ -206,6 +206,21 @@ export const api = {
     return apiFetch("/altas/pacientes", { method: "POST", body: data });
   },
 
+  /** Edita la ficha de un paciente existente. */
+  editarPaciente(numHistoria, data) {
+    return apiFetch(`/altas/pacientes/${encodeURIComponent(numHistoria)}`, {
+      method: "PUT",
+      body: data,
+    });
+  },
+
+  /** Elimina un paciente por su número de historia clínica. */
+  eliminarPaciente(numHistoria) {
+    return apiFetch(`/altas/pacientes/${encodeURIComponent(numHistoria)}`, {
+      method: "DELETE",
+    });
+  },
+
   /** Alta real de turno (Turno + Consulta) */
   crearTurno(data) {
     return apiFetch("/altas/turnos", { method: "POST", body: data });
@@ -222,6 +237,21 @@ export const api = {
   /** Alta real de médico. El backend solo la permite para ADMIN. */
   crearMedico(data) {
     return apiFetch("/altas/medicos", { method: "POST", body: data });
+  },
+
+  /** Edita la ficha de un médico existente. */
+  editarMedico(codMed, data) {
+    return apiFetch(`/altas/medicos/${encodeURIComponent(codMed)}`, {
+      method: "PUT",
+      body: data,
+    });
+  },
+
+  /** Elimina un médico por su código. */
+  eliminarMedico(codMed) {
+    return apiFetch(`/altas/medicos/${encodeURIComponent(codMed)}`, {
+      method: "DELETE",
+    });
   },
 
   /** Avisos de inicio y finalización de turnos visibles según el rol. */

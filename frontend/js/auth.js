@@ -375,4 +375,210 @@ document.addEventListener("DOMContentLoaded", () => {
       registerSubmit.textContent = "Registrarse";
     }
   });
+
+  // ---------------------------------------------------------
+  // RECUPERACIÓN DE CONTRASEÑA
+  // ---------------------------------------------------------
+  const forgotLink = document.getElementById("forgotPasswordLink");
+  const recoverBox = document.getElementById("recoverBox");
+  const recoverClose = document.getElementById("recoverClose");
+  const recoverRequestStep = document.getElementById("recoverRequestStep");
+  const recoverResetStep = document.getElementById("recoverResetStep");
+  const recoverRequestBtn = document.getElementById("recoverRequest");
+  const recoverResetBtn = document.getElementById("recoverReset");
+  const recoverEmail = document.getElementById("recoverEmail");
+  const recoverToken = document.getElementById("recoverToken");
+  const recoverTokenEmail = document.getElementById("recoverTokenEmail");
+  const recoverPass = document.getElementById("recoverPass");
+  const recoverPassConfirm = document.getElementById("recoverPassConfirm");
+  const recoverFeedback = document.getElementById("recoverFeedback");
+  const recoverError = document.getElementById("recoverError");
+  const recoverLink = document.getElementById("recoverLink");
+
+  const setRecoverMessage = (feedback = "", error = "") => {
+    if (recoverFeedback) recoverFeedback.textContent = feedback;
+    if (recoverError) recoverError.textContent = error;
+  };
+
+  const showRecoverLink = (url = "") => {
+    if (!recoverLink) return;
+    if (url) {
+      recoverLink.href = url;
+      recoverLink.textContent = `Abrir enlace de restablecimiento`;
+      recoverLink.hidden = false;
+    } else {
+      recoverLink.removeAttribute("href");
+      recoverLink.textContent = "";
+      recoverLink.hidden = true;
+    }
+  };
+
+  const openRecover = (mode = "request") => {
+    if (!recoverBox) return;
+    setState("login");
+    recoverBox.hidden = false;
+    if (mode === "reset") {
+      recoverRequestStep && (recoverRequestStep.hidden = true);
+      recoverResetStep && (recoverResetStep.hidden = false);
+    } else {
+      recoverRequestStep && (recoverRequestStep.hidden = false);
+      recoverResetStep && (recoverResetStep.hidden = true);
+      if (recoverEmail && !recoverEmail.value) {
+        recoverEmail.value =
+          document.getElementById("loginEmail")?.value.trim() || "";
+      }
+    }
+  };
+
+  const closeRecover = () => {
+    if (recoverBox) recoverBox.hidden = true;
+    setRecoverMessage();
+    showRecoverLink();
+    if (recoverPass) recoverPass.value = "";
+    if (recoverPassConfirm) recoverPassConfirm.value = "";
+  };
+
+  forgotLink?.addEventListener("click", (e) => {
+    e.preventDefault();
+    setRecoverMessage();
+    showRecoverLink();
+    openRecover("request");
+  });
+
+  recoverClose?.addEventListener("click", () => {
+    closeRecover();
+  });
+
+  recoverRequestBtn?.addEventListener("click", async () => {
+    const email = (recoverEmail?.value || "").trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setRecoverMessage("", "Ingresa un correo electrónico válido.");
+      return;
+    }
+
+    setRecoverMessage();
+    showRecoverLink();
+    recoverRequestBtn.disabled = true;
+    recoverRequestBtn.textContent = "Enviando...";
+
+    try {
+      const res = await api.forgotPassword(email);
+      if (!res.ok) {
+        setRecoverMessage("", res.error || "No se pudo procesar la solicitud.");
+        return;
+      }
+
+      const data = res.data || {};
+      setRecoverMessage(
+        data.message ||
+          "Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.",
+        "",
+      );
+
+      if (data.resetUrl) {
+        // En entornos sin correo, el backend devuelve el enlace para usarlo de inmediato.
+        showRecoverLink(data.resetUrl);
+        try {
+          const url = new URL(data.resetUrl, window.location.href);
+          const token = url.searchParams.get("reset_token") || "";
+          const tokenEmail = url.searchParams.get("email") || email;
+          if (token) {
+            if (recoverToken) recoverToken.value = token;
+            if (recoverTokenEmail) recoverTokenEmail.value = tokenEmail;
+            openRecover("reset");
+            // Mantener visible el enlace por si el usuario quiere copiarlo.
+            showRecoverLink(data.resetUrl);
+          }
+        } catch {
+          // Si el enlace no se puede parsear, igual se muestra para abrirlo manualmente.
+        }
+      }
+    } catch (error) {
+      console.error("Error al solicitar recuperación:", error);
+      setRecoverMessage("", "No se pudo conectar con el servidor.");
+    } finally {
+      recoverRequestBtn.disabled = false;
+      recoverRequestBtn.textContent = "Enviar enlace";
+    }
+  });
+
+  recoverResetBtn?.addEventListener("click", async () => {
+    const email = (recoverTokenEmail?.value || recoverEmail?.value || "").trim();
+    const token = (recoverToken?.value || "").trim();
+    const password = recoverPass?.value || "";
+    const confirm = recoverPassConfirm?.value || "";
+
+    if (!email || !token) {
+      setRecoverMessage("", "El enlace de recuperación no es válido.");
+      return;
+    }
+    if (password.length < 6) {
+      setRecoverMessage("", "La nueva contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+    if (password !== confirm) {
+      setRecoverMessage("", "Las contraseñas no coinciden.");
+      return;
+    }
+
+    setRecoverMessage();
+    recoverResetBtn.disabled = true;
+    recoverResetBtn.textContent = "Guardando...";
+
+    try {
+      const res = await api.resetPassword(email, token, password);
+      if (!res.ok) {
+        setRecoverMessage("", res.error || "No se pudo restablecer la contraseña.");
+        return;
+      }
+
+      const message =
+        res.data?.message || "Contraseña actualizada. Ya puedes iniciar sesión.";
+      setRecoverMessage(message, "");
+      showRecoverLink();
+      if (recoverPass) recoverPass.value = "";
+      if (recoverPassConfirm) recoverPassConfirm.value = "";
+
+      const loginEmail = document.getElementById("loginEmail");
+      const loginPass = document.getElementById("loginPass");
+      if (loginEmail) loginEmail.value = email;
+      if (loginPass) loginPass.value = "";
+
+      try {
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete("reset_token");
+        cleanUrl.searchParams.delete("email");
+        window.history.replaceState({}, "", cleanUrl.toString());
+      } catch {
+        // Ignorar si no se puede limpiar la URL.
+      }
+
+      setTimeout(() => {
+        closeRecover();
+      }, 2200);
+    } catch (error) {
+      console.error("Error al restablecer contraseña:", error);
+      setRecoverMessage("", "No se pudo conectar con el servidor.");
+    } finally {
+      recoverResetBtn.disabled = false;
+      recoverResetBtn.textContent = "Restablecer contraseña";
+    }
+  });
+
+  // Si la página se abre desde un enlace de recuperación, mostrar el paso final.
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const tokenParam = params.get("reset_token");
+    const emailParam = params.get("email");
+    if (tokenParam) {
+      if (recoverToken) recoverToken.value = tokenParam;
+      if (recoverTokenEmail) recoverTokenEmail.value = (emailParam || "").trim();
+      if (recoverEmail && emailParam) recoverEmail.value = emailParam;
+      if (loginError) loginError.textContent = "";
+      openRecover("reset");
+      setRecoverMessage("Ingresa tu nueva contraseña para completar la recuperación.", "");
+    }
+  } catch {
+    // Ignorar parámetros malformados.
+  }
 });

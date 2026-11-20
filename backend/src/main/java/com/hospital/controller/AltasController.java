@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,6 +48,31 @@ public class AltasController {
         }
     }
 
+    @PutMapping("/pacientes/{numHistoria}")
+    public ResponseEntity<?> editarPaciente(@PathVariable String numHistoria,
+                                            @RequestBody Map<String, String> body,
+                                            HttpServletRequest request) {
+        String username = username(request);
+        if (username == null) return noAutorizado();
+        try {
+            return ok(altasService.editarPaciente(username, role(request), numHistoria, body));
+        } catch (Exception e) {
+            return error(e);
+        }
+    }
+
+    @DeleteMapping("/pacientes/{numHistoria}")
+    public ResponseEntity<?> eliminarPaciente(@PathVariable String numHistoria,
+                                              HttpServletRequest request) {
+        String username = username(request);
+        if (username == null) return noAutorizado();
+        try {
+            return ok(altasService.eliminarPaciente(username, role(request), numHistoria));
+        } catch (Exception e) {
+            return error(e);
+        }
+    }
+
     @PostMapping("/turnos")
     public ResponseEntity<?> crearTurno(@RequestBody Map<String, String> body,
                                         HttpServletRequest request) {
@@ -80,6 +106,31 @@ public class AltasController {
         if (username == null) return noAutorizado();
         try {
             return ok(altasService.crearMedico(username, role(request), body));
+        } catch (Exception e) {
+            return error(e);
+        }
+    }
+
+    @PutMapping("/medicos/{codMed}")
+    public ResponseEntity<?> editarMedico(@PathVariable String codMed,
+                                          @RequestBody Map<String, String> body,
+                                          HttpServletRequest request) {
+        String username = username(request);
+        if (username == null) return noAutorizado();
+        try {
+            return ok(altasService.editarMedico(username, role(request), codMed, body));
+        } catch (Exception e) {
+            return error(e);
+        }
+    }
+
+    @DeleteMapping("/medicos/{codMed}")
+    public ResponseEntity<?> eliminarMedico(@PathVariable String codMed,
+                                            HttpServletRequest request) {
+        String username = username(request);
+        if (username == null) return noAutorizado();
+        try {
+            return ok(altasService.eliminarMedico(username, role(request), codMed));
         } catch (Exception e) {
             return error(e);
         }

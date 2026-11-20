@@ -53,6 +53,10 @@ const state = {
   noLeidas: 0,
   ultimaNotificacionId: 0,
   turnoEditando: null,
+  patientMenuId: null,
+  patientEditId: null,
+  medicoMenuId: null,
+  medicoEditCod: null,
 };
 
 const PAGE_SIZE = 20;
@@ -1312,7 +1316,10 @@ function mapPacientePanel(row) {
     hospital: row.hospital,
     departamento: row.departamento,
     unidad: row.unidad,
-    direccion: row.direccion,
+    codUni: row.codUni || "",
+    direccion: row.direccion || "",
+    nacimiento: row.nacimiento || "",
+    estadoRegistro: row.estado || "Internado",
   };
 }
 
@@ -1540,7 +1547,8 @@ function renderTimeline(filter = "all") {
   const root = $("#timeline");
   if (!root) return;
 
-  const items = state.resumenAppointments
+  // Mostrar todos los turnos agendados del día (no una muestra parcial).
+  const items = state.viewAppointments
     .filter(
       (appointment) =>
         filter === "all" || slug(appointment.specialty) === slug(filter),
@@ -1589,7 +1597,6 @@ function buildQueue(appointments) {
         String(a.time).localeCompare(String(b.time)) ||
         String(a.id).localeCompare(String(b.id)),
     )
-    .slice(0, 5)
     .map((appointment) => ({
       initials: initialsOf(appointment.patient),
       name: appointment.patient,
@@ -1685,7 +1692,7 @@ function renderPatients(query = "") {
           <td><span class="status-chip ${patient.status === "pending" ? "pending" : "confirmed"}">${patient.status === "pending" ? "Pendiente" : "Activo"}</span></td>
           <td>
             <div class="table-actions">
-              <button class="icon-btn" data-patient-id="${escapeHtml(patient.id)}" title="Ver ficha de ${escapeHtml(patient.name)}">
+              <button class="icon-btn" data-patient-id="${escapeHtml(patient.id)}" title="Acciones de ${escapeHtml(patient.name)}">
                 <i data-lucide="more-horizontal"></i>
               </button>
             </div>
@@ -1742,16 +1749,12 @@ function renderTurnoTimeline() {
   const root = $("#turnoTimeline");
   if (!root) return;
 
-  // Vista rápida: primero los turnos en curso y después una muestra repartida
-  // por horas, para que no se vean solo los primeros turnos de una franja.
-  // El listado completo está más abajo.
-  const items = muestraAgenda(
-    filterAppointments(false).sort(
-      (a, b) =>
-        Number(b.status === "in_progress") - Number(a.status === "in_progress") ||
-        String(a.time).localeCompare(String(b.time)) ||
-        String(a.id).localeCompare(String(b.id)),
-    ),
+  // Agenda del día: mostrar todos los turnos que coinciden con los filtros.
+  const items = filterAppointments(false).sort(
+    (a, b) =>
+      Number(b.status === "in_progress") - Number(a.status === "in_progress") ||
+      String(a.time).localeCompare(String(b.time)) ||
+      String(a.id).localeCompare(String(b.id)),
   );
 
   root.classList.toggle("is-empty", !items.length);
@@ -1947,7 +1950,7 @@ function renderPacientesTable() {
           <td><span class="status-chip ${patient.status === "pending" ? "pending" : patient.status === "inactive" ? "inactive" : "active"}">${statusLabel(patient.status)}</span></td>
           <td>
             <div class="table-actions">
-              <button class="icon-btn" data-patient-id="${escapeHtml(patient.id)}" title="Ver ficha de ${escapeHtml(patient.name)}">
+              <button class="icon-btn" data-patient-id="${escapeHtml(patient.id)}" title="Acciones de ${escapeHtml(patient.name)}">
                 <i data-lucide="more-horizontal"></i>
               </button>
             </div>
@@ -2325,11 +2328,11 @@ function sincronizarUnidadTurno() {
   unidad.value = medico.codUni;
 }
 
-function populatePacienteForm() {
+function populatePacienteForm(editing = null) {
   const perfil = state.catalogos?.perfil || {};
   const unidades = unidadesParaSelect();
   const unidadSelect = $("#pacienteUnidad");
-  const actual = unidadSelect?.value || perfil.codUni || "";
+  const actual = editing?.codUni || unidadSelect?.value || perfil.codUni || "";
 
   fillSelect(
     unidadSelect,
@@ -2342,17 +2345,26 @@ function populatePacienteForm() {
 
   const submit = $("#patientSubmit");
   const help = $("#patientFormHelp");
+  const esEdicion = Boolean(editing || state.patientEditId);
   if (help) {
-    help.textContent = !unidades.length
-      ? "No hay unidades disponibles para este perfil."
-      : isAdmin()
-        ? "El documento se genera automáticamente si se deja vacío. El hospital y la especialidad se deducen de la unidad."
-        : `El alta se registra en tu unidad (${unidades[0]?.nombre || perfil.codUni || "—"}). El documento se genera automáticamente si se deja vacío.`;
+    if (!unidades.length) {
+      help.textContent = "No hay unidades disponibles para este perfil.";
+    } else if (esEdicion) {
+      help.textContent =
+        "Actualiza los datos de la ficha. Puedes modificar el documento, estado, unidad y datos personales.";
+    } else if (isAdmin()) {
+      help.textContent =
+        "El documento se genera automáticamente si se deja vacío. El hospital y la especialidad se deducen de la unidad.";
+    } else {
+      help.textContent = `El alta se registra en tu unidad (${unidades[0]?.nombre || perfil.codUni || "—"}). El documento se genera automáticamente si se deja vacío.`;
+    }
   }
-  if (submit) submit.disabled = !unidades.length || !isAdmin();
+  if (submit) {
+    submit.disabled = !unidades.length || (!isAdmin() && !esEdicion);
+  }
 }
 
-function populateMedicoForm() {
+function populateMedicoForm(editing = null) {
   const catalogos = state.catalogos || {};
   const hospitales = catalogos.hospitales || [];
   const departamentos = catalogos.departamentos || [];
@@ -2361,24 +2373,27 @@ function populateMedicoForm() {
   const departamentoSelect = $("#medicoDepartamento");
   const unidadSelect = $("#medicoUnidad");
 
-  const hospital = hospitalSelect?.value || hospitales[0]?.codigo || "";
+  const preferredHospital =
+    editing?.codHos || hospitalSelect?.value || hospitales[0]?.codigo || "";
   fillSelect(
     hospitalSelect,
     hospitales,
     hospitales.length ? "Selecciona el hospital" : "No hay hospitales disponibles",
     "codigo",
     "nombre",
-    hospital,
+    preferredHospital,
   );
+  const hospital = hospitalSelect?.value || preferredHospital || "";
 
   const departamentosHospital = departamentos.filter(
     (item) => !hospital || item.codHos === hospital,
   );
-  const departamento =
-    departamentoSelect?.value &&
+  const preferredDepartamento =
+    editing?.codDep ||
+    (departamentoSelect?.value &&
     departamentosHospital.some((item) => item.codigo === departamentoSelect.value)
       ? departamentoSelect.value
-      : departamentosHospital[0]?.codigo || "";
+      : departamentosHospital[0]?.codigo || "");
   fillSelect(
     departamentoSelect,
     departamentosHospital,
@@ -2387,17 +2402,19 @@ function populateMedicoForm() {
       : "Selecciona primero un hospital",
     "codigo",
     "nombre",
-    departamento,
+    preferredDepartamento,
   );
+  const departamento = departamentoSelect?.value || preferredDepartamento || "";
 
   const unidadesDepartamento = unidades.filter(
     (item) => !departamento || item.codDep === departamento,
   );
-  const unidad =
-    unidadSelect?.value &&
+  const preferredUnidad =
+    editing?.codUni ||
+    (unidadSelect?.value &&
     unidadesDepartamento.some((item) => item.codigo === unidadSelect.value)
       ? unidadSelect.value
-      : unidadesDepartamento[0]?.codigo || "";
+      : unidadesDepartamento[0]?.codigo || "");
   fillSelect(
     unidadSelect,
     unidadesDepartamento,
@@ -2406,7 +2423,7 @@ function populateMedicoForm() {
       : "Selecciona primero un departamento",
     "codigo",
     "nombre",
-    unidad,
+    preferredUnidad,
   );
 
   const submit = $("#medicoSubmit");
@@ -2800,54 +2817,109 @@ function renderReportPanel(key) {
   refreshIcons();
 }
 
-function exportReportesCsv() {
-  const resumen = state.reportes.results.resumen;
-  const hospitals =
-    resumen?.ok && Array.isArray(resumen.data) ? resumen.data : [];
+function csvCell(value) {
+  return `"${String(value ?? "").replace(/"/g, '""')}"`;
+}
 
-  if (!hospitals.length) {
-    toast("No hay datos de hospitales para exportar");
-    return;
-  }
-
-  const header = [
-    "Hospital",
-    "Departamentos",
-    "Unidades",
-    "Médicos",
-    "Pacientes",
-  ];
-  const lines = hospitals.map((hospital) => [
-    hospital.nombreHos || "",
-    hospital.cantDep || 0,
-    hospital.cantUni || 0,
-    hospital.cantMed || 0,
-    hospital.cantPac || 0,
-  ]);
-
-  const csv = [header, ...lines]
-    .map((row) =>
-      row
-        .map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`)
-        .join(","),
-    )
-    .join("\r\n");
-
-  const blob = new Blob([`\uFEFF${csv}`], {
-    type: "text/csv;charset=utf-8;",
-  });
+function downloadCsv(filename, rows) {
+  if (!rows.length) return false;
+  const csv = rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `reporte-hospitales-${new Date()
-    .toISOString()
-    .slice(0, 10)}.csv`;
+  link.download = filename;
   document.body.appendChild(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+  return true;
+}
 
-  toast("Resumen de hospitales exportado en CSV");
+function stripHtml(value) {
+  const div = document.createElement("div");
+  div.innerHTML = String(value ?? "");
+  return (div.textContent || div.innerText || "").replace(/\s+/g, " ").trim();
+}
+
+function exportPacientesCsv(items, filename = "pacientes") {
+  const rows = [
+    ["Paciente", "Documento", "Edad", "Nacimiento", "Dirección", "Área/Departamento", "Unidad", "Hospital", "Estado", "Última visita", "Profesional"],
+    ...items.map((patient) => [
+      patient.name || "",
+      patient.id || "",
+      patient.age ?? "",
+      patient.nacimiento || "",
+      patient.direccion || "",
+      patient.departamento || patient.specialty || "",
+      patient.unidad || "",
+      patient.hospital || "",
+      statusLabel(patient.status),
+      patient.lastVisit || "",
+      patient.doctor || "",
+    ]),
+  ];
+  const ok = downloadCsv(`${filename}-${hoyISO()}.csv`, rows);
+  toast(ok ? `Se exportaron ${items.length} pacientes` : "No hay pacientes para exportar");
+}
+
+function exportTurnosCsv(items, filename = "turnos") {
+  const rows = [
+    ["Turno", "Fecha", "Hora", "Fin", "Duración (min)", "Paciente", "Documento", "Área/Especialidad", "Profesional", "Consultorio", "Estado", "Nota clínica", "Hospital", "Unidad"],
+    ...items.map((turno) => [
+      turno.id || "",
+      turno.fecha || state.fecha || "",
+      turno.time || "",
+      turno.fin || "",
+      turno.duracion ?? "",
+      turno.patient || "",
+      turno.patientId || "",
+      turno.specialty || "",
+      turno.doctor || "",
+      turno.room || "",
+      statusLabel(turno.status),
+      turno.notaClinica || "",
+      turno.hospital || "",
+      turno.unidad || "",
+    ]),
+  ];
+  const ok = downloadCsv(`${filename}-${state.fecha || hoyISO()}.csv`, rows);
+  toast(ok ? `Se exportaron ${items.length} turnos` : "No hay turnos para exportar");
+}
+
+function exportReportesCsv() {
+  if (!isAdmin()) {
+    toast("Los reportes solo están disponibles para administradores.");
+    return;
+  }
+  if (!state.reportes.loaded) {
+    toast("Actualiza los reportes antes de exportarlos.");
+    return;
+  }
+
+  const rows = [];
+  let total = 0;
+  for (const def of REPORT_DEFS) {
+    const result = state.reportes.results[def.key];
+    if (!result?.ok) continue;
+    const dataRows = reportRows(def, result);
+    if (!dataRows.length) continue;
+    if (rows.length) rows.push([]);
+    rows.push([`Reporte ${def.number}: ${def.title}`]);
+    rows.push(def.columns.map((col) => col.label));
+    dataRows.forEach((row) => {
+      rows.push(def.columns.map((col) => stripHtml(col.render(row))));
+    });
+    total += dataRows.length;
+  }
+
+  if (!rows.length) {
+    toast("No hay datos de reportes para exportar");
+    return;
+  }
+
+  const ok = downloadCsv(`reportes-hospitalarios-${hoyISO()}.csv`, rows);
+  toast(ok ? `Reportes exportados (${total} registros)` : "No hay datos para exportar");
 }
 
 /* ============================================================
@@ -2918,6 +2990,15 @@ function renderProfesionalesGrid() {
     .map(
       (doctor, index) => `
         <article class="doctor-card">
+          <button
+            class="icon-btn doctor-card-menu-btn"
+            type="button"
+            data-medico-id="${escapeHtml(doctor.codMed)}"
+            title="Acciones de ${escapeHtml(doctor.nombre || "profesional")}"
+            aria-label="Acciones de ${escapeHtml(doctor.nombre || "profesional")}"
+          >
+            <i data-lucide="more-horizontal"></i>
+          </button>
           <div class="doctor-card-head">
             <span class="doctor-avatar" style="${avatarStyle(index)}">${escapeHtml(initialsOf(doctor.nombre))}</span>
             <div class="doctor-identity">
@@ -3461,6 +3542,109 @@ function abrirMenuTurno(button) {
   menu.style.top = `${Math.max(8, Math.min(window.innerHeight - 220, rect.bottom + 6))}px`;
 }
 
+/* ============================================================
+   Menú de acciones de pacientes
+   ============================================================ */
+function encontrarPaciente(id) {
+  return (
+    state.viewPatients.find((patient) => patient.id === id) ||
+    state.resumenPatients.find((patient) => patient.id === id) ||
+    null
+  );
+}
+
+function cerrarMenuPaciente() {
+  const menu = $("#pacienteActionMenu");
+  if (menu) menu.hidden = true;
+  state.patientMenuId = null;
+}
+
+function abrirMenuPaciente(button) {
+  const menu = $("#pacienteActionMenu");
+  if (!menu) return;
+  const id = button.dataset.patientId;
+  if (!id) return;
+
+  const patient = encontrarPaciente(id);
+  state.patientMenuId = id;
+  setText("pacienteActionTitle", patient ? `${patient.name} · ${patient.id}` : "Paciente");
+
+  const rect = button.getBoundingClientRect();
+  menu.hidden = false;
+  const ancho = menu.offsetWidth || 210;
+  menu.style.left = `${Math.max(8, rect.right - ancho)}px`;
+  menu.style.top = `${Math.max(8, Math.min(window.innerHeight - 160, rect.bottom + 6))}px`;
+}
+
+async function eliminarPacienteActual() {
+  const id = state.patientMenuId;
+  const patient = encontrarPaciente(id);
+  if (!id || !patient) return;
+  const ok = window.confirm(
+    `¿Eliminar la ficha de ${patient.name} (${patient.id})? Esta acción no se puede deshacer.`,
+  );
+  if (!ok) return;
+
+  const response = await api.eliminarPaciente(id);
+  if (!response.ok) {
+    toast(response.error || "No se pudo eliminar el paciente.");
+    return;
+  }
+  await Promise.all([loadDashboardData(), loadCatalogos(true)]);
+  toast(response.data?.mensaje || "Paciente eliminado correctamente");
+}
+
+/* ============================================================
+   Menú de acciones de médicos/profesionales
+   ============================================================ */
+function encontrarMedico(codMed) {
+  return (state.profesionales?.medicos || []).find((doctor) => doctor.codMed === codMed) || null;
+}
+
+function cerrarMenuMedico() {
+  const menu = $("#medicoActionMenu");
+  if (menu) menu.hidden = true;
+  state.medicoMenuId = null;
+}
+
+function abrirMenuMedico(button) {
+  const menu = $("#medicoActionMenu");
+  if (!menu) return;
+  const codMed = button.dataset.medicoId || button.dataset.codMed;
+  if (!codMed) return;
+
+  const doctor = encontrarMedico(codMed);
+  state.medicoMenuId = codMed;
+  setText(
+    "medicoActionTitle",
+    doctor ? `${doctor.nombre} · ${doctor.codMed}` : "Profesional",
+  );
+
+  const rect = button.getBoundingClientRect();
+  menu.hidden = false;
+  const ancho = menu.offsetWidth || 220;
+  menu.style.left = `${Math.max(8, rect.right - ancho)}px`;
+  menu.style.top = `${Math.max(8, Math.min(window.innerHeight - 160, rect.bottom + 6))}px`;
+}
+
+async function eliminarMedicoActual() {
+  const codMed = state.medicoMenuId;
+  const doctor = encontrarMedico(codMed);
+  if (!codMed || !doctor) return;
+  const ok = window.confirm(
+    `¿Eliminar al profesional ${doctor.nombre} (${doctor.codMed})? Esta acción no se puede deshacer.`,
+  );
+  if (!ok) return;
+
+  const response = await api.eliminarMedico(codMed);
+  if (!response.ok) {
+    toast(response.error || "No se pudo eliminar el profesional.");
+    return;
+  }
+  await Promise.all([loadProfesionales(true), loadCatalogos(true)]);
+  toast(response.data?.mensaje || "Profesional eliminado correctamente");
+}
+
 function openTurnoEditModal(numero) {
   const backdrop = $("#turnoEditBackdrop");
   const form = $("#turnoEditForm");
@@ -3546,13 +3730,50 @@ function closeModal() {
   backdrop.setAttribute("aria-hidden", "true");
 }
 
-async function openPatientModal() {
+function setPatientModalMode(editing) {
+  const title = $("#patientModalTitle");
+  const submit = $("#patientSubmit");
+  const eyebrow = $("#patientModalEyebrow");
+  if (title) title.textContent = editing ? "Editar ficha de paciente" : "Registrar paciente";
+  if (eyebrow) eyebrow.textContent = editing ? "Editar registro" : "Nuevo registro";
+  if (submit) {
+    submit.innerHTML = editing
+      ? '<i data-lucide="save"></i>Guardar cambios'
+      : '<i data-lucide="user-plus"></i>Guardar paciente';
+  }
+}
+
+async function openPatientModal(patient = null) {
+  const isEvent = patient && typeof patient.preventDefault === "function";
+  const editing = !isEvent && patient ? patient : null;
   const backdrop = $("#patientModalBackdrop");
   if (!backdrop) return;
+
+  state.patientEditId = editing ? editing.id : null;
+  setPatientModalMode(Boolean(editing));
+
   backdrop.classList.add("open");
   backdrop.setAttribute("aria-hidden", "false");
   await loadCatalogos(true);
-  populatePacienteForm();
+  populatePacienteForm(editing);
+
+  const form = $("#patientForm");
+  if (form) {
+    form.reset();
+    if (editing) {
+      if (form.elements.documento) form.elements.documento.value = editing.id || "";
+      if (form.elements.nombre) form.elements.nombre.value = editing.name || "";
+      if (form.elements.fechaNacimiento) form.elements.fechaNacimiento.value = editing.nacimiento || "";
+      if (form.elements.direccion) form.elements.direccion.value = editing.direccion || "";
+      if (form.elements.estado) form.elements.estado.value = editing.estadoRegistro || "Internado";
+      if (form.elements.codUni && editing.codUni) form.elements.codUni.value = editing.codUni;
+    } else {
+      const perfil = state.catalogos?.perfil || {};
+      if (form.elements.codUni && perfil.codUni) form.elements.codUni.value = perfil.codUni;
+      if (form.elements.estado) form.elements.estado.value = "Internado";
+    }
+  }
+
   refreshIcons();
   $("#patientForm input[name='nombre']")?.focus();
 }
@@ -3562,19 +3783,65 @@ function closePatientModal() {
   if (!backdrop) return;
   backdrop.classList.remove("open");
   backdrop.setAttribute("aria-hidden", "true");
+  state.patientEditId = null;
+  $("#patientForm")?.reset();
+  setPatientModalMode(false);
+  refreshIcons();
 }
 
-async function openMedicoModal() {
+function setMedicoModalMode(editing) {
+  const title = $("#medicoModalTitle");
+  const eyebrow = $("#medicoModalEyebrow");
+  const submit = $("#medicoSubmit");
+  if (title) title.textContent = editing ? "Editar profesional" : "Nuevo médico";
+  if (eyebrow) eyebrow.textContent = editing ? "Editar registro" : "Solo administradores";
+  if (submit) {
+    submit.innerHTML = editing
+      ? '<i data-lucide="save"></i>Guardar cambios'
+      : '<i data-lucide="stethoscope"></i>Guardar médico';
+  }
+}
+
+async function openMedicoModal(doctor = null) {
   if (!isAdmin()) {
-    toast("Solo un administrador puede registrar médicos.");
+    toast("Solo un administrador puede gestionar médicos.");
     return;
   }
+  const isEvent = doctor && typeof doctor.preventDefault === "function";
+  const editing = !isEvent && doctor ? doctor : null;
   const backdrop = $("#medicoModalBackdrop");
   if (!backdrop) return;
+
+  state.medicoEditCod = editing ? editing.codMed : null;
+  setMedicoModalMode(Boolean(editing));
+
   backdrop.classList.add("open");
   backdrop.setAttribute("aria-hidden", "false");
   await loadCatalogos(true);
-  populateMedicoForm();
+
+  const form = $("#medicoForm");
+  if (form) {
+    form.reset();
+    // Valores de ubicación para que populateMedicoForm seleccione la jerarquía correcta.
+    if ($("#medicoHospital")) $("#medicoHospital").value = editing?.codHos || "";
+    if ($("#medicoDepartamento")) $("#medicoDepartamento").value = editing?.codDep || "";
+    if ($("#medicoUnidad")) $("#medicoUnidad").value = editing?.codUni || "";
+  }
+
+  populateMedicoForm(editing);
+
+  if (form && editing) {
+    if (form.elements.codMed) form.elements.codMed.value = editing.codMed || "";
+    if (form.elements.nombre) form.elements.nombre.value = editing.nombre || "";
+    if (form.elements.especialidad) form.elements.especialidad.value = editing.especialidad || "";
+    if (form.elements.licencia) form.elements.licencia.value = editing.licencia || "";
+    if (form.elements.telefono) form.elements.telefono.value = editing.telefono || "";
+    if (form.elements.experiencia) form.elements.experiencia.value = editing.experiencia ?? 0;
+    if (form.elements.datosContacto) form.elements.datosContacto.value = editing.datosContacto || "";
+    // La dirección no viene en el listado de profesionales; se conserva vacío si no existe.
+    if (form.elements.direccion && editing.direccion) form.elements.direccion.value = editing.direccion || "";
+  }
+
   refreshIcons();
   $("#medicoForm input[name='nombre']")?.focus();
 }
@@ -3584,6 +3851,10 @@ function closeMedicoModal() {
   if (!backdrop) return;
   backdrop.classList.remove("open");
   backdrop.setAttribute("aria-hidden", "true");
+  state.medicoEditCod = null;
+  $("#medicoForm")?.reset();
+  setMedicoModalMode(false);
+  refreshIcons();
 }
 
 /* ============================================================
@@ -3806,12 +4077,20 @@ function bindEvents() {
       codUni: form.elements.codUni.value,
     };
 
+    const editingId = state.patientEditId;
     if (submit) submit.disabled = true;
-    const response = await api.crearPaciente(payload);
+    const response = editingId
+      ? await api.editarPaciente(editingId, payload)
+      : await api.crearPaciente(payload);
     if (submit) submit.disabled = false;
 
     if (!response.ok) {
-      toast(response.error || "No se pudo registrar el paciente.");
+      toast(
+        response.error ||
+          (editingId
+            ? "No se pudo actualizar la ficha del paciente."
+            : "No se pudo registrar el paciente."),
+      );
       return;
     }
 
@@ -3819,7 +4098,11 @@ function bindEvents() {
     form.reset();
     await loadDashboardData();
     refreshIcons();
-    toast(`${response.data?.nombre || "Paciente"} registrado correctamente`);
+    toast(
+      editingId
+        ? "Ficha de paciente actualizada correctamente"
+        : `${response.data?.nombre || "Paciente"} registrado correctamente`,
+    );
   });
 
   $("#newMedicoBtn")?.addEventListener("click", openMedicoModal);
@@ -3834,7 +4117,7 @@ function bindEvents() {
   $("#medicoForm")?.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!isAdmin()) {
-      toast("Solo un administrador puede registrar médicos.");
+      toast("Solo un administrador puede gestionar médicos.");
       return;
     }
 
@@ -3852,20 +4135,32 @@ function bindEvents() {
       codUni: form.elements.codUni.value,
     };
 
+    const editingCod = state.medicoEditCod;
     if (submit) submit.disabled = true;
-    const response = await api.crearMedico(payload);
+    const response = editingCod
+      ? await api.editarMedico(editingCod, payload)
+      : await api.crearMedico(payload);
     if (submit) submit.disabled = false;
 
     if (!response.ok) {
-      toast(response.error || "No se pudo registrar el médico.");
+      toast(
+        response.error ||
+          (editingCod
+            ? "No se pudo actualizar el profesional."
+            : "No se pudo registrar el médico."),
+      );
       return;
     }
 
     closeMedicoModal();
     form.reset();
-    await Promise.all([loadCatalogos(true), loadProfesionales(true)]);
+    await Promise.all([loadCatalogos(true), loadProfesionales(true), loadDashboardData()]);
     refreshIcons();
-    toast(`Médico ${response.data?.codMed || ""} registrado correctamente`);
+    toast(
+      editingCod
+        ? "Profesional actualizado correctamente"
+        : `Médico ${response.data?.codMed || ""} registrado correctamente`,
+    );
   });
 
   document.addEventListener("keydown", (event) => {
@@ -3875,22 +4170,41 @@ function bindEvents() {
       closeMedicoModal();
       closeProfileModal();
       closeAccountMenu();
+      cerrarMenuTurno();
+      cerrarMenuPaciente();
+      cerrarMenuMedico();
     }
   });
 
   $("#exportBtn")?.addEventListener("click", () => {
-    toast("Reporte preparado para descargar");
+    const query = ($("#patientSearch")?.value || "").toLowerCase();
+    const items = state.resumenPatients.filter((patient) =>
+      `${patient.name} ${patient.id} ${patient.specialty} ${patient.doctor}`
+        .toLowerCase()
+        .includes(query),
+    );
+    exportPacientesCsv(items, "pacientes-recientes");
   });
   $("#exportTurnos")?.addEventListener("click", () => {
-    toast("Listado de turnos preparado para descargar");
+    exportTurnosCsv(filterAppointments(true));
   });
   $("#exportPacientes")?.addEventListener("click", () => {
-    toast("Directorio de pacientes preparado para descargar");
+    const search = state.pacienteFilters.search.trim().toLowerCase();
+    const status = state.pacienteFilters.status;
+    const items = state.viewPatients.filter((patient) => {
+      const haystack =
+        `${patient.name} ${patient.id} ${patient.specialty} ${patient.phone} ${patient.doctor} ${patient.hospital || ""}`.toLowerCase();
+      const matchesSearch = !search || haystack.includes(search);
+      const matchesStatus = status === "all" || patient.status === status;
+      return matchesSearch && matchesStatus;
+    });
+    exportPacientesCsv(items, "directorio-pacientes");
   });
 
   $("#manageQueue")?.addEventListener("click", async () => {
     await refreshLiveData();
-    toast("Cola actualizada con los estados actuales");
+    navigate("Turnos");
+    toast("Cola actualizada. Gestiona los turnos desde aquí.");
   });
 
   $("#viewCalendar")?.addEventListener("click", () => navigate("Turnos"));
@@ -3979,6 +4293,56 @@ function bindEvents() {
     else cambiarEstadoTurno(numero, accion);
   });
 
+  $("#pacientesTable")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-patient-id]");
+    if (!button) return;
+    event.stopPropagation();
+    abrirMenuPaciente(button);
+  });
+
+  $("#patientsTable")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-patient-id]");
+    if (!button) return;
+    event.stopPropagation();
+    abrirMenuPaciente(button);
+  });
+
+  $("#pacienteActionMenu")?.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-accion]");
+    if (!button || !state.patientMenuId) return;
+    const accion = button.dataset.accion;
+    const patient = encontrarPaciente(state.patientMenuId);
+    cerrarMenuPaciente();
+    if (accion === "editar") {
+      if (patient) openPatientModal(patient);
+      else toast("No se encontró la ficha del paciente.");
+    } else if (accion === "eliminar") {
+      await eliminarPacienteActual();
+    }
+  });
+
+  $("#profesionalesGrid")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-medico-id]");
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    abrirMenuMedico(button);
+  });
+
+  $("#medicoActionMenu")?.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-accion]");
+    if (!button || !state.medicoMenuId) return;
+    const accion = button.dataset.accion;
+    const doctor = encontrarMedico(state.medicoMenuId);
+    cerrarMenuMedico();
+    if (accion === "editar") {
+      if (doctor) openMedicoModal(doctor);
+      else toast("No se encontró la ficha del profesional.");
+    } else if (accion === "eliminar") {
+      await eliminarMedicoActual();
+    }
+  });
+
   $("#closeTurnoEdit")?.addEventListener("click", closeTurnoEditModal);
   $("#cancelTurnoEdit")?.addEventListener("click", closeTurnoEditModal);
   $("#turnoEditBackdrop")?.addEventListener("click", (event) => {
@@ -4018,27 +4382,15 @@ function bindEvents() {
     if (!event.target.closest(".row-action-menu") && !event.target.closest("[data-turno-id]")) {
       cerrarMenuTurno();
     }
+    if (!event.target.closest("#pacienteActionMenu") && !event.target.closest("[data-patient-id]")) {
+      cerrarMenuPaciente();
+    }
+    if (!event.target.closest("#medicoActionMenu") && !event.target.closest("[data-medico-id]")) {
+      cerrarMenuMedico();
+    }
     if (!event.target.closest("#notificationPanel") && !event.target.closest("#notificationBtn")) {
       toggleNotificationPanel(false);
     }
-  });
-
-  $("#pacientesTable")?.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-patient-id]");
-    if (!button) return;
-    const patient = state.viewPatients.find(
-      (item) => item.id === button.dataset.patientId,
-    );
-    toast(patient ? `Abriendo ficha de ${patient.name}` : "Abriendo ficha");
-  });
-
-  $("#patientsTable")?.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-patient-id]");
-    if (!button) return;
-    const patient = state.resumenPatients.find(
-      (item) => item.id === button.dataset.patientId,
-    );
-    toast(patient ? `Abriendo ficha de ${patient.name}` : "Abriendo ficha");
   });
 
   $(".help-card")?.addEventListener("click", () => navigate("Ayuda"));

@@ -139,6 +139,38 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("ok", true));
     }
 
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body,
+                                            HttpServletRequest request) {
+        try {
+            String baseUrl = request.getScheme() + "://" + request.getServerName()
+                    + ((request.getServerPort() == 80 || request.getServerPort() == 443)
+                            ? "" : ":" + request.getServerPort());
+            Map<String, Object> data = authService.solicitarRecuperacion(
+                    body == null ? null : body.get("email"), baseUrl);
+            return ResponseEntity.ok(Map.of("ok", true, "data", data));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("ok", false, "error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> body) {
+        try {
+            authService.restablecerContrasena(
+                    body == null ? null : body.get("email"),
+                    body == null ? null : body.get("token"),
+                    body == null ? null : body.get("password"));
+            return ResponseEntity.ok(Map.of(
+                    "ok", true,
+                    "data", Map.of("message", "Contraseña actualizada. Ya puedes iniciar sesión.")));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("ok", false, "error", e.getMessage()));
+        }
+    }
+
     private Map<String, Object> datosUsuario(User user) {
         Map<String, Object> userData = new HashMap<>();
         userData.put("username", user.getUsername());

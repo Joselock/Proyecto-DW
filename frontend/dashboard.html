@@ -5,24 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#17324d" />
     <title>Gestión hospitalaria</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap"
-      onerror="
-        this.onerror = null;
-        this.href = './assets/fonts/fonts.css';
-      "
-    />
-    <script
-      src="https://unpkg.com/lucide@latest"
-      onerror="
-        this.onerror = null;
-        this.src = './assets/lucide/lucide.min.js';
-      "
-    ></script>
-    <link rel="stylesheet" href="./css/dashboard.css?v=8" />
+    <!-- Recursos locales: funcionan sin conexión y sin depender de CDNs. -->
+    <link rel="stylesheet" href="./assets/fonts/fonts.css?v=1" />
+    <script src="./assets/js/lucide.js?v=1"></script>
+    <link rel="stylesheet" href="./css/dashboard.css?v=16" />
   </head>
   <body>
     <div class="app-shell">
@@ -349,7 +335,7 @@
                     <tr>
                       <th>Paciente</th>
                       <th>Última visita</th>
-                      <th>Especialidad</th>
+                      <th>Área</th>
                       <th>Profesional</th>
                       <th>Estado</th>
                       <th></th>
@@ -680,7 +666,7 @@
                       <th>Documento</th>
                       <th>Edad</th>
                       <th>Última visita</th>
-                      <th>Especialidad</th>
+                      <th>Área</th>
                       <th>Estado</th>
                       <th></th>
                     </tr>
@@ -701,7 +687,7 @@
               <article class="panel content-panel">
                 <div class="panel-heading">
                   <div>
-                    <h2>Pacientes por especialidad</h2>
+                    <h2>Pacientes por área</h2>
                     <p>Distribución del directorio</p>
                   </div>
                 </div>
@@ -1429,10 +1415,10 @@
                       <i data-lucide="chevron-down"></i>
                     </summary>
                     <p>
-                      El botón <strong>Exportar</strong> del tablero genera una
-                      descarga CSV con el resumen de hospitales visible en
-                      pantalla. La exportación completa por reporte está prevista
-                      como siguiente mejora.
+                      Sí. Los botones <strong>Exportar</strong> descargan la
+                      información en formato CSV: pacientes y turnos según los
+                      filtros actuales, y en Reportes el contenido de los
+                      reportes disponibles en el tablero.
                     </p>
                   </details>
                 </div>
@@ -1615,7 +1601,7 @@
       >
         <div class="modal-header">
           <div>
-            <p class="eyebrow">Nuevo registro</p>
+            <p class="eyebrow" id="patientModalEyebrow">Nuevo registro</p>
             <h2 id="patientModalTitle">Registrar paciente</h2>
           </div>
           <button class="icon-btn" id="closePatientModal" title="Cerrar">
@@ -1681,7 +1667,7 @@
       >
         <div class="modal-header">
           <div>
-            <p class="eyebrow">Solo administradores</p>
+            <p class="eyebrow" id="medicoModalEyebrow">Solo administradores</p>
             <h2 id="medicoModalTitle">Nuevo médico</h2>
           </div>
           <button class="icon-btn" id="closeMedicoModal" title="Cerrar">
@@ -1892,6 +1878,26 @@
       </button>
     </div>
 
+    <div class="row-action-menu" id="pacienteActionMenu" hidden>
+      <div class="row-action-title" id="pacienteActionTitle">Paciente</div>
+      <button type="button" data-accion="editar">
+        <i data-lucide="pencil"></i><span>Editar ficha</span>
+      </button>
+      <button type="button" class="danger" data-accion="eliminar">
+        <i data-lucide="trash-2"></i><span>Eliminar paciente</span>
+      </button>
+    </div>
+
+    <div class="row-action-menu" id="medicoActionMenu" hidden>
+      <div class="row-action-title" id="medicoActionTitle">Profesional</div>
+      <button type="button" data-accion="editar">
+        <i data-lucide="pencil"></i><span>Editar profesional</span>
+      </button>
+      <button type="button" class="danger" data-accion="eliminar">
+        <i data-lucide="trash-2"></i><span>Eliminar profesional</span>
+      </button>
+    </div>
+
     <div class="modal-backdrop" id="turnoEditBackdrop" aria-hidden="true">
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="turnoEditTitle">
         <div class="modal-header">
@@ -1947,6 +1953,6 @@
       <i data-lucide="check-circle-2"></i
       ><span>Turno creado correctamente</span>
     </div>
-    <script type="module" src="./js/dashboard.js?v=9"></script>
+    <script type="module" src="./js/dashboard.js?v=12"></script>
   </body>
 </html>

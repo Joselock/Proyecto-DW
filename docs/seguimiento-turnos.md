@@ -91,7 +91,7 @@ rápida no aparenta un único paciente repetido a una sola hora.
 | --- | --- |
 | `frontend/js/api.js` | `pacientesPanel`/`turnosPanel` con `{fecha, limit, offset}`, `editarTurno`, `notificaciones`, `marcarNotificacionesLeidas`. |
 | `frontend/js/dashboard.js` | Estado global con `fecha`, switchers, campana, panel, cola real, menú de tres puntos, modales y polling de 30 s. |
-| `frontend/dashboard.html` | Campana/badge/panel, switchers de fecha, estados nuevos, formulario con fecha/hora/nota, menú y modal de edición, etiquetas dinámicas del hospital, selector de tema y buscador de Pacientes sin lupa. Cache bust: `dashboard.js?v=9`, `dashboard.css?v=8`. |
+| `frontend/dashboard.html` | Campana/badge/panel, switchers de fecha, estados nuevos, formulario con fecha/hora/nota, menús y modales de edición/eliminación, exportación CSV, etiquetas dinámicas del hospital, selector de tema y buscador de Pacientes sin lupa. Cache bust: `dashboard.js?v=12`, `dashboard.css?v=16`. |
 | `frontend/css/dashboard.css` | Estilos de notificaciones, `in_progress`, `no_atendido`, menú de fila, switcher de Pacientes y cuatro temas (`light`, `dark`, `navy`, `sand`). |
 
 ---

@@ -334,6 +334,78 @@ public class AltasService {
         return "pendiente";
     }
 
+    @Transactional
+    public Map<String, Object> editarPaciente(String username, String role, String numHistoria,
+            Map<String, String> body) {
+        Perfil perfil = perfil(username, role);
+        if (numHistoria == null || numHistoria.isBlank()) {
+            throw new IllegalArgumentException("Indica el paciente que deseas modificar.");
+        }
+        validarPaciente(numHistoria, perfil);
+
+        String nuevoDocumento = texto(body.get("documento"));
+        if (nuevoDocumento.isEmpty()) nuevoDocumento = numHistoria;
+        String nombre = texto(body.get("nombre"));
+        String direccion = texto(body.get("direccion"));
+        String codUni = texto(body.get("codUni"));
+        String estado = texto(body.get("estado"));
+        if (estado.isEmpty()) estado = "Internado";
+
+        LocalDate fechaNac = fecha(body.get("fechaNacimiento"));
+        if (nombre.isEmpty()) throw new IllegalArgumentException("Escribe el nombre del paciente.");
+        if (fechaNac == null) throw new IllegalArgumentException("Indica la fecha de nacimiento.");
+        if (Period.between(fechaNac, LocalDate.now()).getYears() < 16) {
+            throw new IllegalArgumentException("El paciente debe tener al menos 16 años.");
+        }
+        if (direccion.isEmpty()) throw new IllegalArgumentException("Indica la dirección del paciente.");
+        if (!List.of("Internado", "Pendiente", "Alta").contains(estado)) {
+            throw new IllegalArgumentException("Selecciona un estado válido.");
+        }
+        if (codUni.isEmpty()) throw new IllegalArgumentException("Selecciona la unidad de admisión.");
+        validarUnidad(codUni, perfil, "pacientes");
+
+        Map<String, Object> resultado = llamarFuncion(
+                "SELECT * FROM public.modificarPaciente(?, ?, ?, ?, ?, ?, ?)",
+                numHistoria, nuevoDocumento, estado, nombre, direccion,
+                Date.valueOf(fechaNac), codUni);
+
+        Map<String, Object> respuesta = new LinkedHashMap<>();
+        respuesta.put("id", texto(resultado.get("numhistoria")));
+        respuesta.put("nombre", texto(resultado.get("nompac")));
+        respuesta.put("direccion", texto(resultado.get("direccion")));
+        respuesta.put("fechaNacimiento", fechaNac.toString());
+        respuesta.put("estado", texto(resultado.get("estpac")));
+        respuesta.put("codUni", texto(resultado.get("coduni")));
+        respuesta.put("mensaje", texto(resultado.get("mensaje")));
+        return respuesta;
+    }
+
+    @Transactional
+    public Map<String, Object> eliminarPaciente(String username, String role, String numHistoria) {
+        Perfil perfil = perfil(username, role);
+        if (numHistoria == null || numHistoria.isBlank()) {
+            throw new IllegalArgumentException("Indica el paciente que deseas eliminar.");
+        }
+        validarPaciente(numHistoria, perfil);
+
+        String mensaje;
+        try {
+            mensaje = texto(jdbc.queryForObject(
+                    "SELECT public.eliminarPaciente(?)", String.class, numHistoria));
+        } catch (org.springframework.dao.DataAccessException e) {
+            throw new IllegalStateException("No se pudo eliminar el paciente: " + e.getMostSpecificCause().getMessage());
+        }
+        if (mensaje == null || mensaje.toLowerCase(Locale.ROOT).startsWith("error")) {
+            throw new IllegalStateException(mensaje == null || mensaje.isBlank()
+                    ? "No se pudo eliminar el paciente." : mensaje);
+        }
+
+        Map<String, Object> respuesta = new LinkedHashMap<>();
+        respuesta.put("id", numHistoria);
+        respuesta.put("mensaje", mensaje);
+        return respuesta;
+    }
+
     /* ------------------------------------------------------------------ */
     /* Médicos (solo ADMIN)                                                */
     /* ------------------------------------------------------------------ */
@@ -401,6 +473,107 @@ public class AltasService {
         respuesta.put("codHos", ubicacion.get("codHos"));
         respuesta.put("hospital", ubicacion.get("hospital"));
         respuesta.put("mensaje", "Médico registrado correctamente");
+        return respuesta;
+    }
+
+    @Transactional
+    public Map<String, Object> editarMedico(String username, String role, String codMed,
+            Map<String, String> body) {
+        Perfil perfil = perfil(username, role);
+        if (!perfil.admin()) {
+            throw new SecurityException("Solo un administrador puede modificar médicos.");
+        }
+        if (codMed == null || codMed.isBlank()) {
+            throw new IllegalArgumentException("Indica el médico que deseas modificar.");
+        }
+
+        String nuevoCodigo = texto(body.get("codMed"));
+        if (nuevoCodigo.isEmpty()) nuevoCodigo = codMed;
+        String nombre = texto(body.get("nombre"));
+        String especialidad = texto(body.get("especialidad"));
+        String licencia = texto(body.get("licencia"));
+        String telefono = texto(body.get("telefono"));
+        String datosContacto = texto(body.get("datosContacto"));
+        String direccion = texto(body.get("direccion"));
+        String codUni = texto(body.get("codUni"));
+        int experiencia = entero(body.get("experiencia"));
+
+        if (nombre.isEmpty()) throw new IllegalArgumentException("Escribe el nombre del médico.");
+        if (especialidad.isEmpty()) throw new IllegalArgumentException("Indica la especialidad.");
+        if (licencia.isEmpty()) throw new IllegalArgumentException("Indica el número de licencia.");
+        if (telefono.isEmpty()) throw new IllegalArgumentException("Indica el teléfono.");
+        if (experiencia < 0) throw new IllegalArgumentException("La experiencia no puede ser negativa.");
+        if (datosContacto.isEmpty()) datosContacto = "Datos de contacto pendientes";
+        if (codUni.isEmpty()) throw new IllegalArgumentException("Selecciona la unidad asignada.");
+
+        validarUnidad(codUni, perfil, "médicos");
+
+        Map<String, Object> resultado = llamarFuncion(
+                "SELECT * FROM public.modificarMedico(?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                codMed, nuevoCodigo, nombre, especialidad, licencia, telefono,
+                experiencia, datosContacto, codUni);
+
+        if (!direccion.isEmpty()) {
+            jdbc.update("UPDATE public.\"Medico\" SET \"dirMed\" = ? WHERE \"codMed\" = ?",
+                    direccion, nuevoCodigo);
+        } else {
+            jdbc.update("UPDATE public.\"Medico\" SET \"dirMed\" = NULL WHERE \"codMed\" = ?",
+                    nuevoCodigo);
+        }
+
+        Map<String, Object> ubicacion = jdbc.queryForList("""
+                SELECT u."nomUni" AS unidad, d."nomDep" AS departamento,
+                       d."codHos" AS "codHos", h."nomHos" AS hospital
+                FROM public."Medico" m
+                JOIN public."Unidad" u ON u."codUni" = m."codUni"
+                JOIN public."Departamento" d ON d."codDep" = u."codDep"
+                JOIN public."Hospital" h ON h."codHos" = d."codHos"
+                WHERE m."codMed" = ?
+                """, nuevoCodigo).stream().findFirst().orElse(Map.of());
+
+        Map<String, Object> respuesta = new LinkedHashMap<>();
+        respuesta.put("codMed", texto(resultado.get("codmed")));
+        respuesta.put("nombre", texto(resultado.get("nommed")));
+        respuesta.put("especialidad", texto(resultado.get("espmed")));
+        respuesta.put("licencia", texto(resultado.get("numlic")));
+        respuesta.put("telefono", texto(resultado.get("telefono")));
+        respuesta.put("experiencia", resultado.get("experiencia"));
+        respuesta.put("datosContacto", texto(resultado.get("datos")));
+        respuesta.put("direccion", direccion);
+        respuesta.put("codUni", texto(resultado.get("coduni")));
+        respuesta.put("unidad", ubicacion.get("unidad"));
+        respuesta.put("departamento", ubicacion.get("departamento"));
+        respuesta.put("codHos", ubicacion.get("codHos"));
+        respuesta.put("hospital", ubicacion.get("hospital"));
+        respuesta.put("mensaje", texto(resultado.get("mensaje")));
+        return respuesta;
+    }
+
+    @Transactional
+    public Map<String, Object> eliminarMedico(String username, String role, String codMed) {
+        Perfil perfil = perfil(username, role);
+        if (!perfil.admin()) {
+            throw new SecurityException("Solo un administrador puede eliminar médicos.");
+        }
+        if (codMed == null || codMed.isBlank()) {
+            throw new IllegalArgumentException("Indica el médico que deseas eliminar.");
+        }
+
+        String mensaje;
+        try {
+            mensaje = texto(jdbc.queryForObject(
+                    "SELECT public.eliminarMedico(?)", String.class, codMed));
+        } catch (org.springframework.dao.DataAccessException e) {
+            throw new IllegalStateException("No se pudo eliminar el médico: " + e.getMostSpecificCause().getMessage());
+        }
+        if (mensaje == null || mensaje.toLowerCase(Locale.ROOT).startsWith("error")) {
+            throw new IllegalStateException(mensaje == null || mensaje.isBlank()
+                    ? "No se pudo eliminar el médico." : mensaje);
+        }
+
+        Map<String, Object> respuesta = new LinkedHashMap<>();
+        respuesta.put("codMed", codMed);
+        respuesta.put("mensaje", mensaje);
         return respuesta;
     }
 
