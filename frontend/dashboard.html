@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#17324d" />
     <title>Gestión hospitalaria</title>
-    <!-- Recursos locales: funcionan sin conexión y sin depender de CDNs. -->
     <link rel="stylesheet" href="./assets/fonts/fonts.css?v=1" />
     <script src="./assets/js/lucide.js?v=1"></script>
     <link rel="stylesheet" href="./css/dashboard.css?v=16" />
@@ -140,7 +139,9 @@
               <div class="notification-panel-head">
                 <div>
                   <strong>Notificaciones</strong>
-                  <span id="notificationSubtitle">Avisos de turnos en vivo</span>
+                  <span id="notificationSubtitle"
+                    >Avisos de turnos en vivo</span
+                  >
                 </div>
                 <button
                   class="icon-btn small"
@@ -190,7 +191,9 @@
                   >
                 </div>
                 <div class="stat-value" id="resumenTurnosValue">0</div>
-                <div class="stat-label" id="resumenTurnosLabel">Turnos del día</div>
+                <div class="stat-label" id="resumenTurnosLabel">
+                  Turnos del día
+                </div>
                 <div class="stat-foot" id="resumenTurnosFoot">
                   Total programado en la agenda
                 </div>
@@ -215,7 +218,9 @@
                     ><i data-lucide="clock-3"></i></span
                   ><span class="trend neutral">En tiempo real</span>
                 </div>
-                <div class="stat-value" id="resumenEsperaValue">0 <small>min</small></div>
+                <div class="stat-value" id="resumenEsperaValue">
+                  0 <small>min</small>
+                </div>
                 <div class="stat-label">Tiempo de consulta</div>
                 <div class="stat-foot" id="resumenEsperaFoot">
                   Hasta el siguiente turno del médico
@@ -266,7 +271,13 @@
                     >
                       <i data-lucide="chevron-right"></i>
                     </button>
-                    <button class="text-btn small" id="agendaToday" title="Volver a hoy">Hoy</button>
+                    <button
+                      class="text-btn small"
+                      id="agendaToday"
+                      title="Volver a hoy"
+                    >
+                      Hoy
+                    </button>
                   </div>
                   <div class="select-wrap">
                     <i data-lucide="filter"></i
@@ -347,7 +358,8 @@
               <div class="table-footer recent-footer">
                 <span id="patientsRecentCount">0 pacientes recientes</span>
                 <span class="table-hint"
-                  >Vista resumida · usa “Ver todos” para el directorio completo</span
+                  >Vista resumida · usa “Ver todos” para el directorio
+                  completo</span
                 >
               </div>
             </section>
@@ -432,7 +444,9 @@
               <article class="panel appointments-panel">
                 <div class="panel-heading">
                   <div>
-                    <h2>Agenda <span id="turnosAgendaTitleDay">del día</span></h2>
+                    <h2>
+                      Agenda <span id="turnosAgendaTitleDay">del día</span>
+                    </h2>
                     <p id="turnosAgendaSubtitle">Turnos programados para hoy</p>
                   </div>
                   <div class="date-switcher">
@@ -450,7 +464,13 @@
                     >
                       <i data-lucide="chevron-right"></i>
                     </button>
-                    <button class="text-btn small" id="turnosToday" title="Volver a hoy">Hoy</button>
+                    <button
+                      class="text-btn small"
+                      id="turnosToday"
+                      title="Volver a hoy"
+                    >
+                      Hoy
+                    </button>
                   </div>
                 </div>
                 <div class="agenda-toolbar">
@@ -568,15 +588,32 @@
                 </p>
               </div>
               <div class="view-actions">
-                <div class="date-switcher pacientes-date" title="Filtrar por día de turno">
-                  <button class="icon-btn small" id="pacientesPrevDay" title="Día anterior">
+                <div
+                  class="date-switcher pacientes-date"
+                  title="Filtrar por día de turno"
+                >
+                  <button
+                    class="icon-btn small"
+                    id="pacientesPrevDay"
+                    title="Día anterior"
+                  >
                     <i data-lucide="chevron-left"></i>
                   </button>
                   <span id="pacientesFechaLabel">Todos los días</span>
-                  <button class="icon-btn small" id="pacientesNextDay" title="Día siguiente">
+                  <button
+                    class="icon-btn small"
+                    id="pacientesNextDay"
+                    title="Día siguiente"
+                  >
                     <i data-lucide="chevron-right"></i>
                   </button>
-                  <button class="text-btn small" id="pacientesTodos" title="Ver el directorio completo">Todos</button>
+                  <button
+                    class="text-btn small"
+                    id="pacientesTodos"
+                    title="Ver el directorio completo"
+                  >
+                    Todos
+                  </button>
                 </div>
                 <button class="outline-btn" id="exportPacientes">
                   <i data-lucide="download"></i><span>Exportar</span>
@@ -791,9 +828,7 @@
                 <i data-lucide="hospital"></i>
               </div>
               <div class="hospital-banner-copy">
-                <span class="hospital-banner-label"
-                  >Hospital en contexto</span
-                >
+                <span class="hospital-banner-label">Hospital en contexto</span>
                 <strong id="profesionalesHospitalName"
                   >Resolviendo hospital…</strong
                 >
@@ -892,7 +927,10 @@
                 </label>
                 <label class="compact-label"
                   >Contexto
-                  <select id="reporteScopeFilter" aria-label="Contexto del reporte">
+                  <select
+                    id="reporteScopeFilter"
+                    aria-label="Contexto del reporte"
+                  >
                     <option value="">Cargando contextos…</option>
                   </select>
                 </label>
@@ -1107,10 +1145,10 @@
                         <span>Avisos cuando un turno cambie de estado.</span>
                       </span>
                       <span class="switch"
-                        ><input type="checkbox" id="prefNotifications" /><span
-                          ></span
-                        ></span
-                      >
+                        ><input
+                          type="checkbox"
+                          id="prefNotifications" /><span></span
+                      ></span>
                     </label>
                     <label class="setting-row">
                       <span class="setting-icon blue"
@@ -1121,10 +1159,10 @@
                         <span>Recibir un resumen diario de la operación.</span>
                       </span>
                       <span class="switch"
-                        ><input type="checkbox" id="prefEmailDigest" /><span
-                          ></span
-                        ></span
-                      >
+                        ><input
+                          type="checkbox"
+                          id="prefEmailDigest" /><span></span
+                      ></span>
                     </label>
                     <label class="setting-row">
                       <span class="setting-icon amber"
@@ -1132,13 +1170,13 @@
                       ></span>
                       <span class="setting-copy">
                         <strong>Mostrar tarjeta de ayuda</strong>
-                        <span>Mantener el acceso rápido al centro de ayuda.</span>
+                        <span
+                          >Mantener el acceso rápido al centro de ayuda.</span
+                        >
                       </span>
                       <span class="switch"
-                        ><input type="checkbox" id="prefHelpCard" /><span
-                          ></span
-                        ></span
-                      >
+                        ><input type="checkbox" id="prefHelpCard" /><span></span
+                      ></span>
                     </label>
                     <label class="setting-row">
                       <span class="setting-icon coral"
@@ -1152,10 +1190,8 @@
                         >
                       </span>
                       <span class="switch"
-                        ><input type="checkbox" id="prefPrivacy" /><span
-                          ></span
-                        ></span
-                      >
+                        ><input type="checkbox" id="prefPrivacy" /><span></span
+                      ></span>
                     </label>
                   </div>
                   <p class="settings-status" id="settingsStatus">
@@ -1207,9 +1243,9 @@
                   ></span>
                   <h3>Acceso seguro</h3>
                   <p>
-                    Tu contraseña se almacena cifrada con BCrypt y la sesión
-                    usa cookies HttpSession. El nombre de usuario, el correo y
-                    el rol solo pueden cambiarse desde administración.
+                    Tu contraseña se almacena cifrada con BCrypt y la sesión usa
+                    cookies HttpSession. El nombre de usuario, el correo y el
+                    rol solo pueden cambiarse desde administración.
                   </p>
                   <button class="text-btn" data-goto="Ayuda">
                     Ir al centro de ayuda <i data-lucide="arrow-right"></i>
@@ -1231,7 +1267,8 @@
               </div>
               <div class="view-actions">
                 <button class="outline-btn" id="helpContactShortcut">
-                  <i data-lucide="messages-square"></i><span>Contactar soporte</span>
+                  <i data-lucide="messages-square"></i
+                  ><span>Contactar soporte</span>
                 </button>
               </div>
             </div>
@@ -1259,14 +1296,19 @@
               </div>
               <div class="help-tags">
                 <button type="button" data-help-tag="turnos">Turnos</button>
-                <button type="button" data-help-tag="pacientes">Pacientes</button>
+                <button type="button" data-help-tag="pacientes">
+                  Pacientes
+                </button>
                 <button type="button" data-help-tag="reportes">Reportes</button>
                 <button type="button" data-help-tag="cuenta">Cuenta</button>
               </div>
             </section>
 
             <section class="help-grid" aria-label="Guías rápidas">
-              <article class="panel guide-card" data-help-text="turnos agenda programar confirmar" >
+              <article
+                class="panel guide-card"
+                data-help-text="turnos agenda programar confirmar"
+              >
                 <span class="guide-icon teal"
                   ><i data-lucide="calendar-plus"></i
                 ></span>
@@ -1279,7 +1321,10 @@
                   Ver turnos <i data-lucide="arrow-right"></i>
                 </button>
               </article>
-              <article class="panel guide-card" data-help-text="pacientes directorio registrar ficha historia" >
+              <article
+                class="panel guide-card"
+                data-help-text="pacientes directorio registrar ficha historia"
+              >
                 <span class="guide-icon blue"
                   ><i data-lucide="user-plus"></i
                 ></span>
@@ -1292,7 +1337,10 @@
                   Ver pacientes <i data-lucide="arrow-right"></i>
                 </button>
               </article>
-              <article class="panel guide-card" data-help-text="reportes analítica hospital indicadores" >
+              <article
+                class="panel guide-card"
+                data-help-text="reportes analítica hospital indicadores"
+              >
                 <span class="guide-icon amber"
                   ><i data-lucide="bar-chart-3"></i
                 ></span>
@@ -1305,7 +1353,10 @@
                   Ver reportes <i data-lucide="arrow-right"></i>
                 </button>
               </article>
-              <article class="panel guide-card" data-help-text="cuenta perfil contraseña sesión seguridad" >
+              <article
+                class="panel guide-card"
+                data-help-text="cuenta perfil contraseña sesión seguridad"
+              >
                 <span class="guide-icon coral"
                   ><i data-lucide="user-cog"></i
                 ></span>
@@ -1342,8 +1393,8 @@
                     <p>
                       Solo las cuentas con rol <strong>ADMIN</strong>. Los
                       usuarios con rol <strong>MEDICO</strong> trabajan con
-                      Resumen, Turnos, Pacientes, Configuración y Ayuda; el panel
-                      oculta las secciones reservadas.
+                      Resumen, Turnos, Pacientes, Configuración y Ayuda; el
+                      panel oculta las secciones reservadas.
                     </p>
                   </details>
                   <details
@@ -1545,10 +1596,18 @@
           </p>
           <div class="form-row">
             <label
-              >Fecha de atención<input required type="date" name="fecha" id="turnoFecha"
+              >Fecha de atención<input
+                required
+                type="date"
+                name="fecha"
+                id="turnoFecha"
             /></label>
             <label
-              >Hora de inicio<input required type="time" name="hora" id="turnoHora"
+              >Hora de inicio<input
+                required
+                type="time"
+                name="hora"
+                id="turnoHora"
             /></label>
           </div>
           <label
@@ -1610,8 +1669,8 @@
         </div>
         <form id="patientForm">
           <p class="form-help" id="patientFormHelp">
-            El documento se genera automáticamente si se deja vacío. Especialidad
-            y hospital se deducen de la unidad.
+            El documento se genera automáticamente si se deja vacío.
+            Especialidad y hospital se deducen de la unidad.
           </p>
           <label
             >Nombre completo<input
@@ -1621,11 +1680,13 @@
           /></label>
           <div class="form-row">
             <label
-              >N.º de historia clínica
-              <span class="optional">Opcional</span
+              >N.º de historia clínica <span class="optional">Opcional</span
               ><input name="documento" placeholder="Ej. P4201" /></label
             ><label
-              >Fecha de nacimiento<input required name="fechaNacimiento" type="date"
+              >Fecha de nacimiento<input
+                required
+                name="fechaNacimiento"
+                type="date"
             /></label>
           </div>
           <label
@@ -1721,8 +1782,7 @@
             /></label>
           </div>
           <label
-            >Datos de contacto
-            <span class="optional">Opcional</span
+            >Datos de contacto <span class="optional">Opcional</span
             ><input
               name="datosContacto"
               placeholder="Correo, extensión o información de contacto"
@@ -1899,7 +1959,12 @@
     </div>
 
     <div class="modal-backdrop" id="turnoEditBackdrop" aria-hidden="true">
-      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="turnoEditTitle">
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="turnoEditTitle"
+      >
         <div class="modal-header">
           <div>
             <p class="eyebrow">Seguimiento de turnos</p>
@@ -1915,8 +1980,16 @@
             se concretó, selecciona “No atendido”.
           </p>
           <div class="form-row">
-            <label>Fecha<input required type="date" name="fecha" id="turnoEditFecha" /></label>
-            <label>Hora<input required type="time" name="hora" id="turnoEditHora" /></label>
+            <label
+              >Fecha<input
+                required
+                type="date"
+                name="fecha"
+                id="turnoEditFecha"
+            /></label>
+            <label
+              >Hora<input required type="time" name="hora" id="turnoEditHora"
+            /></label>
           </div>
           <label
             >Estado<select name="estatus" id="turnoEditEstado">
@@ -1940,7 +2013,9 @@
             <span>La consulta fue exitosa</span>
           </label>
           <div class="form-actions">
-            <button type="button" class="outline-btn" id="cancelTurnoEdit">Cancelar</button>
+            <button type="button" class="outline-btn" id="cancelTurnoEdit">
+              Cancelar
+            </button>
             <button class="primary-btn" type="submit" id="turnoEditSubmit">
               <i data-lucide="save"></i>Guardar cambios
             </button>
