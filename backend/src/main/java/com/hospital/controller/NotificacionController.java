@@ -1,10 +1,5 @@
 package com.hospital.controller;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,6 +8,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.hospital.dto.common.ApiResponse;
+import com.hospital.dto.request.MarcarNotificacionesRequest;
+import com.hospital.dto.response.MarcarNotificacionesResponse;
+import com.hospital.dto.response.NotificacionesResponse;
 import com.hospital.service.NotificacionService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,48 +29,29 @@ public class NotificacionController {
     }
 
     @GetMapping
-    public ResponseEntity<?> listar(
+    public ResponseEntity<ApiResponse<NotificacionesResponse>> listar(
             @RequestParam(required = false, defaultValue = "30") Integer limite,
             HttpServletRequest request) {
         String username = username(request);
         if (username == null) return noAutorizado();
-        return ok(notificacionService.listar(username, role(request), limite));
+        return ResponseEntity.ok(ApiResponse.ok(notificacionService.listar(username, role(request), limite)));
     }
 
     @PostMapping("/leer")
-    public ResponseEntity<?> marcarLeidas(@RequestBody(required = false) Map<String, Object> body,
-                                          HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<MarcarNotificacionesResponse>> marcarLeidas(
+            @RequestBody(required = false) MarcarNotificacionesRequest body,
+            HttpServletRequest request) {
         String username = username(request);
         if (username == null) return noAutorizado();
 
-        List<Long> ids = new ArrayList<>();
-        Object valores = body == null ? null : body.get("ids");
-        if (valores instanceof List<?> lista) {
-            for (Object valor : lista) {
-                try {
-                    if (valor instanceof Number number) ids.add(number.longValue());
-                    else ids.add(Long.parseLong(String.valueOf(valor).trim()));
-                } catch (NumberFormatException ignored) {
-                    // Se ignoran identificadores no numéricos.
-                }
-            }
-        }
-
-        int actualizadas = notificacionService.marcarLeidas(username, role(request), ids);
-        return ok(Map.of("actualizadas", actualizadas));
+        int actualizadas = notificacionService.marcarLeidas(
+                username, role(request), body == null ? null : body.ids());
+        return ResponseEntity.ok(ApiResponse.ok(new MarcarNotificacionesResponse(actualizadas)));
     }
 
-    private ResponseEntity<?> ok(Object data) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("ok", true);
-        body.put("data", data);
-        return ResponseEntity.ok(body);
-    }
-
-    private ResponseEntity<?> noAutorizado() {
-        return ResponseEntity.status(401).body(Map.of(
-                "ok", false,
-                "error", "Debes iniciar sesión para ver las notificaciones."));
+    private <T> ResponseEntity<ApiResponse<T>> noAutorizado() {
+        return ResponseEntity.status(401).body(ApiResponse.error(
+                "Debes iniciar sesión para ver las notificaciones."));
     }
 
     private String username(HttpServletRequest request) {

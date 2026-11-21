@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.hospital.dto.common.ApiResponse;
 import com.hospital.service.REPORTES.ConsultaService;
 import com.hospital.service.REPORTES.HospitalService;
 import com.hospital.service.REPORTES.MedicoService;
@@ -45,77 +46,73 @@ public class ReportesController {
     }
 
     @GetMapping("/contexto")
-    public Map<String, Object> contexto(HttpServletRequest request) {
+    public ApiResponse<Object> contexto(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         String username = session == null ? null : (String) session.getAttribute("username");
 
         Map<String, Object> data = new LinkedHashMap<>(contextoService.contextoUsuario(username));
         data.put("role", session == null ? null : session.getAttribute("role"));
         data.put("autenticado", username != null);
-        return ok(data);
+        return ApiResponse.ok(data);
     }
 
     @GetMapping("/profesionales")
-    public Map<String, Object> profesionales(HttpServletRequest request) {
+    public ApiResponse<Object> profesionales(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         String username = session == null ? null : (String) session.getAttribute("username");
-        return ok(contextoService.profesionalesDelUsuario(username));
+        return ApiResponse.ok(contextoService.profesionalesDelUsuario(username));
     }
 
     @GetMapping("/hospitales/resumen")
-    public Map<String, Object> resumenHospitales() {
-        return ok(hospitalService.resumenHospitales());
+    public ApiResponse<Object> resumenHospitales() {
+        return ApiResponse.ok(hospitalService.resumenHospitales());
     }
 
     @GetMapping("/hospitales/mayores-de-cien")
-    public Map<String, Object> hospitalesMayorCantidadPacientes() {
-        return ok(hospitalService.hospitalesMayorCantidadPacientes());
+    public ApiResponse<Object> hospitalesMayorCantidadPacientes() {
+        return ApiResponse.ok(hospitalService.hospitalesMayorCantidadPacientes());
     }
 
     @GetMapping("/proceso")
-    public Map<String, Object> resumenProceso() {
-        return ok(hospitalService.resumenProceso());
+    public ApiResponse<Object> resumenProceso() {
+        return ApiResponse.ok(hospitalService.resumenProceso());
     }
 
     @GetMapping("/medicos")
-    public Map<String, Object> listadoMedicos() {
-        return ok(medicoService.obtenerListadosMedicos());
+    public ApiResponse<Object> listadoMedicos() {
+        return ApiResponse.ok(medicoService.obtenerListadosMedicos());
     }
 
     @GetMapping("/pacientes")
-    public Map<String, Object> listadoPacientes(
+    public ApiResponse<Object> listadoPacientes(
             @RequestParam String area,
             @RequestParam String codigo) {
-        return ok(pacienteService.obtenerPacientesDepartamento(area, codigo));
+        return ApiResponse.ok(pacienteService.obtenerPacientesDepartamento(area, codigo));
     }
 
     @GetMapping("/pacientes/no-atendidos")
-    public Map<String, Object> pacientesNoAtendidos(
+    public ApiResponse<Object> pacientesNoAtendidos(
             @RequestParam String area,
             @RequestParam String codigo) {
-        return ok(pacienteService.listadoNoAtendidos(area, codigo));
+        return ApiResponse.ok(pacienteService.listadoNoAtendidos(area, codigo));
     }
 
     @GetMapping("/consultas/informe")
-    public Map<String, Object> informeDuranteConsultas(
+    public ApiResponse<Object> informeDuranteConsultas(
             @RequestParam String area,
             @RequestParam String codigo) {
-        return ok(consultaService.obtenerInformeHospital(area, codigo));
+        return ApiResponse.ok(consultaService.obtenerInformeHospital(area, codigo));
     }
 
     @GetMapping("/consultas/exitosas")
-    public Map<String, Object> consultasExitosas(
+    public ApiResponse<Object> consultasExitosas(
             @RequestParam String area,
             @RequestParam String codigo) {
-        return ok(consultaService.resumenConsultasExitosas(area, codigo));
+        return ApiResponse.ok(consultaService.resumenConsultasExitosas(area, codigo));
     }
 
     @GetMapping("/unidades/turnos-por-revisar")
-    public Map<String, Object> turnosPorRevisar() {
-        return ok(unidadService.listadoUnidades());
-    }
-
-    private static Map<String, Object> ok(Object data) {
-        return Map.of("ok", true, "data", data);
+    public ApiResponse<Object> turnosPorRevisar() {
+        return ApiResponse.ok(unidadService.listadoUnidades());
     }
 }

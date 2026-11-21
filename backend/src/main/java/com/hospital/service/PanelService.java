@@ -11,6 +11,11 @@ import java.util.Map;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import com.hospital.dto.response.PacientePanelRow;
+import com.hospital.dto.response.PanelPacientesResponse;
+import com.hospital.dto.response.PanelTurnosResponse;
+import com.hospital.dto.response.TurnoPanelRow;
+
 /**
  * Datos que alimentan las secciones "Pacientes" y "Turnos" del dashboard.
  *
@@ -52,7 +57,7 @@ public class PanelService {
         }
     }
 
-    public Map<String, Object> pacientes(String username, String role, String q, String fecha,
+    public PanelPacientesResponse pacientes(String username, String role, String q, String fecha,
             Integer limit, Integer offset) {
         sincronizarTurnos();
         Perfil perfil = resolverPerfil(username, role);
@@ -161,36 +166,41 @@ public class PanelService {
         args.add(Math.max(0, offset == null ? 0 : offset));
 
         List<Map<String, Object>> filas = jdbcTemplate.queryForList(sql.toString(), args.toArray());
-        List<Map<String, Object>> rows = new ArrayList<>();
+        List<PacientePanelRow> rows = new ArrayList<>();
         for (Map<String, Object> fila : filas) {
-            Map<String, Object> row = new LinkedHashMap<>();
             LocalDate nacimiento = fecha(fila.get("nacimiento"));
             LocalDate admision = fecha(fila.get("admision"));
 
-            row.put("id", texto(fila.get("id")));
-            row.put("nombre", texto(fila.get("nombre")));
-            row.put("nacimiento", fila.get("nacimiento"));
-            row.put("admision", fila.get("admision"));
-            row.put("direccion", texto(fila.get("direccion")));
-            row.put("estado", texto(fila.get("estado")));
-            row.put("estatus", estadoPaciente(fila));
-            row.put("edad", nacimiento == null ? null : Period.between(nacimiento, LocalDate.now()).getYears());
-            row.put("esNuevo", admision != null && !admision.isBefore(LocalDate.now().minusDays(30)));
-            row.put("codUni", texto(fila.get("cod_uni")));
-            row.put("unidad", texto(fila.get("unidad")));
-            row.put("departamento", texto(fila.get("departamento")));
-            row.put("hospital", texto(fila.get("hospital")));
-            row.put("medico", texto(fila.get("medico")));
-            row.put("ultimaVisita", fila.get("ultima_visita"));
-            rows.add(row);
+            rows.add(new PacientePanelRow(
+                    texto(fila.get("id")),
+                    texto(fila.get("nombre")),
+                    texto(fila.get("nacimiento")),
+                    texto(fila.get("admision")),
+                    texto(fila.get("direccion")),
+                    texto(fila.get("estado")),
+                    estadoPaciente(fila),
+                    nacimiento == null ? null : Period.between(nacimiento, LocalDate.now()).getYears(),
+                    admision != null && !admision.isBefore(LocalDate.now().minusDays(30)),
+                    texto(fila.get("cod_uni")),
+                    texto(fila.get("unidad")),
+                    texto(fila.get("departamento")),
+                    texto(fila.get("hospital")),
+                    texto(fila.get("medico")),
+                    texto(fila.get("ultima_visita"))
+            ));
         }
 
-        Map<String, Object> data = respuesta(perfil, rows, total(filas));
-        data.put("fecha", dia);
-        return data;
+        return new PanelPacientesResponse(
+                rows,
+                total(filas),
+                perfil.admin() ? "global" : "medico",
+                perfil.nombre(),
+                perfil.codMed(),
+                dia
+        );
     }
 
-    public Map<String, Object> turnos(String username, String role, String q, String fecha,
+    public PanelTurnosResponse turnos(String username, String role, String q, String fecha,
             Integer limit, Integer offset) {
         sincronizarTurnos();
         Perfil perfil = resolverPerfil(username, role);
@@ -284,37 +294,42 @@ public class PanelService {
         args.add(Math.max(0, offset == null ? 0 : offset));
 
         List<Map<String, Object>> filas = jdbcTemplate.queryForList(sql.toString(), args.toArray());
-        List<Map<String, Object>> rows = new ArrayList<>();
+        List<TurnoPanelRow> rows = new ArrayList<>();
         for (Map<String, Object> fila : filas) {
-            Map<String, Object> row = new LinkedHashMap<>();
             int numero = numero(fila.get("id"));
-            row.put("id", "T-" + numero);
-            row.put("numero", numero);
-            row.put("codMed", texto(fila.get("cod_med")));
-            row.put("paciente", texto(fila.get("paciente")));
-            row.put("pacienteId", texto(fila.get("paciente_id")));
-            row.put("profesional", texto(fila.get("profesional")));
-            row.put("especialidad", texto(fila.get("especialidad")));
-            row.put("estatus", estadoTurno(texto(fila.get("estado"))));
-            row.put("estadoOriginal", texto(fila.get("estado")));
-            row.put("hora", texto(fila.get("hora")));
-            row.put("fin", texto(fila.get("fin")));
-            row.put("duracion", numero(fila.get("duracion")));
-            row.put("notaClinica", texto(fila.get("nota_clinica")));
-            row.put("fecha", fila.get("fecha"));
-            row.put("consultorio", "Consultorio " + ((numero % 4) + 1));
-            row.put("unidad", texto(fila.get("unidad")));
-            row.put("departamento", texto(fila.get("departamento")));
-            row.put("hospital", texto(fila.get("hospital")));
-            row.put("atendidos", numero(fila.get("atendidos")));
-            row.put("consultas", numero(fila.get("consultas")));
-            row.put("cantidadAtendida", numero(fila.get("cant_aten")));
-            rows.add(row);
+            rows.add(new TurnoPanelRow(
+                    "T-" + numero,
+                    numero,
+                    texto(fila.get("cod_med")),
+                    texto(fila.get("paciente")),
+                    texto(fila.get("paciente_id")),
+                    texto(fila.get("profesional")),
+                    texto(fila.get("especialidad")),
+                    estadoTurno(texto(fila.get("estado"))),
+                    texto(fila.get("estado")),
+                    texto(fila.get("hora")),
+                    texto(fila.get("fin")),
+                    numero(fila.get("duracion")),
+                    texto(fila.get("nota_clinica")),
+                    texto(fila.get("fecha")),
+                    "Consultorio " + ((numero % 4) + 1),
+                    texto(fila.get("unidad")),
+                    texto(fila.get("departamento")),
+                    texto(fila.get("hospital")),
+                    numero(fila.get("atendidos")),
+                    numero(fila.get("consultas")),
+                    numero(fila.get("cant_aten"))
+            ));
         }
 
-        Map<String, Object> data = respuesta(perfil, rows, total(filas));
-        data.put("fecha", dia);
-        return data;
+        return new PanelTurnosResponse(
+                rows,
+                total(filas),
+                perfil.admin() ? "global" : "medico",
+                perfil.nombre(),
+                perfil.codMed(),
+                dia
+        );
     }
 
     /** Resuelve el médico vinculado a la sesión y si el usuario es administrador. */
@@ -337,16 +352,6 @@ public class PanelService {
 
         Map<String, Object> fila = filas.get(0);
         return new Perfil(false, texto(fila.get("cod_med")), texto(fila.get("nombre")), texto(fila.get("cod_uni")));
-    }
-
-    private Map<String, Object> respuesta(Perfil perfil, List<Map<String, Object>> rows, long total) {
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("rows", rows);
-        data.put("total", total);
-        data.put("alcance", perfil.admin() ? "global" : "medico");
-        data.put("medico", perfil.nombre());
-        data.put("codMed", perfil.codMed());
-        return data;
     }
 
     private static long total(List<Map<String, Object>> filas) {

@@ -1,14 +1,14 @@
 package com.hospital.controller;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.hospital.dto.common.ApiResponse;
+import com.hospital.dto.response.PanelPacientesResponse;
+import com.hospital.dto.response.PanelTurnosResponse;
 import com.hospital.service.PanelService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,37 +30,32 @@ public class PanelController {
     }
 
     @GetMapping("/pacientes")
-    public ResponseEntity<?> pacientes(
+    public ResponseEntity<ApiResponse<PanelPacientesResponse>> pacientes(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String fecha,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             HttpServletRequest request) {
         if (username(request) == null) return noAutorizado();
-        return respuesta(panelService.pacientes(username(request), role(request), q, fecha, limit, offset));
+        return ResponseEntity.ok(ApiResponse.ok(
+                panelService.pacientes(username(request), role(request), q, fecha, limit, offset)));
     }
 
     @GetMapping("/turnos")
-    public ResponseEntity<?> turnos(
+    public ResponseEntity<ApiResponse<PanelTurnosResponse>> turnos(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String fecha,
             @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Integer offset,
             HttpServletRequest request) {
         if (username(request) == null) return noAutorizado();
-        return respuesta(panelService.turnos(username(request), role(request), q, fecha, limit, offset));
+        return ResponseEntity.ok(ApiResponse.ok(
+                panelService.turnos(username(request), role(request), q, fecha, limit, offset)));
     }
 
-    private ResponseEntity<?> noAutorizado() {
+    private <T> ResponseEntity<ApiResponse<T>> noAutorizado() {
         return ResponseEntity.status(401)
-                .body(Map.of("ok", false, "error", "Debes iniciar sesión para ver esta información."));
-    }
-
-    private ResponseEntity<?> respuesta(Map<String, Object> data) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("ok", true);
-        body.put("data", data);
-        return ResponseEntity.ok(body);
+                .body(ApiResponse.error("Debes iniciar sesión para ver esta información."));
     }
 
     private HttpSession sesion(HttpServletRequest request) {

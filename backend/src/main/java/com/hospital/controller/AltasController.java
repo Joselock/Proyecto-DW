@@ -1,6 +1,5 @@
 package com.hospital.controller;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
@@ -13,6 +12,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.hospital.dto.common.ApiResponse;
+import com.hospital.dto.request.CrearMedicoRequest;
+import com.hospital.dto.request.CrearPacienteRequest;
+import com.hospital.dto.request.CrearTurnoRequest;
+import com.hospital.dto.request.EditarMedicoRequest;
+import com.hospital.dto.request.EditarPacienteRequest;
+import com.hospital.dto.request.EditarTurnoRequest;
+import com.hospital.dto.response.CatalogosAltasResponse;
 import com.hospital.service.AltasService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,15 +37,18 @@ public class AltasController {
     }
 
     @GetMapping("/catalogos")
-    public ResponseEntity<?> catalogos(HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<CatalogosAltasResponse>> catalogos(HttpServletRequest request) {
         String username = username(request);
-        if (username == null) return noAutorizado();
-        return ok(altasService.catalogos(username, role(request)));
+        if (username == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error(
+                    "Debes iniciar sesión para realizar esta operación."));
+        }
+        return ResponseEntity.ok(ApiResponse.ok(altasService.catalogos(username, role(request))));
     }
 
     @PostMapping("/pacientes")
-    public ResponseEntity<?> crearPaciente(@RequestBody Map<String, String> body,
-                                           HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Object>> crearPaciente(@RequestBody CrearPacienteRequest body,
+                                                             HttpServletRequest request) {
         String username = username(request);
         if (username == null) return noAutorizado();
         try {
@@ -49,9 +59,9 @@ public class AltasController {
     }
 
     @PutMapping("/pacientes/{numHistoria}")
-    public ResponseEntity<?> editarPaciente(@PathVariable String numHistoria,
-                                            @RequestBody Map<String, String> body,
-                                            HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Object>> editarPaciente(@PathVariable String numHistoria,
+                                                              @RequestBody EditarPacienteRequest body,
+                                                              HttpServletRequest request) {
         String username = username(request);
         if (username == null) return noAutorizado();
         try {
@@ -62,8 +72,8 @@ public class AltasController {
     }
 
     @DeleteMapping("/pacientes/{numHistoria}")
-    public ResponseEntity<?> eliminarPaciente(@PathVariable String numHistoria,
-                                              HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Object>> eliminarPaciente(@PathVariable String numHistoria,
+                                                                HttpServletRequest request) {
         String username = username(request);
         if (username == null) return noAutorizado();
         try {
@@ -74,8 +84,8 @@ public class AltasController {
     }
 
     @PostMapping("/turnos")
-    public ResponseEntity<?> crearTurno(@RequestBody Map<String, String> body,
-                                        HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Object>> crearTurno(@RequestBody CrearTurnoRequest body,
+                                                          HttpServletRequest request) {
         String username = username(request);
         if (username == null) return noAutorizado();
         try {
@@ -87,9 +97,9 @@ public class AltasController {
 
     /** Edita fecha, hora, nota clínica y estado de un turno (menú de tres puntos). */
     @PutMapping("/turnos/{numero}")
-    public ResponseEntity<?> editarTurno(@PathVariable int numero,
-                                         @RequestBody Map<String, String> body,
-                                         HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Object>> editarTurno(@PathVariable int numero,
+                                                           @RequestBody EditarTurnoRequest body,
+                                                           HttpServletRequest request) {
         String username = username(request);
         if (username == null) return noAutorizado();
         try {
@@ -100,8 +110,8 @@ public class AltasController {
     }
 
     @PostMapping("/medicos")
-    public ResponseEntity<?> crearMedico(@RequestBody Map<String, String> body,
-                                         HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Object>> crearMedico(@RequestBody CrearMedicoRequest body,
+                                                           HttpServletRequest request) {
         String username = username(request);
         if (username == null) return noAutorizado();
         try {
@@ -112,9 +122,9 @@ public class AltasController {
     }
 
     @PutMapping("/medicos/{codMed}")
-    public ResponseEntity<?> editarMedico(@PathVariable String codMed,
-                                          @RequestBody Map<String, String> body,
-                                          HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Object>> editarMedico(@PathVariable String codMed,
+                                                            @RequestBody EditarMedicoRequest body,
+                                                            HttpServletRequest request) {
         String username = username(request);
         if (username == null) return noAutorizado();
         try {
@@ -125,8 +135,8 @@ public class AltasController {
     }
 
     @DeleteMapping("/medicos/{codMed}")
-    public ResponseEntity<?> eliminarMedico(@PathVariable String codMed,
-                                            HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Object>> eliminarMedico(@PathVariable String codMed,
+                                                              HttpServletRequest request) {
         String username = username(request);
         if (username == null) return noAutorizado();
         try {
@@ -136,20 +146,16 @@ public class AltasController {
         }
     }
 
-    private ResponseEntity<?> ok(Object data) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("ok", true);
-        body.put("data", data);
-        return ResponseEntity.ok(body);
+    private ResponseEntity<ApiResponse<Object>> ok(Object data) {
+        return ResponseEntity.ok(ApiResponse.ok(data));
     }
 
-    private ResponseEntity<?> noAutorizado() {
-        return ResponseEntity.status(401).body(Map.of(
-                "ok", false,
-                "error", "Debes iniciar sesión para realizar esta operación."));
+    private ResponseEntity<ApiResponse<Object>> noAutorizado() {
+        return ResponseEntity.status(401).body(ApiResponse.error(
+                "Debes iniciar sesión para realizar esta operación."));
     }
 
-    private ResponseEntity<?> error(Exception e) {
+    private ResponseEntity<ApiResponse<Object>> error(Exception e) {
         int status = 500;
         if (e instanceof IllegalArgumentException) {
             status = 400;
@@ -161,7 +167,7 @@ public class AltasController {
         String mensaje = e.getMessage() == null || e.getMessage().isBlank()
                 ? "No se pudo completar la operación."
                 : e.getMessage();
-        return ResponseEntity.status(status).body(Map.of("ok", false, "error", mensaje));
+        return ResponseEntity.status(status).body(ApiResponse.error(mensaje));
     }
 
     private String username(HttpServletRequest request) {

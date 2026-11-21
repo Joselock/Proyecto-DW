@@ -8,6 +8,9 @@ import java.util.Map;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import com.hospital.dto.response.NotificacionRow;
+import com.hospital.dto.response.NotificacionesResponse;
+
 /**
  * Notificaciones generadas por el motor de estados de los turnos.
  *
@@ -38,7 +41,7 @@ public class NotificacionService {
     }
 
     /** Listado de avisos visibles para la sesión actual. */
-    public Map<String, Object> listar(String username, String role, Integer limite) {
+    public NotificacionesResponse listar(String username, String role, Integer limite) {
         sincronizar();
         String codMed = codMedSesion(username, role);
         boolean admin = "ADMIN".equalsIgnoreCase(role == null ? "" : role);
@@ -47,12 +50,7 @@ public class NotificacionService {
         String filtro = "";
         if (!admin) {
             if (codMed == null) {
-                Map<String, Object> vacio = new LinkedHashMap<>();
-                vacio.put("rows", List.of());
-                vacio.put("noLeidas", 0);
-                vacio.put("ultimoId", 0);
-                vacio.put("alcance", "medico");
-                return vacio;
+                return new NotificacionesResponse(List.of(), 0, 0, "medico");
             }
             filtro = " WHERE n.\"codMed\" = ? ";
             args.add(codMed);
@@ -77,19 +75,19 @@ public class NotificacionService {
                 LIMIT ?
                 """, concat(args, tope));
 
-        List<Map<String, Object>> rows = new ArrayList<>();
+        List<NotificacionRow> rows = new ArrayList<>();
         for (Map<String, Object> fila : filas) {
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("id", numero(fila.get("id")));
-            row.put("numero", numero(fila.get("numero")));
-            row.put("tipo", texto(fila.get("tipo")));
-            row.put("mensaje", texto(fila.get("mensaje")));
-            row.put("fecha", String.valueOf(fila.get("fecha")));
-            row.put("leida", Boolean.TRUE.equals(fila.get("leida")));
-            row.put("fechaTurno", texto(fila.get("fecha_turno")));
-            row.put("hora", texto(fila.get("hora")));
-            row.put("paciente", texto(fila.get("paciente")));
-            rows.add(row);
+            rows.add(new NotificacionRow(
+                    numero(fila.get("id")),
+                    numero(fila.get("numero")),
+                    texto(fila.get("tipo")),
+                    texto(fila.get("mensaje")),
+                    String.valueOf(fila.get("fecha")),
+                    Boolean.TRUE.equals(fila.get("leida")),
+                    texto(fila.get("fecha_turno")),
+                    texto(fila.get("hora")),
+                    texto(fila.get("paciente"))
+            ));
         }
 
         StringBuilder conteoSql = new StringBuilder("""
@@ -107,12 +105,12 @@ public class NotificacionService {
                 SELECT COALESCE(max(n."id"), 0) FROM public."Notificacion" n
                 """ + filtro, Integer.class, admin ? new Object[0] : new Object[] { codMed });
 
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("rows", rows);
-        data.put("noLeidas", noLeidas == null ? 0 : noLeidas);
-        data.put("ultimoId", ultimoId == null ? 0 : ultimoId);
-        data.put("alcance", admin ? "global" : "medico");
-        return data;
+        return new NotificacionesResponse(
+                rows,
+                noLeidas == null ? 0 : noLeidas,
+                ultimoId == null ? 0 : ultimoId,
+                admin ? "global" : "medico"
+        );
     }
 
     /** Marca como leídas las notificaciones indicadas (o todas si no hay ids). */

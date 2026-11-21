@@ -16,6 +16,19 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.hospital.dto.request.CrearMedicoRequest;
+import com.hospital.dto.request.CrearPacienteRequest;
+import com.hospital.dto.request.CrearTurnoRequest;
+import com.hospital.dto.request.EditarMedicoRequest;
+import com.hospital.dto.request.EditarPacienteRequest;
+import com.hospital.dto.request.EditarTurnoRequest;
+import com.hospital.dto.response.CatalogoDepartamentoResponse;
+import com.hospital.dto.response.CatalogoHospitalResponse;
+import com.hospital.dto.response.CatalogoMedicoResponse;
+import com.hospital.dto.response.CatalogoPerfilResponse;
+import com.hospital.dto.response.CatalogoUnidadResponse;
+import com.hospital.dto.response.CatalogosAltasResponse;
+
 /**
  * Altas reales de pacientes, turnos y médicos.
  *
@@ -38,7 +51,7 @@ public class AltasService {
     /* ------------------------------------------------------------------ */
 
     @Transactional(readOnly = true)
-    public Map<String, Object> catalogos(String username, String role) {
+    public CatalogosAltasResponse catalogos(String username, String role) {
         Perfil perfil = perfil(username, role);
         List<Object> hospitalArgs = new ArrayList<>();
         List<Object> departamentoArgs = new ArrayList<>();
@@ -59,23 +72,27 @@ public class AltasService {
             medicoArgs.add(perfil.codMed());
         }
 
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("hospitales", jdbc.queryForList("""
+        List<CatalogoHospitalResponse> hospitales = jdbc.queryForList("""
                 SELECT h."codHos" AS codigo, h."nomHos" AS nombre
                 FROM public."Hospital" h
                 """ + filtroHospital + """
                 ORDER BY h."nomHos"
-                """, hospitalArgs.toArray()));
+                """, hospitalArgs.toArray()).stream()
+                .map(f -> new CatalogoHospitalResponse(texto(f.get("codigo")), texto(f.get("nombre"))))
+                .toList();
 
-        data.put("departamentos", jdbc.queryForList("""
+        List<CatalogoDepartamentoResponse> departamentos = jdbc.queryForList("""
                 SELECT d."codDep" AS codigo, d."nomDep" AS nombre, d."codHos" AS "codHos"
                 FROM public."Departamento" d
                 JOIN public."Hospital" h ON h."codHos" = d."codHos"
                 """ + filtroHospital + """
                 ORDER BY d."nomDep"
-                """, departamentoArgs.toArray()));
+                """, departamentoArgs.toArray()).stream()
+                .map(f -> new CatalogoDepartamentoResponse(
+                        texto(f.get("codigo")), texto(f.get("nombre")), texto(f.get("codHos"))))
+                .toList();
 
-        data.put("unidades", jdbc.queryForList("""
+        List<CatalogoUnidadResponse> unidades = jdbc.queryForList("""
                 SELECT u."codUni" AS codigo, u."nomUni" AS nombre,
                        u."codDep" AS "codDep", d."codHos" AS "codHos"
                 FROM public."Unidad" u
@@ -83,9 +100,13 @@ public class AltasService {
                 JOIN public."Hospital" h ON h."codHos" = d."codHos"
                 """ + (perfil.admin() ? "" : filtroUnidad) + """
                 ORDER BY u."nomUni"
-                """, perfil.admin() ? new Object[0] : unidadArgs.toArray()));
+                """, perfil.admin() ? new Object[0] : unidadArgs.toArray()).stream()
+                .map(f -> new CatalogoUnidadResponse(
+                        texto(f.get("codigo")), texto(f.get("nombre")),
+                        texto(f.get("codDep")), texto(f.get("codHos"))))
+                .toList();
 
-        data.put("medicos", jdbc.queryForList("""
+        List<CatalogoMedicoResponse> medicos = jdbc.queryForList("""
                 SELECT m."codMed" AS "codMed", m."nomMed" AS nombre,
                        m."espMed" AS especialidad, m."codUni" AS "codUni",
                        u."nomUni" AS unidad, d."codDep" AS "codDep",
@@ -97,17 +118,21 @@ public class AltasService {
                 JOIN public."Hospital" h ON h."codHos" = d."codHos"
                 """ + filtroMedico + """
                 ORDER BY h."nomHos", d."nomDep", u."nomUni", m."nomMed"
-                """, medicoArgs.toArray()));
+                """, medicoArgs.toArray()).stream()
+                .map(f -> new CatalogoMedicoResponse(
+                        texto(f.get("codMed")), texto(f.get("nombre")), texto(f.get("especialidad")),
+                        texto(f.get("codUni")), texto(f.get("unidad")), texto(f.get("codDep")),
+                        texto(f.get("departamento")), texto(f.get("codHos")), texto(f.get("hospital"))))
+                .toList();
 
-        Map<String, Object> perfilData = new LinkedHashMap<>();
-        perfilData.put("rol", perfil.admin() ? "ADMIN" : "MEDICO");
-        perfilData.put("codMed", perfil.codMed());
-        perfilData.put("codUni", perfil.codUni());
-        perfilData.put("codHos", perfil.codHos());
-        perfilData.put("nombre", perfil.nombre());
-        data.put("perfil", perfilData);
+        CatalogoPerfilResponse perfilData = new CatalogoPerfilResponse(
+                perfil.admin() ? "ADMIN" : "MEDICO",
+                perfil.codMed(),
+                perfil.codUni(),
+                perfil.codHos(),
+                perfil.nombre());
 
-        return data;
+        return new CatalogosAltasResponse(hospitales, departamentos, unidades, medicos, perfilData);
     }
 
     /* ------------------------------------------------------------------ */
@@ -115,20 +140,20 @@ public class AltasService {
     /* ------------------------------------------------------------------ */
 
     @Transactional
-    public Map<String, Object> crearPaciente(String username, String role, Map<String, String> body) {
+    public Map<String, Object> crearPaciente(String username, String role, CrearPacienteRequest body) {
         Perfil perfil = perfil(username, role);
 
-        String numero = texto(body.get("documento"));
+        String numero = texto(body.documento());
         if (numero.isEmpty()) {
             numero = siguientePaciente();
         }
-        String nombre = texto(body.get("nombre"));
-        String direccion = texto(body.get("direccion"));
-        String codUni = texto(body.get("codUni"));
-        String estado = texto(body.get("estado"));
+        String nombre = texto(body.nombre());
+        String direccion = texto(body.direccion());
+        String codUni = texto(body.codUni());
+        String estado = texto(body.estado());
         if (estado.isEmpty()) estado = "Internado";
 
-        LocalDate fechaNac = fecha(body.get("fechaNacimiento"));
+        LocalDate fechaNac = fecha(body.fechaNacimiento());
         if (nombre.isEmpty()) throw new IllegalArgumentException("Escribe el nombre del paciente.");
         if (fechaNac == null) throw new IllegalArgumentException("Indica la fecha de nacimiento.");
         if (Period.between(fechaNac, LocalDate.now()).getYears() < 16) {
@@ -162,13 +187,13 @@ public class AltasService {
     /* ------------------------------------------------------------------ */
 
     @Transactional
-    public Map<String, Object> crearTurno(String username, String role, Map<String, String> body) {
+    public Map<String, Object> crearTurno(String username, String role, CrearTurnoRequest body) {
         Perfil perfil = perfil(username, role);
 
-        String pacienteId = texto(body.get("pacienteId"));
-        String codMed = texto(body.get("codMed"));
-        String codUni = texto(body.get("codUni"));
-        String estado = texto(body.get("estado"));
+        String pacienteId = texto(body.pacienteId());
+        String codMed = texto(body.codMed());
+        String codUni = texto(body.codUni());
+        String estado = texto(body.estado());
         if (estado.isEmpty()) estado = "pendiente";
         estado = estado.toLowerCase(Locale.ROOT);
         if (!List.of("pendiente", "confirmado").contains(estado)) {
@@ -200,15 +225,15 @@ public class AltasService {
 
         validarPaciente(pacienteId, perfil);
 
-        LocalDate fechaTurno = fecha(body.get("fecha"));
+        LocalDate fechaTurno = fecha(body.fecha());
         if (fechaTurno == null) fechaTurno = LocalDate.now();
-        Time horaTurno = hora(body.get("hora"));
+        Time horaTurno = hora(body.hora());
         if (horaTurno == null) {
             horaTurno = Time.valueOf(LocalTime.now().withNano(0)
                     .format(DateTimeFormatter.ofPattern("HH:mm:ss")));
         }
-        String notaClinica = texto(body.get("notaClinica"));
-        if (notaClinica.isEmpty()) notaClinica = texto(body.get("nota"));
+        String notaClinica = texto(body.notaClinica());
+        if (notaClinica.isEmpty()) notaClinica = texto(body.nota());
 
         int numero = siguienteTurno();
         Map<String, Object> turno = llamarFuncion(
@@ -244,7 +269,7 @@ public class AltasService {
      */
     @Transactional
     public Map<String, Object> editarTurno(String username, String role, int numero,
-            Map<String, String> body) {
+            EditarTurnoRequest body) {
         Perfil perfil = perfil(username, role);
 
         List<Map<String, Object>> filas = jdbc.queryForList("""
@@ -266,26 +291,26 @@ public class AltasService {
             throw new SecurityException("Solo puedes editar tus propios turnos.");
         }
 
-        LocalDate fechaTurno = body.containsKey("fecha")
-                ? fecha(body.get("fecha"))
+        LocalDate fechaTurno = (body.fecha() != null)
+                ? fecha(body.fecha())
                 : fecha(texto(actual.get("fecha")));
         if (fechaTurno == null) {
             throw new IllegalArgumentException("Indica una fecha válida para el turno (AAAA-MM-DD).");
         }
 
-        Time horaTurno = body.containsKey("hora")
-                ? hora(body.get("hora"))
+        Time horaTurno = (body.hora() != null)
+                ? hora(body.hora())
                 : hora(texto(actual.get("hora")));
         if (horaTurno == null) {
             throw new IllegalArgumentException("Indica una hora válida para el turno (HH:MM).");
         }
 
-        String notaClinica = body.containsKey("notaClinica")
-                ? texto(body.get("notaClinica"))
+        String notaClinica = (body.notaClinica() != null)
+                ? texto(body.notaClinica())
                 : texto(actual.get("nota"));
 
-        String estado = texto(body.get("estatus"));
-        if (estado.isEmpty()) estado = texto(body.get("estadoOriginal"));
+        String estado = texto(body.estatus());
+        if (estado.isEmpty()) estado = texto(body.estadoOriginal());
         if (estado.isEmpty()) estado = texto(actual.get("estado"));
         String estadoDb = estadoBase(estado);
 
@@ -302,8 +327,8 @@ public class AltasService {
                     SET atendido = false, causa = ?
                     WHERE "numTur" = ?
                     """, notaClinica.isEmpty() ? "No atendido" : notaClinica, numero);
-        } else if (body.containsKey("atendido")) {
-            boolean atendido = Boolean.parseBoolean(texto(body.get("atendido")));
+        } else if ((body.atendido() != null)) {
+            boolean atendido = Boolean.parseBoolean(texto(body.atendido()));
             jdbc.update("""
                     UPDATE public."Consulta" SET atendido = ? WHERE "numTur" = ?
                     """, atendido, numero);
@@ -336,22 +361,22 @@ public class AltasService {
 
     @Transactional
     public Map<String, Object> editarPaciente(String username, String role, String numHistoria,
-            Map<String, String> body) {
+            EditarPacienteRequest body) {
         Perfil perfil = perfil(username, role);
         if (numHistoria == null || numHistoria.isBlank()) {
             throw new IllegalArgumentException("Indica el paciente que deseas modificar.");
         }
         validarPaciente(numHistoria, perfil);
 
-        String nuevoDocumento = texto(body.get("documento"));
+        String nuevoDocumento = texto(body.documento());
         if (nuevoDocumento.isEmpty()) nuevoDocumento = numHistoria;
-        String nombre = texto(body.get("nombre"));
-        String direccion = texto(body.get("direccion"));
-        String codUni = texto(body.get("codUni"));
-        String estado = texto(body.get("estado"));
+        String nombre = texto(body.nombre());
+        String direccion = texto(body.direccion());
+        String codUni = texto(body.codUni());
+        String estado = texto(body.estado());
         if (estado.isEmpty()) estado = "Internado";
 
-        LocalDate fechaNac = fecha(body.get("fechaNacimiento"));
+        LocalDate fechaNac = fecha(body.fechaNacimiento());
         if (nombre.isEmpty()) throw new IllegalArgumentException("Escribe el nombre del paciente.");
         if (fechaNac == null) throw new IllegalArgumentException("Indica la fecha de nacimiento.");
         if (Period.between(fechaNac, LocalDate.now()).getYears() < 16) {
@@ -411,22 +436,22 @@ public class AltasService {
     /* ------------------------------------------------------------------ */
 
     @Transactional
-    public Map<String, Object> crearMedico(String username, String role, Map<String, String> body) {
+    public Map<String, Object> crearMedico(String username, String role, CrearMedicoRequest body) {
         Perfil perfil = perfil(username, role);
         if (!perfil.admin()) {
             throw new SecurityException("Solo un administrador puede agendar médicos.");
         }
 
-        String codMed = texto(body.get("codMed"));
+        String codMed = texto(body.codMed());
         if (codMed.isEmpty()) codMed = siguienteMedico();
-        String nombre = texto(body.get("nombre"));
-        String especialidad = texto(body.get("especialidad"));
-        String licencia = texto(body.get("licencia"));
-        String telefono = texto(body.get("telefono"));
-        String datosContacto = texto(body.get("datosContacto"));
-        String direccion = texto(body.get("direccion"));
-        String codUni = texto(body.get("codUni"));
-        int experiencia = entero(body.get("experiencia"));
+        String nombre = texto(body.nombre());
+        String especialidad = texto(body.especialidad());
+        String licencia = texto(body.licencia());
+        String telefono = texto(body.telefono());
+        String datosContacto = texto(body.datosContacto());
+        String direccion = texto(body.direccion());
+        String codUni = texto(body.codUni());
+        int experiencia = entero(body.experiencia());
 
         if (nombre.isEmpty()) throw new IllegalArgumentException("Escribe el nombre del médico.");
         if (especialidad.isEmpty()) throw new IllegalArgumentException("Indica la especialidad.");
@@ -478,7 +503,7 @@ public class AltasService {
 
     @Transactional
     public Map<String, Object> editarMedico(String username, String role, String codMed,
-            Map<String, String> body) {
+            EditarMedicoRequest body) {
         Perfil perfil = perfil(username, role);
         if (!perfil.admin()) {
             throw new SecurityException("Solo un administrador puede modificar médicos.");
@@ -487,16 +512,16 @@ public class AltasService {
             throw new IllegalArgumentException("Indica el médico que deseas modificar.");
         }
 
-        String nuevoCodigo = texto(body.get("codMed"));
+        String nuevoCodigo = texto(body.codMed());
         if (nuevoCodigo.isEmpty()) nuevoCodigo = codMed;
-        String nombre = texto(body.get("nombre"));
-        String especialidad = texto(body.get("especialidad"));
-        String licencia = texto(body.get("licencia"));
-        String telefono = texto(body.get("telefono"));
-        String datosContacto = texto(body.get("datosContacto"));
-        String direccion = texto(body.get("direccion"));
-        String codUni = texto(body.get("codUni"));
-        int experiencia = entero(body.get("experiencia"));
+        String nombre = texto(body.nombre());
+        String especialidad = texto(body.especialidad());
+        String licencia = texto(body.licencia());
+        String telefono = texto(body.telefono());
+        String datosContacto = texto(body.datosContacto());
+        String direccion = texto(body.direccion());
+        String codUni = texto(body.codUni());
+        int experiencia = entero(body.experiencia());
 
         if (nombre.isEmpty()) throw new IllegalArgumentException("Escribe el nombre del médico.");
         if (especialidad.isEmpty()) throw new IllegalArgumentException("Indica la especialidad.");
@@ -701,10 +726,13 @@ public class AltasService {
         }
     }
 
-    private static int entero(String valor) {
-        if (valor == null || valor.isBlank()) return 0;
+    private static int entero(Object valor) {
+        if (valor == null) return 0;
+        if (valor instanceof Number number) return number.intValue();
+        String texto = String.valueOf(valor).trim();
+        if (texto.isBlank()) return 0;
         try {
-            return Integer.parseInt(valor.trim());
+            return Integer.parseInt(texto);
         } catch (NumberFormatException e) {
             return -1;
         }

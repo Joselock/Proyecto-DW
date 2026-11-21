@@ -1,5 +1,12 @@
 package com.hospital.controller.JPA;
 
+import com.hospital.dto.common.ApiResponse;
+import com.hospital.dto.request.ForgotPasswordRequest;
+import com.hospital.dto.request.LoginRequest;
+import com.hospital.dto.request.RegisterRequest;
+import com.hospital.dto.request.ResetPasswordRequest;
+import com.hospital.dto.request.UpdateProfileRequest;
+import com.hospital.dto.response.UserProfileResponse;
 import com.hospital.model.EntidadesJPA.User;
 import com.hospital.service.JPA.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -7,7 +14,7 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.HashMap;
+
 import java.util.Locale;
 import java.util.Map;
 
@@ -22,17 +29,17 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> body,
-                                   HttpServletRequest request) {
-        String username = body.get("username");
-        String email = body.get("email");
-        String password = body.get("password");
+    public ResponseEntity<ApiResponse<Void>> login(@RequestBody LoginRequest body,
+                                                   HttpServletRequest request) {
+        String username = body.username();
+        String email = body.email();
+        String password = body.password();
 
         if (password == null || password.isBlank()
                 || ((username == null || username.isBlank())
                     && (email == null || email.isBlank()))) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("ok", false, "error", "Completa el correo y la contraseña."));
+                    .body(ApiResponse.error("Completa el correo y la contraseña."));
         }
 
         try {
@@ -46,30 +53,30 @@ public class AuthController {
             session.setAttribute("email", user.getEmail());
             session.setAttribute("role", authService.rolEfectivo(user));
 
-            return ResponseEntity.ok(Map.of("ok", true, "user", datosUsuario(user)));
+            return ResponseEntity.ok(ApiResponse.okUser(datosUsuario(user)));
 
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(401)
-                    .body(Map.of("ok", false, "error", "Correo o contraseña incorrectos."));
+                    .body(ApiResponse.error("Correo o contraseña incorrectos."));
         }
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody Map<String, String> body) {
+    public ResponseEntity<ApiResponse<Void>> register(@RequestBody RegisterRequest body) {
         try {
             authService.registrar(
-                    body.get("username"),
-                    body.get("email"),
-                    body.get("password"),
-                    body.get("codMed"));
+                    body.username(),
+                    body.email(),
+                    body.password(),
+                    body.codMed());
             return ResponseEntity.status(201)
-                    .body(Map.of("ok", true, "message", "Registro completado."));
+                    .body(ApiResponse.okMessage("Registro completado."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("ok", false, "error", e.getMessage()));
+                    .body(ApiResponse.error(e.getMessage()));
         } catch (IllegalStateException e) {
             return ResponseEntity.status(409)
-                    .body(Map.of("ok", false, "error", e.getMessage()));
+                    .body(ApiResponse.error(e.getMessage()));
         }
     }
 
@@ -78,110 +85,119 @@ public class AuthController {
      * hospitales, unidades y médicos que todavía no tienen cuenta.
      */
     @GetMapping("/registro/opciones")
-    public ResponseEntity<?> opcionesRegistro() {
-        return ResponseEntity.ok(Map.of("ok", true, "data", authService.opcionesRegistro()));
+    public ResponseEntity<ApiResponse<Map<String, Object>>> opcionesRegistro() {
+        return ResponseEntity.ok(ApiResponse.ok(authService.opcionesRegistro()));
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> me(HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Void>> me(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("username") == null) {
             return ResponseEntity.status(401)
-                    .body(Map.of("ok", false, "error", "Debes iniciar sesión."));
+                    .body(ApiResponse.error("Debes iniciar sesión."));
         }
 
         User user = authService.obtenerPorUsername((String) session.getAttribute("username"));
         if (user == null) {
             session.invalidate();
             return ResponseEntity.status(401)
-                    .body(Map.of("ok", false, "error", "Debes iniciar sesión."));
+                    .body(ApiResponse.error("Debes iniciar sesión."));
         }
 
-        return ResponseEntity.ok(Map.of("ok", true, "user", datosUsuario(user)));
+        return ResponseEntity.ok(ApiResponse.okUser(datosUsuario(user)));
     }
 
     @PutMapping("/me")
-    public ResponseEntity<?> updateMe(@RequestBody Map<String, String> body,
-                                      HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Void>> updateMe(@RequestBody UpdateProfileRequest body,
+                                                      HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("username") == null) {
             return ResponseEntity.status(401)
-                    .body(Map.of("ok", false, "error", "Debes iniciar sesión."));
+                    .body(ApiResponse.error("Debes iniciar sesión."));
         }
 
         User user = authService.obtenerPorUsername((String) session.getAttribute("username"));
         if (user == null) {
             session.invalidate();
             return ResponseEntity.status(401)
-                    .body(Map.of("ok", false, "error", "Debes iniciar sesión."));
+                    .body(ApiResponse.error("Debes iniciar sesión."));
         }
 
         try {
             User updated = authService.actualizarPerfil(
                     user.getUsername(),
-                    body.get("nombre"),
-                    body.get("especialidad"),
-                    body.get("direccion"),
-                    body.get("telefono"));
-            return ResponseEntity.ok(Map.of("ok", true, "user", datosUsuario(updated)));
+                    body.nombre(),
+                    body.especialidad(),
+                    body.direccion(),
+                    body.telefono());
+            return ResponseEntity.ok(ApiResponse.okUser(datosUsuario(updated)));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("ok", false, "error", e.getMessage()));
+                    .body(ApiResponse.error(e.getMessage()));
         }
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Void>> logout(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();
         }
-        return ResponseEntity.ok(Map.of("ok", true));
+        return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body,
-                                            HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> forgotPassword(
+            @RequestBody(required = false) ForgotPasswordRequest body,
+            HttpServletRequest request) {
         try {
             String baseUrl = request.getScheme() + "://" + request.getServerName()
                     + ((request.getServerPort() == 80 || request.getServerPort() == 443)
                             ? "" : ":" + request.getServerPort());
             Map<String, Object> data = authService.solicitarRecuperacion(
-                    body == null ? null : body.get("email"), baseUrl);
-            return ResponseEntity.ok(Map.of("ok", true, "data", data));
+                    body == null ? null : body.email(), baseUrl);
+            return ResponseEntity.ok(ApiResponse.ok(data));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("ok", false, "error", e.getMessage()));
+                    .body(ApiResponse.error(e.getMessage()));
         }
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> body) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> resetPassword(
+            @RequestBody(required = false) ResetPasswordRequest body) {
         try {
             authService.restablecerContrasena(
-                    body == null ? null : body.get("email"),
-                    body == null ? null : body.get("token"),
-                    body == null ? null : body.get("password"));
-            return ResponseEntity.ok(Map.of(
-                    "ok", true,
-                    "data", Map.of("message", "Contraseña actualizada. Ya puedes iniciar sesión.")));
+                    body == null ? null : body.email(),
+                    body == null ? null : body.token(),
+                    body == null ? null : body.password());
+            return ResponseEntity.ok(ApiResponse.ok(
+                    Map.of("message", "Contraseña actualizada. Ya puedes iniciar sesión.")));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("ok", false, "error", e.getMessage()));
+                    .body(ApiResponse.error(e.getMessage()));
         }
     }
 
-    private Map<String, Object> datosUsuario(User user) {
-        Map<String, Object> userData = new HashMap<>();
-        userData.put("username", user.getUsername());
-        userData.put("email", user.getEmail());
-        userData.put("role", authService.rolEfectivo(user));
-
-        // El perfil del usuario son los datos del médico vinculado.
+    private UserProfileResponse datosUsuario(User user) {
         Map<String, Object> perfil = authService.perfilMedico(user.getUsername());
-        if (perfil != null) {
-            userData.putAll(perfil);
-        }
-        return userData;
+        return new UserProfileResponse(
+                user.getUsername(),
+                user.getEmail(),
+                authService.rolEfectivo(user),
+                perfil == null ? null : str(perfil.get("codMed")),
+                perfil == null ? null : str(perfil.get("nombre")),
+                perfil == null ? null : str(perfil.get("especialidad")),
+                perfil == null ? null : str(perfil.get("direccion")),
+                perfil == null ? null : str(perfil.get("telefono")),
+                perfil == null ? null : str(perfil.get("codUni")),
+                perfil == null ? null : str(perfil.get("unidad")),
+                perfil == null ? null : str(perfil.get("codHos")),
+                perfil == null ? null : str(perfil.get("hospital"))
+        );
+    }
+
+    private static String str(Object value) {
+        return value == null ? null : String.valueOf(value);
     }
 }
