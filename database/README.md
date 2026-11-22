@@ -1,24 +1,21 @@
 # Base de datos · Proyecto-DW
 
-Rediseño del esquema relacional del Sistema de Gestión Hospitalaria para
-PostgreSQL 17. Integra el ERD entregado, la tabla de usuarios (`user`) y la
-relación entre **médico** y **usuario**. Los datos del perfil viven en
-`"Medico"`, así que no se duplican en una tabla aparte.
+Sistema de Gestión Hospitalaria para PostgreSQL 17.
 
 ## Archivos
 
-| Archivo | Para qué sirve |
-| --- | --- |
-| `01_schema.sql` | Esquema completo. **Recrea** las tablas del esquema `public`. |
-| `02_migracion_medico_usuario.sql` | Migración (paso 1): agrega la relación médico–usuario y `dirMed` a una base existente. No elimina `data_user`. |
-| `02b_eliminar_data_user.sql` | Migración (paso 2): copia la dirección, verifica que todas las cuentas tengan médico, elimina `data_user` y simplifica la PK de `"user"`. |
-| `03_views.sql` | Vistas de apoyo: jerarquía, médico–usuario, paciente–unidad y ocupación de unidades. |
-| `CRUD/` | Funciones PL/pgSQL de alta, modificación y baja. |
-| `Reportes/` | Funciones de los nueve reportes. |
-| `Trigger/` | Funciones y disparadores de informe automático y límite de médicos. |
-| `Datos de Prueba/` | Datos de ejemplo. `04_datos_prueba_masivos.sql` carga más de 3.200 pacientes, turnos y consultas, y crea cuentas demo de ADMIN y MEDICO. |
-| `05_seguimiento_turnos.sql` | Migración reejecutable: fecha/hora/nota reales en `Turno`, tabla `Notificacion` y motor de estados por reloj. |
-| `docs/seguimiento-turnos.md` | Documentación del flujo completo, endpoints y análisis de UI implementada/pendiente. |
+| Archivo                           | Para qué sirve                                                                                                                            |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `01_schema.sql`                   | Esquema completo. **Recrea** las tablas del esquema `public`.                                                                             |
+| `02_migracion_medico_usuario.sql` | Migración (paso 1): agrega la relación médico–usuario y `dirMed` a una base existente. No elimina `data_user`.                            |
+| `02b_eliminar_data_user.sql`      | Migración (paso 2): copia la dirección, verifica que todas las cuentas tengan médico, elimina `data_user` y simplifica la PK de `"user"`. |
+| `03_views.sql`                    | Vistas de apoyo: jerarquía, médico–usuario, paciente–unidad y ocupación de unidades.                                                      |
+| `CRUD/`                           | Funciones PL/pgSQL de alta, modificación y baja.                                                                                          |
+| `Reportes/`                       | Funciones de los nueve reportes.                                                                                                          |
+| `Trigger/`                        | Funciones y disparadores de informe automático y límite de médicos.                                                                       |
+| `Datos de Prueba/`                | Datos de ejemplo. `04_datos_prueba_masivos.sql` carga más de 3.200 pacientes, turnos y consultas, y crea cuentas demo de ADMIN y MEDICO.  |
+| `05_seguimiento_turnos.sql`       | Migración reejecutable: fecha/hora/nota reales en `Turno`, tabla `Notificacion` y motor de estados por reloj.                             |
+| `docs/seguimiento-turnos.md`      | Documentación del flujo completo, endpoints y análisis de UI implementada/pendiente.                                                      |
 
 ## Modelo
 
@@ -85,28 +82,28 @@ WHERE username IS NOT NULL;
 
 ### Usuarios
 
-| Tabla | Propósito | Clave |
-| --- | --- | --- |
-| `"user"` | Credenciales y rol (`ADMIN` / `MEDICO`). | `username` + `UNIQUE(email)` |
-| `"reset_tokens"` | Recuperación de contraseña. | `id`; `email` → `"user"(email)` |
+| Tabla            | Propósito                                | Clave                           |
+| ---------------- | ---------------------------------------- | ------------------------------- |
+| `"user"`         | Credenciales y rol (`ADMIN` / `MEDICO`). | `username` + `UNIQUE(email)`    |
+| `"reset_tokens"` | Recuperación de contraseña.              | `id`; `email` → `"user"(email)` |
 
 El perfil del usuario (nombre, especialidad, dirección y teléfono) **no está
 en `"user"`**: se lee de `"Medico"` mediante `"Medico".username`.
 
 ### Estructura hospitalaria
 
-| Tabla | Propósito | Relaciones |
-| --- | --- | --- |
-| `"Hospital"` | Nodo superior. | — |
-| `"Departamento"` | División del hospital. | `codHos` → `"Hospital"` |
-| `"Unidad"` | Área operativa. | `codDep` → `"Departamento"` |
+| Tabla            | Propósito              | Relaciones                  |
+| ---------------- | ---------------------- | --------------------------- |
+| `"Hospital"`     | Nodo superior.         | —                           |
+| `"Departamento"` | División del hospital. | `codHos` → `"Hospital"`     |
+| `"Unidad"`       | Área operativa.        | `codDep` → `"Departamento"` |
 
 ### Pacientes
 
-| Tabla | Propósito | Relaciones |
-| --- | --- | --- |
-| `"Registro"` | Admisión vigente del paciente en una unidad. | `codUni` → `"Unidad"` |
-| `"Paciente"` | Ficha demográfica. | `numHisCli` → `"Registro"` |
+| Tabla        | Propósito                                    | Relaciones                 |
+| ------------ | -------------------------------------------- | -------------------------- |
+| `"Registro"` | Admisión vigente del paciente en una unidad. | `codUni` → `"Unidad"`      |
+| `"Paciente"` | Ficha demográfica.                           | `numHisCli` → `"Registro"` |
 
 > `"Registro"` es la raíz de la admisión y `"Paciente"` su ficha 1:1. Esta
 > dirección mantiene compatibles los scripts existentes: `insertarPaciente`
@@ -115,12 +112,12 @@ en `"user"`**: se lee de `"Medico"` mediante `"Medico".username`.
 
 ### Personal y operación
 
-| Tabla | Propósito | Relaciones |
-| --- | --- | --- |
-| `"Medico"` | Profesional asignado a una unidad; también es el perfil del usuario. | `codUni` → `"Unidad"`; `username` → `"user"` |
-| `"Turno"` | Turno de atención. | `codUni` → `"Unidad"`; `codMed` → `"Medico"` |
-| `"Consulta"` | Atención de un paciente en un turno. | `numTur` → `"Turno"`; `numHisCli` → `"Registro"` |
-| `"Informe"` | Resumen automático de un turno. | `codUni` → `"Unidad"`; `numTur` → `"Turno"` |
+| Tabla        | Propósito                                                            | Relaciones                                       |
+| ------------ | -------------------------------------------------------------------- | ------------------------------------------------ |
+| `"Medico"`   | Profesional asignado a una unidad; también es el perfil del usuario. | `codUni` → `"Unidad"`; `username` → `"user"`     |
+| `"Turno"`    | Turno de atención.                                                   | `codUni` → `"Unidad"`; `codMed` → `"Medico"`     |
+| `"Consulta"` | Atención de un paciente en un turno.                                 | `numTur` → `"Turno"`; `numHisCli` → `"Registro"` |
+| `"Informe"`  | Resumen automático de un turno.                                      | `codUni` → `"Unidad"`; `numTur` → `"Turno"`      |
 
 Claves primarias y reglas destacadas:
 
@@ -136,19 +133,19 @@ Claves primarias y reglas destacadas:
 
 ## Correcciones al ERD adjunto
 
-| Problema en el ERD entregado | Corrección aplicada |
-| --- | --- |
-| No existía la tabla `unidad`, pero todas las funciones y entidades la usan. | Se creó `"Unidad"` entre `"Departamento"` y las tablas operativas. |
-| `medico.codUni`, `registro.codUni` e `informe.codUni` apuntaban a `departamento.codDep`. | Ahora apuntan a `"Unidad"."codUni"`, que es la jerarquía real usada por los reportes. |
-| Las FK de `informe`, `medico` y `registro` declaraban la columna `codDep`, que no existe en esas tablas. | Se usan las columnas reales (`codUni`) y la tabla destino correcta (`"Unidad"`). |
-| `paciente` no tenía clave primaria. | PK `numHisCli` + FK a `"Registro"`. |
-| `consulta` no tenía clave primaria. | PK compuesta `(numTur, numHisCli)`. |
-| `turno` no declaraba FK para `codUni`. | FK `codUni` → `"Unidad"`. |
-| `informe` no impedía más de un informe por turno. | `UNIQUE(numTur)`. |
-| `nomPac` era `varchar(10)` y no admite los nombres de los datos reales. | `varchar(100)`; también se ampliaron `dirPac`, `telMed` y `numLic`. |
-| No existía relación entre médico y usuario. | `"Medico".username` → `"user".username`, 1:1 con `UNIQUE`. |
-| El ERD no incluía las tablas de usuarios ni recuperación de contraseña. | Se incorporaron `"user"` y `"reset_tokens"`; el perfil se resolvió con `"Medico"` para no duplicar datos. |
-| El ERD no tenía dónde guardar la dirección del usuario. | Se agregó `"Medico"."dirMed"`. |
+| Problema en el ERD entregado                                                                             | Corrección aplicada                                                                                       |
+| -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| No existía la tabla `unidad`, pero todas las funciones y entidades la usan.                              | Se creó `"Unidad"` entre `"Departamento"` y las tablas operativas.                                        |
+| `medico.codUni`, `registro.codUni` e `informe.codUni` apuntaban a `departamento.codDep`.                 | Ahora apuntan a `"Unidad"."codUni"`, que es la jerarquía real usada por los reportes.                     |
+| Las FK de `informe`, `medico` y `registro` declaraban la columna `codDep`, que no existe en esas tablas. | Se usan las columnas reales (`codUni`) y la tabla destino correcta (`"Unidad"`).                          |
+| `paciente` no tenía clave primaria.                                                                      | PK `numHisCli` + FK a `"Registro"`.                                                                       |
+| `consulta` no tenía clave primaria.                                                                      | PK compuesta `(numTur, numHisCli)`.                                                                       |
+| `turno` no declaraba FK para `codUni`.                                                                   | FK `codUni` → `"Unidad"`.                                                                                 |
+| `informe` no impedía más de un informe por turno.                                                        | `UNIQUE(numTur)`.                                                                                         |
+| `nomPac` era `varchar(10)` y no admite los nombres de los datos reales.                                  | `varchar(100)`; también se ampliaron `dirPac`, `telMed` y `numLic`.                                       |
+| No existía relación entre médico y usuario.                                                              | `"Medico".username` → `"user".username`, 1:1 con `UNIQUE`.                                                |
+| El ERD no incluía las tablas de usuarios ni recuperación de contraseña.                                  | Se incorporaron `"user"` y `"reset_tokens"`; el perfil se resolvió con `"Medico"` para no duplicar datos. |
+| El ERD no tenía dónde guardar la dirección del usuario.                                                  | Se agregó `"Medico"."dirMed"`.                                                                            |
 
 ## Compatibilidad con los scripts existentes
 
@@ -205,9 +202,9 @@ psql -U postgres -d sistema -v ON_ERROR_STOP=1 \
 Deja 3.800 pacientes, 3.220 turnos y dos cuentas útiles para probar la
 visibilidad por rol:
 
-| Correo | Contraseña | Rol | Alcance en Pacientes / Turnos |
-| --- | --- | --- | --- |
-| `admin.demo@hospital.test` | `hospital123` | `ADMIN` | Todos los hospitales |
+| Correo                      | Contraseña    | Rol      | Alcance en Pacientes / Turnos              |
+| --------------------------- | ------------- | -------- | ------------------------------------------ |
+| `admin.demo@hospital.test`  | `hospital123` | `ADMIN`  | Todos los hospitales                       |
 | `medico.demo@hospital.test` | `hospital123` | `MEDICO` | Solo sus pacientes y turnos (ficha `M001`) |
 
 El inicio de sesión de la interfaz pide el correo; el usuario interno es
@@ -341,12 +338,12 @@ historia.
 `"Medico"` es la única fuente de verdad de los datos personales y
 profesionales:
 
-| Dato | Columna |
-| --- | --- |
-| Nombre | `"nomMed"` |
+| Dato         | Columna    |
+| ------------ | ---------- |
+| Nombre       | `"nomMed"` |
 | Especialidad | `"espMed"` |
-| Teléfono | `"telMed"` |
-| Dirección | `"dirMed"` |
+| Teléfono     | `"telMed"` |
+| Dirección    | `"dirMed"` |
 
 `"user"` solo guarda credenciales (`username`, `email`, `password`, `role`).
 La pantalla de perfil de la aplicación edita la ficha de `"Medico"` cuando el
