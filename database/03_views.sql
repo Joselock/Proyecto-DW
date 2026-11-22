@@ -1,12 +1,8 @@
 -- ============================================================================
--- PROYECTO-DW · VISTAS DE APOYO
--- Archivo : database/03_views.sql
---
 -- Vistas de solo lectura para consultar la jerarquía hospitalaria, la
 -- relación entre médicos y usuarios, la ubicación de los pacientes y la
 -- ocupación de médicos por unidad.
 --
--- Se pueden ejecutar después de 01_schema.sql. Son idempotentes.
 -- ============================================================================
 
 BEGIN;

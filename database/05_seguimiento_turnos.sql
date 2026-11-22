@@ -1,16 +1,12 @@
 -- ============================================================================
--- PROYECTO-DW · Seguimiento real de turnos, notificaciones y cambio de día
+-- · Seguimiento real de turnos, notificaciones y cambio de día
 -- ============================================================================
--- Ejecutar sobre una base ya creada. Es reejecutable.
---
---   psql -U postgres -d sistema -v ON_ERROR_STOP=1 \
---     -f database/05_seguimiento_turnos.sql
---
+
 -- Añade fecha, hora y nota clínica a "Turno", reparte los turnos de prueba en
 -- los 7 días anteriores y los 7 siguientes, y crea el motor que cambia el
 -- estado de cada turno según el reloj del sistema:
 --
---   pendiente/confirmado -> en_progreso -> finalizado
+-- Estados:  pendiente/confirmado -> en_progreso -> finalizado
 --
 -- El fin de la consulta es la hora del siguiente turno del mismo médico y día,
 -- o 30 minutos después si es el último. Al finalizar, la consulta se marca
@@ -76,9 +72,9 @@ WHERE t."numTur" = c."numTur";
 -- ----------------------------------------------------------------------------
 -- 2b. Nombres de los pacientes de prueba
 --     El seed anterior combinaba nombre y apellido con un único índice (%40),
---     así que solo había 40 nombres distintos para 3200 pacientes y la agenda
---     parecía repetir siempre el mismo paciente. Se usan tres índices para
---     obtener hasta 40 * 40 * 40 combinaciones.
+--     así que solo había 40 nombres distintos para 3200 pacientes.
+--     Se usan tres índices para  obtener hasta 40 * 40 * 40 combinaciones.
+--    
 -- ----------------------------------------------------------------------------
 WITH listas AS (
     SELECT
