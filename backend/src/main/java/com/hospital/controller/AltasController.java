@@ -1,7 +1,5 @@
 package com.hospital.controller;
 
-import java.util.Map;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,9 +46,10 @@ public class AltasController {
 
     @PostMapping("/pacientes")
     public ResponseEntity<ApiResponse<Object>> crearPaciente(@RequestBody CrearPacienteRequest body,
-                                                             HttpServletRequest request) {
+            HttpServletRequest request) {
         String username = username(request);
-        if (username == null) return noAutorizado();
+        if (username == null)
+            return noAutorizado();
         try {
             return ok(altasService.crearPaciente(username, role(request), body));
         } catch (Exception e) {
@@ -60,10 +59,11 @@ public class AltasController {
 
     @PutMapping("/pacientes/{numHistoria}")
     public ResponseEntity<ApiResponse<Object>> editarPaciente(@PathVariable String numHistoria,
-                                                              @RequestBody EditarPacienteRequest body,
-                                                              HttpServletRequest request) {
+            @RequestBody EditarPacienteRequest body,
+            HttpServletRequest request) {
         String username = username(request);
-        if (username == null) return noAutorizado();
+        if (username == null)
+            return noAutorizado();
         try {
             return ok(altasService.editarPaciente(username, role(request), numHistoria, body));
         } catch (Exception e) {
@@ -73,9 +73,10 @@ public class AltasController {
 
     @DeleteMapping("/pacientes/{numHistoria}")
     public ResponseEntity<ApiResponse<Object>> eliminarPaciente(@PathVariable String numHistoria,
-                                                                HttpServletRequest request) {
+            HttpServletRequest request) {
         String username = username(request);
-        if (username == null) return noAutorizado();
+        if (username == null)
+            return noAutorizado();
         try {
             return ok(altasService.eliminarPaciente(username, role(request), numHistoria));
         } catch (Exception e) {
@@ -85,9 +86,10 @@ public class AltasController {
 
     @PostMapping("/turnos")
     public ResponseEntity<ApiResponse<Object>> crearTurno(@RequestBody CrearTurnoRequest body,
-                                                          HttpServletRequest request) {
+            HttpServletRequest request) {
         String username = username(request);
-        if (username == null) return noAutorizado();
+        if (username == null)
+            return noAutorizado();
         try {
             return ok(altasService.crearTurno(username, role(request), body));
         } catch (Exception e) {
@@ -95,13 +97,16 @@ public class AltasController {
         }
     }
 
-    /** Edita fecha, hora, nota clínica y estado de un turno (menú de tres puntos). */
+    /**
+     * Edita fecha, hora, nota clínica y estado de un turno (menú de tres puntos).
+     */
     @PutMapping("/turnos/{numero}")
     public ResponseEntity<ApiResponse<Object>> editarTurno(@PathVariable int numero,
-                                                           @RequestBody EditarTurnoRequest body,
-                                                           HttpServletRequest request) {
+            @RequestBody EditarTurnoRequest body,
+            HttpServletRequest request) {
         String username = username(request);
-        if (username == null) return noAutorizado();
+        if (username == null)
+            return noAutorizado();
         try {
             return ok(altasService.editarTurno(username, role(request), numero, body));
         } catch (Exception e) {
@@ -111,9 +116,10 @@ public class AltasController {
 
     @PostMapping("/medicos")
     public ResponseEntity<ApiResponse<Object>> crearMedico(@RequestBody CrearMedicoRequest body,
-                                                           HttpServletRequest request) {
+            HttpServletRequest request) {
         String username = username(request);
-        if (username == null) return noAutorizado();
+        if (username == null)
+            return noAutorizado();
         try {
             return ok(altasService.crearMedico(username, role(request), body));
         } catch (Exception e) {
@@ -123,10 +129,11 @@ public class AltasController {
 
     @PutMapping("/medicos/{codMed}")
     public ResponseEntity<ApiResponse<Object>> editarMedico(@PathVariable String codMed,
-                                                            @RequestBody EditarMedicoRequest body,
-                                                            HttpServletRequest request) {
+            @RequestBody EditarMedicoRequest body,
+            HttpServletRequest request) {
         String username = username(request);
-        if (username == null) return noAutorizado();
+        if (username == null)
+            return noAutorizado();
         try {
             return ok(altasService.editarMedico(username, role(request), codMed, body));
         } catch (Exception e) {
@@ -136,9 +143,10 @@ public class AltasController {
 
     @DeleteMapping("/medicos/{codMed}")
     public ResponseEntity<ApiResponse<Object>> eliminarMedico(@PathVariable String codMed,
-                                                              HttpServletRequest request) {
+            HttpServletRequest request) {
         String username = username(request);
-        if (username == null) return noAutorizado();
+        if (username == null)
+            return noAutorizado();
         try {
             return ok(altasService.eliminarMedico(username, role(request), codMed));
         } catch (Exception e) {
@@ -177,7 +185,8 @@ public class AltasController {
 
     private String role(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
-        if (session == null) return null;
+        if (session == null)
+            return null;
         Object role = session.getAttribute("role");
         return role == null ? null : String.valueOf(role);
     }

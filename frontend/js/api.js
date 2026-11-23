@@ -24,7 +24,7 @@ function apiBaseCandidates() {
     // Si la página viene de otro servidor, el backend sigue en el puerto 8080.
     bases.push(`${protocol}//${hostname}:${BACKEND_PORT}/api`);
 
-    // Último recurso: mismo origen (útil si se configuró un proxy /api).
+    // Último recurso: mismo origen.
     bases.push(`${origin}/api`);
   }
 
@@ -174,7 +174,8 @@ export const api = {
    * { fecha, limit, offset }; se mantiene la firma antigua (q, limit, offset).
    */
   pacientesPanel(q = "", options = {}, offset = 0) {
-    const opts = typeof options === "number" ? { limit: options, offset } : options || {};
+    const opts =
+      typeof options === "number" ? { limit: options, offset } : options || {};
     const params = new URLSearchParams({
       limit: String(opts.limit ?? 5000),
       offset: String(opts.offset ?? 0),
@@ -186,7 +187,8 @@ export const api = {
 
   /** Turnos del día y del alcance de la sesión (ADMIN = todos, MEDICO = los suyos). */
   turnosPanel(q = "", options = {}, offset = 0) {
-    const opts = typeof options === "number" ? { limit: options, offset } : options || {};
+    const opts =
+      typeof options === "number" ? { limit: options, offset } : options || {};
     const params = new URLSearchParams({
       limit: String(opts.limit ?? 5000),
       offset: String(opts.offset ?? 0),
