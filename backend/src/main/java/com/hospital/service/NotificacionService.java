@@ -1,7 +1,6 @@
 package com.hospital.service;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -86,8 +85,7 @@ public class NotificacionService {
                     Boolean.TRUE.equals(fila.get("leida")),
                     texto(fila.get("fecha_turno")),
                     texto(fila.get("hora")),
-                    texto(fila.get("paciente"))
-            ));
+                    texto(fila.get("paciente"))));
         }
 
         StringBuilder conteoSql = new StringBuilder("""
@@ -109,8 +107,7 @@ public class NotificacionService {
                 rows,
                 noLeidas == null ? 0 : noLeidas,
                 ultimoId == null ? 0 : ultimoId,
-                admin ? "global" : "medico"
-        );
+                admin ? "global" : "medico");
     }
 
     /** Marca como leídas las notificaciones indicadas (o todas si no hay ids). */
@@ -123,14 +120,16 @@ public class NotificacionService {
                 """);
         List<Object> args = new ArrayList<>();
         if (!admin) {
-            if (codMed == null) return 0;
+            if (codMed == null)
+                return 0;
             sql.append(" AND \"codMed\" = ? ");
             args.add(codMed);
         }
         if (ids != null && !ids.isEmpty()) {
             sql.append(" AND \"id\" IN (");
             for (int i = 0; i < ids.size(); i++) {
-                if (i > 0) sql.append(", ");
+                if (i > 0)
+                    sql.append(", ");
                 sql.append('?');
                 args.add(ids.get(i));
             }
@@ -140,8 +139,10 @@ public class NotificacionService {
     }
 
     private String codMedSesion(String username, String role) {
-        if ("ADMIN".equalsIgnoreCase(role == null ? "" : role)) return null;
-        if (username == null || username.isBlank()) return null;
+        if ("ADMIN".equalsIgnoreCase(role == null ? "" : role))
+            return null;
+        if (username == null || username.isBlank())
+            return null;
         List<String> filas = jdbc.queryForList("""
                 SELECT m."codMed" FROM public."Medico" m WHERE m.username = ? LIMIT 1
                 """, String.class, username);
@@ -159,8 +160,10 @@ public class NotificacionService {
     }
 
     private static int numero(Object valor) {
-        if (valor == null) return 0;
-        if (valor instanceof Number number) return number.intValue();
+        if (valor == null)
+            return 0;
+        if (valor instanceof Number number)
+            return number.intValue();
         try {
             return Integer.parseInt(String.valueOf(valor));
         } catch (NumberFormatException e) {

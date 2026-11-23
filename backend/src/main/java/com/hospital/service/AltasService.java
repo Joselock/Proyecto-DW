@@ -33,8 +33,8 @@ import com.hospital.dto.response.CatalogosAltasResponse;
  * Altas reales de pacientes, turnos y médicos.
  *
  * La regla de visibilidad es la misma que en PanelService:
- *   - ADMIN: puede elegir cualquier hospital, unidad, médico o paciente.
- *   - MEDICO: solo puede crear en su unidad y con su ficha profesional.
+ * - ADMIN: puede elegir cualquier hospital, unidad, médico o paciente.
+ * - MEDICO: solo puede crear en su unidad y con su ficha profesional.
  * Crear médicos es exclusivo de ADMIN.
  */
 @Service
@@ -47,7 +47,7 @@ public class AltasService {
     }
 
     /* ------------------------------------------------------------------ */
-    /* Catálogos para los formularios                                      */
+    /* Catálogos para los formularios */
     /* ------------------------------------------------------------------ */
 
     @Transactional(readOnly = true)
@@ -136,7 +136,7 @@ public class AltasService {
     }
 
     /* ------------------------------------------------------------------ */
-    /* Pacientes                                                           */
+    /* Pacientes */
     /* ------------------------------------------------------------------ */
 
     @Transactional
@@ -151,19 +151,24 @@ public class AltasService {
         String direccion = texto(body.direccion());
         String codUni = texto(body.codUni());
         String estado = texto(body.estado());
-        if (estado.isEmpty()) estado = "Internado";
+        if (estado.isEmpty())
+            estado = "Internado";
 
         LocalDate fechaNac = fecha(body.fechaNacimiento());
-        if (nombre.isEmpty()) throw new IllegalArgumentException("Escribe el nombre del paciente.");
-        if (fechaNac == null) throw new IllegalArgumentException("Indica la fecha de nacimiento.");
+        if (nombre.isEmpty())
+            throw new IllegalArgumentException("Escribe el nombre del paciente.");
+        if (fechaNac == null)
+            throw new IllegalArgumentException("Indica la fecha de nacimiento.");
         if (Period.between(fechaNac, LocalDate.now()).getYears() < 16) {
             throw new IllegalArgumentException("El paciente debe tener al menos 16 años.");
         }
-        if (direccion.isEmpty()) throw new IllegalArgumentException("Indica la dirección del paciente.");
+        if (direccion.isEmpty())
+            throw new IllegalArgumentException("Indica la dirección del paciente.");
         if (!List.of("Internado", "Pendiente", "Alta").contains(estado)) {
             throw new IllegalArgumentException("Selecciona un estado válido.");
         }
-        if (codUni.isEmpty()) throw new IllegalArgumentException("Selecciona la unidad de admisión.");
+        if (codUni.isEmpty())
+            throw new IllegalArgumentException("Selecciona la unidad de admisión.");
 
         validarUnidad(codUni, perfil, "pacientes");
 
@@ -183,7 +188,7 @@ public class AltasService {
     }
 
     /* ------------------------------------------------------------------ */
-    /* Turnos                                                              */
+    /* Turnos */
     /* ------------------------------------------------------------------ */
 
     @Transactional
@@ -194,7 +199,8 @@ public class AltasService {
         String codMed = texto(body.codMed());
         String codUni = texto(body.codUni());
         String estado = texto(body.estado());
-        if (estado.isEmpty()) estado = "pendiente";
+        if (estado.isEmpty())
+            estado = "pendiente";
         estado = estado.toLowerCase(Locale.ROOT);
         if (!List.of("pendiente", "confirmado").contains(estado)) {
             throw new IllegalArgumentException("Selecciona un estado válido para el turno.");
@@ -204,7 +210,8 @@ public class AltasService {
             codMed = perfil.codMed();
             codUni = perfil.codUni();
         }
-        if (pacienteId.isEmpty()) throw new IllegalArgumentException("Selecciona un paciente.");
+        if (pacienteId.isEmpty())
+            throw new IllegalArgumentException("Selecciona un paciente.");
         if (codMed == null || codMed.isEmpty()) {
             throw new IllegalArgumentException("Tu cuenta no tiene una ficha médica vinculada.");
         }
@@ -215,7 +222,8 @@ public class AltasService {
                 WHERE m."codMed" = ?
                 LIMIT 1
                 """, codMed).stream().findFirst().orElse(null);
-        if (medico == null) throw new IllegalArgumentException("El profesional seleccionado no existe.");
+        if (medico == null)
+            throw new IllegalArgumentException("El profesional seleccionado no existe.");
 
         // La unidad del turno siempre es la del médico que lo atiende.
         codUni = texto(medico.get("codUni"));
@@ -226,14 +234,16 @@ public class AltasService {
         validarPaciente(pacienteId, perfil);
 
         LocalDate fechaTurno = fecha(body.fecha());
-        if (fechaTurno == null) fechaTurno = LocalDate.now();
+        if (fechaTurno == null)
+            fechaTurno = LocalDate.now();
         Time horaTurno = hora(body.hora());
         if (horaTurno == null) {
             horaTurno = Time.valueOf(LocalTime.now().withNano(0)
                     .format(DateTimeFormatter.ofPattern("HH:mm:ss")));
         }
         String notaClinica = texto(body.notaClinica());
-        if (notaClinica.isEmpty()) notaClinica = texto(body.nota());
+        if (notaClinica.isEmpty())
+            notaClinica = texto(body.nota());
 
         int numero = siguienteTurno();
         Map<String, Object> turno = llamarFuncion(
@@ -310,8 +320,10 @@ public class AltasService {
                 : texto(actual.get("nota"));
 
         String estado = texto(body.estatus());
-        if (estado.isEmpty()) estado = texto(body.estadoOriginal());
-        if (estado.isEmpty()) estado = texto(actual.get("estado"));
+        if (estado.isEmpty())
+            estado = texto(body.estadoOriginal());
+        if (estado.isEmpty())
+            estado = texto(actual.get("estado"));
         String estadoDb = estadoBase(estado);
 
         jdbc.update("""
@@ -352,10 +364,14 @@ public class AltasService {
     /** Convierte los estados de la interfaz a los valores guardados en la BD. */
     private static String estadoBase(String valor) {
         String estado = valor.toLowerCase(Locale.ROOT).replace('_', ' ').trim();
-        if (estado.contains("no atendido")) return "no_atendido";
-        if (estado.contains("progreso") || estado.contains("curso")) return "en_progreso";
-        if (estado.contains("finaliz") || estado.contains("atendid") || estado.equals("done")) return "finalizado";
-        if (estado.contains("confirm")) return "confirmado";
+        if (estado.contains("no atendido"))
+            return "no_atendido";
+        if (estado.contains("progreso") || estado.contains("curso"))
+            return "en_progreso";
+        if (estado.contains("finaliz") || estado.contains("atendid") || estado.equals("done"))
+            return "finalizado";
+        if (estado.contains("confirm"))
+            return "confirmado";
         return "pendiente";
     }
 
@@ -369,24 +385,30 @@ public class AltasService {
         validarPaciente(numHistoria, perfil);
 
         String nuevoDocumento = texto(body.documento());
-        if (nuevoDocumento.isEmpty()) nuevoDocumento = numHistoria;
+        if (nuevoDocumento.isEmpty())
+            nuevoDocumento = numHistoria;
         String nombre = texto(body.nombre());
         String direccion = texto(body.direccion());
         String codUni = texto(body.codUni());
         String estado = texto(body.estado());
-        if (estado.isEmpty()) estado = "Internado";
+        if (estado.isEmpty())
+            estado = "Internado";
 
         LocalDate fechaNac = fecha(body.fechaNacimiento());
-        if (nombre.isEmpty()) throw new IllegalArgumentException("Escribe el nombre del paciente.");
-        if (fechaNac == null) throw new IllegalArgumentException("Indica la fecha de nacimiento.");
+        if (nombre.isEmpty())
+            throw new IllegalArgumentException("Escribe el nombre del paciente.");
+        if (fechaNac == null)
+            throw new IllegalArgumentException("Indica la fecha de nacimiento.");
         if (Period.between(fechaNac, LocalDate.now()).getYears() < 16) {
             throw new IllegalArgumentException("El paciente debe tener al menos 16 años.");
         }
-        if (direccion.isEmpty()) throw new IllegalArgumentException("Indica la dirección del paciente.");
+        if (direccion.isEmpty())
+            throw new IllegalArgumentException("Indica la dirección del paciente.");
         if (!List.of("Internado", "Pendiente", "Alta").contains(estado)) {
             throw new IllegalArgumentException("Selecciona un estado válido.");
         }
-        if (codUni.isEmpty()) throw new IllegalArgumentException("Selecciona la unidad de admisión.");
+        if (codUni.isEmpty())
+            throw new IllegalArgumentException("Selecciona la unidad de admisión.");
         validarUnidad(codUni, perfil, "pacientes");
 
         Map<String, Object> resultado = llamarFuncion(
@@ -418,11 +440,13 @@ public class AltasService {
             mensaje = texto(jdbc.queryForObject(
                     "SELECT public.eliminarPaciente(?)", String.class, numHistoria));
         } catch (org.springframework.dao.DataAccessException e) {
-            throw new IllegalStateException("No se pudo eliminar el paciente: " + e.getMostSpecificCause().getMessage());
+            throw new IllegalStateException(
+                    "No se pudo eliminar el paciente: " + e.getMostSpecificCause().getMessage());
         }
         if (mensaje == null || mensaje.toLowerCase(Locale.ROOT).startsWith("error")) {
             throw new IllegalStateException(mensaje == null || mensaje.isBlank()
-                    ? "No se pudo eliminar el paciente." : mensaje);
+                    ? "No se pudo eliminar el paciente."
+                    : mensaje);
         }
 
         Map<String, Object> respuesta = new LinkedHashMap<>();
@@ -432,7 +456,7 @@ public class AltasService {
     }
 
     /* ------------------------------------------------------------------ */
-    /* Médicos (solo ADMIN)                                                */
+    /* Médicos (solo ADMIN) */
     /* ------------------------------------------------------------------ */
 
     @Transactional
@@ -443,7 +467,8 @@ public class AltasService {
         }
 
         String codMed = texto(body.codMed());
-        if (codMed.isEmpty()) codMed = siguienteMedico();
+        if (codMed.isEmpty())
+            codMed = siguienteMedico();
         String nombre = texto(body.nombre());
         String especialidad = texto(body.especialidad());
         String licencia = texto(body.licencia());
@@ -453,13 +478,20 @@ public class AltasService {
         String codUni = texto(body.codUni());
         int experiencia = entero(body.experiencia());
 
-        if (nombre.isEmpty()) throw new IllegalArgumentException("Escribe el nombre del médico.");
-        if (especialidad.isEmpty()) throw new IllegalArgumentException("Indica la especialidad.");
-        if (licencia.isEmpty()) throw new IllegalArgumentException("Indica el número de licencia.");
-        if (telefono.isEmpty()) throw new IllegalArgumentException("Indica el teléfono.");
-        if (experiencia < 0) throw new IllegalArgumentException("La experiencia no puede ser negativa.");
-        if (datosContacto.isEmpty()) datosContacto = "Datos de contacto pendientes";
-        if (codUni.isEmpty()) throw new IllegalArgumentException("Selecciona la unidad asignada.");
+        if (nombre.isEmpty())
+            throw new IllegalArgumentException("Escribe el nombre del médico.");
+        if (especialidad.isEmpty())
+            throw new IllegalArgumentException("Indica la especialidad.");
+        if (licencia.isEmpty())
+            throw new IllegalArgumentException("Indica el número de licencia.");
+        if (telefono.isEmpty())
+            throw new IllegalArgumentException("Indica el teléfono.");
+        if (experiencia < 0)
+            throw new IllegalArgumentException("La experiencia no puede ser negativa.");
+        if (datosContacto.isEmpty())
+            datosContacto = "Datos de contacto pendientes";
+        if (codUni.isEmpty())
+            throw new IllegalArgumentException("Selecciona la unidad asignada.");
 
         validarUnidad(codUni, perfil, "médicos");
 
@@ -513,7 +545,8 @@ public class AltasService {
         }
 
         String nuevoCodigo = texto(body.codMed());
-        if (nuevoCodigo.isEmpty()) nuevoCodigo = codMed;
+        if (nuevoCodigo.isEmpty())
+            nuevoCodigo = codMed;
         String nombre = texto(body.nombre());
         String especialidad = texto(body.especialidad());
         String licencia = texto(body.licencia());
@@ -523,13 +556,20 @@ public class AltasService {
         String codUni = texto(body.codUni());
         int experiencia = entero(body.experiencia());
 
-        if (nombre.isEmpty()) throw new IllegalArgumentException("Escribe el nombre del médico.");
-        if (especialidad.isEmpty()) throw new IllegalArgumentException("Indica la especialidad.");
-        if (licencia.isEmpty()) throw new IllegalArgumentException("Indica el número de licencia.");
-        if (telefono.isEmpty()) throw new IllegalArgumentException("Indica el teléfono.");
-        if (experiencia < 0) throw new IllegalArgumentException("La experiencia no puede ser negativa.");
-        if (datosContacto.isEmpty()) datosContacto = "Datos de contacto pendientes";
-        if (codUni.isEmpty()) throw new IllegalArgumentException("Selecciona la unidad asignada.");
+        if (nombre.isEmpty())
+            throw new IllegalArgumentException("Escribe el nombre del médico.");
+        if (especialidad.isEmpty())
+            throw new IllegalArgumentException("Indica la especialidad.");
+        if (licencia.isEmpty())
+            throw new IllegalArgumentException("Indica el número de licencia.");
+        if (telefono.isEmpty())
+            throw new IllegalArgumentException("Indica el teléfono.");
+        if (experiencia < 0)
+            throw new IllegalArgumentException("La experiencia no puede ser negativa.");
+        if (datosContacto.isEmpty())
+            datosContacto = "Datos de contacto pendientes";
+        if (codUni.isEmpty())
+            throw new IllegalArgumentException("Selecciona la unidad asignada.");
 
         validarUnidad(codUni, perfil, "médicos");
 
@@ -593,7 +633,8 @@ public class AltasService {
         }
         if (mensaje == null || mensaje.toLowerCase(Locale.ROOT).startsWith("error")) {
             throw new IllegalStateException(mensaje == null || mensaje.isBlank()
-                    ? "No se pudo eliminar el médico." : mensaje);
+                    ? "No se pudo eliminar el médico."
+                    : mensaje);
         }
 
         Map<String, Object> respuesta = new LinkedHashMap<>();
@@ -603,7 +644,7 @@ public class AltasService {
     }
 
     /* ------------------------------------------------------------------ */
-    /* Apoyo                                                               */
+    /* Apoyo */
     /* ------------------------------------------------------------------ */
 
     private void validarUnidad(String codUni, Perfil perfil, String recurso) {
@@ -707,7 +748,8 @@ public class AltasService {
     }
 
     private static LocalDate fecha(String valor) {
-        if (valor == null || valor.isBlank()) return null;
+        if (valor == null || valor.isBlank())
+            return null;
         try {
             return LocalDate.parse(valor.trim().substring(0, 10));
         } catch (RuntimeException e) {
@@ -716,9 +758,11 @@ public class AltasService {
     }
 
     private static Time hora(String valor) {
-        if (valor == null || valor.isBlank()) return null;
+        if (valor == null || valor.isBlank())
+            return null;
         String textoHora = valor.trim();
-        if (textoHora.matches("\\d{1,2}:\\d{2}")) textoHora += ":00";
+        if (textoHora.matches("\\d{1,2}:\\d{2}"))
+            textoHora += ":00";
         try {
             return Time.valueOf(textoHora);
         } catch (RuntimeException e) {
@@ -727,10 +771,13 @@ public class AltasService {
     }
 
     private static int entero(Object valor) {
-        if (valor == null) return 0;
-        if (valor instanceof Number number) return number.intValue();
+        if (valor == null)
+            return 0;
+        if (valor instanceof Number number)
+            return number.intValue();
         String texto = String.valueOf(valor).trim();
-        if (texto.isBlank()) return 0;
+        if (texto.isBlank())
+            return 0;
         try {
             return Integer.parseInt(texto);
         } catch (NumberFormatException e) {

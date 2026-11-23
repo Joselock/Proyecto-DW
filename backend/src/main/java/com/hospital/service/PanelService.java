@@ -3,7 +3,6 @@ package com.hospital.service;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -20,9 +19,9 @@ import com.hospital.dto.response.TurnoPanelRow;
  * Datos que alimentan las secciones "Pacientes" y "Turnos" del dashboard.
  *
  * Regla de visibilidad:
- *   - ADMIN: ve todos los pacientes y turnos de todos los hospitales.
- *   - MEDICO: ve solo los turnos asignados a su codMed y los pacientes que
- *     atendió en esos turnos o que están ingresados en su unidad.
+ * - ADMIN: ve todos los pacientes y turnos de todos los hospitales.
+ * - MEDICO: ve solo los turnos asignados a su codMed y los pacientes que
+ * atendió en esos turnos o que están ingresados en su unidad.
  *
  * El parámetro fecha permite recorrer la agenda hacia atrás y hacia adelante.
  * Cuando se recibe, los turnos se filtran por ese día y el listado de
@@ -186,8 +185,7 @@ public class PanelService {
                     texto(fila.get("departamento")),
                     texto(fila.get("hospital")),
                     texto(fila.get("medico")),
-                    texto(fila.get("ultima_visita"))
-            ));
+                    texto(fila.get("ultima_visita"))));
         }
 
         return new PanelPacientesResponse(
@@ -196,8 +194,7 @@ public class PanelService {
                 perfil.admin() ? "global" : "medico",
                 perfil.nombre(),
                 perfil.codMed(),
-                dia
-        );
+                dia);
     }
 
     public PanelTurnosResponse turnos(String username, String role, String q, String fecha,
@@ -318,8 +315,7 @@ public class PanelService {
                     texto(fila.get("hospital")),
                     numero(fila.get("atendidos")),
                     numero(fila.get("consultas")),
-                    numero(fila.get("cant_aten"))
-            ));
+                    numero(fila.get("cant_aten"))));
         }
 
         return new PanelTurnosResponse(
@@ -328,11 +324,12 @@ public class PanelService {
                 perfil.admin() ? "global" : "medico",
                 perfil.nombre(),
                 perfil.codMed(),
-                dia
-        );
+                dia);
     }
 
-    /** Resuelve el médico vinculado a la sesión y si el usuario es administrador. */
+    /**
+     * Resuelve el médico vinculado a la sesión y si el usuario es administrador.
+     */
     private Perfil resolverPerfil(String username, String role) {
         boolean admin = "ADMIN".equalsIgnoreCase(role == null ? "" : role);
         if (admin || username == null || username.isBlank()) {
@@ -355,9 +352,11 @@ public class PanelService {
     }
 
     private static long total(List<Map<String, Object>> filas) {
-        if (filas.isEmpty()) return 0;
+        if (filas.isEmpty())
+            return 0;
         Object valor = filas.get(0).get("total");
-        if (valor instanceof Number number) return number.longValue();
+        if (valor instanceof Number number)
+            return number.longValue();
         try {
             return Long.parseLong(String.valueOf(valor));
         } catch (NumberFormatException e) {
@@ -367,22 +366,29 @@ public class PanelService {
 
     private static String estadoPaciente(Map<String, Object> fila) {
         String estado = texto(fila.get("estado")).toLowerCase(Locale.ROOT);
-        if (estado.contains("alta")) return "inactive";
-        if (Boolean.TRUE.equals(fila.get("pendiente")) || estado.contains("pendiente")) return "pending";
+        if (estado.contains("alta"))
+            return "inactive";
+        if (Boolean.TRUE.equals(fila.get("pendiente")) || estado.contains("pendiente"))
+            return "pending";
         return "active";
     }
 
     private static String estadoTurno(String estado) {
         String value = estado.toLowerCase(Locale.ROOT).replace('_', ' ').trim();
-        if (value.contains("no atendido")) return "no_atendido";
-        if (value.contains("progreso") || value.contains("curso")) return "in_progress";
-        if (value.contains("finaliz") || value.contains("atendid") || value.contains("done")) return "done";
-        if (value.contains("confirm")) return "confirmed";
+        if (value.contains("no atendido"))
+            return "no_atendido";
+        if (value.contains("progreso") || value.contains("curso"))
+            return "in_progress";
+        if (value.contains("finaliz") || value.contains("atendid") || value.contains("done"))
+            return "done";
+        if (value.contains("confirm"))
+            return "confirmed";
         return "pending";
     }
 
     private static String fechaValida(String fecha) {
-        if (fecha == null || !fecha.matches("\\d{4}-\\d{2}-\\d{2}")) return null;
+        if (fecha == null || !fecha.matches("\\d{4}-\\d{2}-\\d{2}"))
+            return null;
         try {
             return LocalDate.parse(fecha).toString();
         } catch (RuntimeException e) {
@@ -391,7 +397,8 @@ public class PanelService {
     }
 
     private static int normalizarLimit(Integer limit) {
-        if (limit == null || limit <= 0) return DEFAULT_LIMIT;
+        if (limit == null || limit <= 0)
+            return DEFAULT_LIMIT;
         return Math.min(limit, MAX_LIMIT);
     }
 
@@ -400,8 +407,10 @@ public class PanelService {
     }
 
     private static int numero(Object valor) {
-        if (valor == null) return 0;
-        if (valor instanceof Number number) return number.intValue();
+        if (valor == null)
+            return 0;
+        if (valor instanceof Number number)
+            return number.intValue();
         try {
             return Integer.parseInt(String.valueOf(valor));
         } catch (NumberFormatException e) {
@@ -410,9 +419,12 @@ public class PanelService {
     }
 
     private static LocalDate fecha(Object valor) {
-        if (valor instanceof java.sql.Date sqlDate) return sqlDate.toLocalDate();
-        if (valor instanceof LocalDate localDate) return localDate;
-        if (valor == null) return null;
+        if (valor instanceof java.sql.Date sqlDate)
+            return sqlDate.toLocalDate();
+        if (valor instanceof LocalDate localDate)
+            return localDate;
+        if (valor == null)
+            return null;
         try {
             return LocalDate.parse(String.valueOf(valor).substring(0, 10));
         } catch (RuntimeException e) {
